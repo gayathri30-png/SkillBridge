@@ -11,7 +11,7 @@ function SkillsManager() {
 
   const token = localStorage.getItem("token");
 
-  // Fetch skills
+  // Fetch skills on load
   useEffect(() => {
     fetchSkills();
   }, []);
@@ -20,16 +20,12 @@ function SkillsManager() {
     try {
       setLoading(true);
 
-      // Fetch all available skills
       const allRes = await axios.get("http://localhost:5000/api/skills/all");
       setAllSkills(allRes.data);
 
-      // Fetch user's skills
       const myRes = await axios.get(
         "http://localhost:5000/api/skills/my-skills",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setMySkills(myRes.data);
 
@@ -48,7 +44,6 @@ function SkillsManager() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Refresh skills
       fetchSkills();
       alert("Skill added successfully!");
     } catch (error) {
@@ -63,12 +58,9 @@ function SkillsManager() {
     try {
       await axios.delete(
         `http://localhost:5000/api/skills/remove/${userSkillId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Refresh skills
       fetchSkills();
       alert("Skill removed successfully!");
     } catch (error) {
@@ -85,7 +77,6 @@ function SkillsManager() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Update local state
       setMySkills(
         mySkills.map((skill) =>
           skill.id === userSkillId ? { ...skill, proficiency } : skill
@@ -96,23 +87,23 @@ function SkillsManager() {
     }
   };
 
-  // Filter skills user doesn't have yet
-  const mySkillIds = mySkills.map((skill) => skill.name);
+  // IDs of skills user already has
+  const mySkillIds = mySkills.map((s) => s.skill_id);
+
+  // Filter available skills
   const availableSkills = allSkills.filter(
     (skill) =>
-      !mySkillIds.includes(skill.name) &&
+      !mySkillIds.includes(skill.id) &&
       skill.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return <div className="loading">Loading skills...</div>;
-  }
+  if (loading) return <div className="loading">Loading skills...</div>;
 
   return (
     <div className="skills-manager">
       <h1>My Skills</h1>
 
-      {/* My Skills Section */}
+      {/* My Skills */}
       <div className="my-skills-section">
         <h2>Your Current Skills ({mySkills.length})</h2>
 
@@ -133,6 +124,7 @@ function SkillsManager() {
                     ×
                   </button>
                 </div>
+
                 <div className="proficiency-selector">
                   <label>Proficiency:</label>
                   <select
@@ -146,6 +138,7 @@ function SkillsManager() {
                     <option value="Advanced">Advanced</option>
                   </select>
                 </div>
+
                 <div
                   className={`proficiency-badge ${skill.proficiency.toLowerCase()}`}
                 >
@@ -157,7 +150,7 @@ function SkillsManager() {
         )}
       </div>
 
-      {/* Add Skills Section */}
+      {/* Add Skills */}
       <div className="add-skills-section">
         <h2>Add New Skills</h2>
 
@@ -168,6 +161,7 @@ function SkillsManager() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+
           <div className="proficiency-filter">
             <label>Set proficiency:</label>
             <select
