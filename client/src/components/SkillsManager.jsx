@@ -8,10 +8,12 @@ function SkillsManager() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProficiency, setSelectedProficiency] = useState("Beginner");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const token = localStorage.getItem("token");
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  // Fetch skills
+  // Fetch skills on load
   useEffect(() => {
     fetchSkills();
   }, []);
@@ -19,71 +21,132 @@ function SkillsManager() {
   const fetchSkills = async () => {
     try {
       setLoading(true);
+      setError("");
 
-      // Fetch all available skills
+      console.log("🔄 Fetching all skills...");
       const allRes = await axios.get("http://localhost:5000/api/skills/all");
+      console.log("✅ All skills:", allRes.data);
       setAllSkills(allRes.data);
 
-      // Fetch user's skills
+      console.log("🔄 Fetching my skills...");
       const myRes = await axios.get(
         "http://localhost:5000/api/skills/my-skills",
         {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
+      console.log("✅ My skills:", myRes.data);
       setMySkills(myRes.data);
 
       setLoading(false);
     } catch (error) {
-      console.error("Error fetching skills:", error);
+      console.error("❌ Error fetching skills:", error);
+      setError("Failed to load skills. Please try again.");
       setLoading(false);
     }
   };
 
-  const addSkill = async (skillId) => {
+  const addSkill = async (skillId, skillName) => {
     try {
-      await axios.post(
+      console.log(`➕ Adding skill: ${skillName} (ID: ${skillId})`);
+      console.log(`📤 Sending to backend:`, {
+        skillId,
+        proficiency: selectedProficiency,
+      });
+      console.log(`🔑 Token exists:`, !!token);
+
+      const response = await axios.post(
         "http://localhost:5000/api/skills/add",
-        { skillId, proficiency: selectedProficiency },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Refresh skills
-      fetchSkills();
-      alert("Skill added successfully!");
-    } catch (error) {
-      console.error("Error adding skill:", error);
-      alert(error.response?.data?.error || "Failed to add skill");
-    }
-  };
-
-  const removeSkill = async (userSkillId) => {
-    if (!window.confirm("Are you sure you want to remove this skill?")) return;
-
-    try {
-      await axios.delete(
-        `http://localhost:5000/api/skills/remove/${userSkillId}`,
         {
-          headers: { Authorization: `Bearer ${token}` },
+          skillId,
+          proficiency: selectedProficiency,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
-      // Refresh skills
-      fetchSkills();
-      alert("Skill removed successfully!");
+      console.log("✅ Backend response:", response.data);
+
+      if (response.data.success) {
+        alert(`✅ ${skillName} added successfully!`);
+        fetchSkills();
+      } else {
+        alert(`❌ ${response.data.error || "Failed to add skill"}`);
+      }
     } catch (error) {
-      console.error("Error removing skill:", error);
-      alert("Failed to remove skill");
+      console.error("❌ Error adding skill:", error);
+
+      if (error.response) {
+        // Server responded with error
+        console.error("Server error:", error.response.data);
+        console.error("Status:", error.response.status);
+        alert(
+          `❌ Server Error: ${
+            error.response.data?.error || "Failed to add skill"
+          }`
+        );
+      } else if (error.request) {
+        // No response received
+        console.error("No response received:", error.request);
+        alert(
+          "❌ No response from server. Check if backend is running on port 5000."
+        );
+      } else {
+        // Request setup error
+        console.error("Request error:", error.message);
+        alert(`❌ Request Error: ${error.message}`);
+      }
     }
   };
 
-  const updateProficiency = async (userSkillId, proficiency) => {
+  const removeSkill = async (userSkillId, skillName) => {
+    if (!window.confirm(`Are you sure you want to remove "${skillName}"?`))
+      return;
+
     try {
-      await axios.put(
+      const response = await axios.delete(
+        `http://localhost:5000/api/skills/remove/${userSkillId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("✅ Remove response:", response.data);
+
+      if (response.data.success) {
+        alert(`✅ ${skillName} removed successfully!`);
+        fetchSkills();
+      }
+    } catch (error) {
+      console.error("Error removing skill:", error);
+      alert("❌ Failed to remove skill");
+    }
+  };
+
+  const updateProficiency = async (userSkillId, proficiency, skillName) => {
+    try {
+      console.log(`🔄 Updating ${skillName} to ${proficiency}`);
+
+      const response = await axios.put(
         `http://localhost:5000/api/skills/update/${userSkillId}`,
         { proficiency },
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
+
+      console.log("✅ Update response:", response.data);
 
       // Update local state
       setMySkills(
@@ -93,26 +156,45 @@ function SkillsManager() {
       );
     } catch (error) {
       console.error("Error updating proficiency:", error);
+      alert(`❌ Failed to update ${skillName}`);
     }
   };
 
-  // Filter skills user doesn't have yet
-  const mySkillIds = mySkills.map((skill) => skill.name);
+  // IDs of skills user already has
+  const mySkillIds = mySkills.map((s) => s.skill_id);
+
+  // Filter available skills
   const availableSkills = allSkills.filter(
     (skill) =>
-      !mySkillIds.includes(skill.name) &&
+      !mySkillIds.includes(skill.id) &&
       skill.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return <div className="loading">Loading skills...</div>;
-  }
+  if (loading) return <div className="loading">Loading skills...</div>;
 
   return (
     <div className="skills-manager">
       <h1>My Skills</h1>
 
-      {/* My Skills Section */}
+      {error && <div className="error-message">{error}</div>}
+
+      <div
+        className="debug-info"
+        style={{
+          background: "#f0f0f0",
+          padding: "10px",
+          marginBottom: "20px",
+          borderRadius: "5px",
+          fontSize: "12px",
+        }}
+      >
+        <strong>Debug Info:</strong>
+        User: {user?.name} ({user?.role}) | Token:{" "}
+        {token ? "Present ✅" : "Missing ❌"} | All Skills: {allSkills.length} |
+        My Skills: {mySkills.length}
+      </div>
+
+      {/* My Skills */}
       <div className="my-skills-section">
         <h2>Your Current Skills ({mySkills.length})</h2>
 
@@ -128,17 +210,19 @@ function SkillsManager() {
                   <h3>{skill.name}</h3>
                   <button
                     className="remove-btn"
-                    onClick={() => removeSkill(skill.id)}
+                    onClick={() => removeSkill(skill.id, skill.name)}
+                    title={`Remove ${skill.name}`}
                   >
                     ×
                   </button>
                 </div>
+
                 <div className="proficiency-selector">
                   <label>Proficiency:</label>
                   <select
                     value={skill.proficiency}
                     onChange={(e) =>
-                      updateProficiency(skill.id, e.target.value)
+                      updateProficiency(skill.id, e.target.value, skill.name)
                     }
                   >
                     <option value="Beginner">Beginner</option>
@@ -146,6 +230,7 @@ function SkillsManager() {
                     <option value="Advanced">Advanced</option>
                   </select>
                 </div>
+
                 <div
                   className={`proficiency-badge ${skill.proficiency.toLowerCase()}`}
                 >
@@ -157,7 +242,7 @@ function SkillsManager() {
         )}
       </div>
 
-      {/* Add Skills Section */}
+      {/* Add Skills */}
       <div className="add-skills-section">
         <h2>Add New Skills</h2>
 
@@ -168,6 +253,7 @@ function SkillsManager() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+
           <div className="proficiency-filter">
             <label>Set proficiency:</label>
             <select
@@ -193,7 +279,8 @@ function SkillsManager() {
               <button
                 key={skill.id}
                 className="skill-btn"
-                onClick={() => addSkill(skill.id)}
+                onClick={() => addSkill(skill.id, skill.name)}
+                title={`Add ${skill.name} as ${selectedProficiency}`}
               >
                 {skill.name}
                 <span className="proficiency-preview">
