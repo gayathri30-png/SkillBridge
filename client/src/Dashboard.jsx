@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
@@ -7,43 +7,45 @@ function Dashboard() {
   const [user, setUser] = useState(null);
   const [userSkills, setUserSkills] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [jobs, setJobs] = useState([]); // Add jobs state
   const [stats, setStats] = useState({
     totalSkills: 0,
     profileComplete: 100,
     applications: 0,
+    recruiterJobs: 0, // Add recruiter jobs count
   });
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const savedUser = localStorage.getItem("user");
-
-    console.log("📊 Dashboard loading...");
-    console.log("Token exists:", !!token);
-    console.log("User exists:", !!savedUser);
-
-    if (token && savedUser) {
+  // Add this function to fetch all jobs - using useCallback to prevent infinite re-renders
+  const fetchAllJobs = useCallback(
+    async (token) => {
       try {
-        const userData = JSON.parse(savedUser);
-        console.log("✅ User loaded:", userData);
-        setUser(userData);
-        fetchUserSkills(token, userData.id);
+        console.log("🔄 Fetching all jobs...");
+        const response = await axios.get("http://localhost:5000/api/jobs", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        console.log("📊 All jobs loaded:", response.data);
+        setJobs(response.data);
 
-        // If user is recruiter, fetch recruiter stats
-        if (userData.role === "recruiter") {
-          fetchRecruiterStats(token);
+        // Update recruiter jobs count if user is recruiter
+        if (user?.role === "recruiter") {
+          const recruiterJobs = response.data.filter(
+            (job) => Number(job.posted_by) === Number(user.id)
+          );
+          console.log("👤 Recruiter's jobs:", recruiterJobs.length);
+          setStats((prev) => ({
+            ...prev,
+            recruiterJobs: recruiterJobs.length,
+          }));
         }
       } catch (error) {
-        console.error("❌ Error parsing user data:", error);
-        navigate("/login");
+        console.error("❌ Error fetching jobs:", error);
       }
-    } else {
-      console.log("❌ No auth data, redirecting to login");
-      navigate("/login");
-    }
-  }, [navigate]);
+    },
+    [user?.role, user?.id]
+  ); // Add dependencies
 
-  const fetchUserSkills = async (token, userId) => {
+  const fetchUserSkills = useCallback(async (token, userId) => {
     try {
       setLoading(true);
       console.log("🔄 Fetching user skills...");
@@ -61,17 +63,41 @@ function Dashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchRecruiterStats = async (token) => {
-    try {
-      // You can add API calls here for recruiter-specific stats
-      // Example: number of posted jobs, active applicants, etc.
-      console.log("🔄 Fetching recruiter stats...");
-    } catch (error) {
-      console.error("Error fetching recruiter stats:", error);
+  // Remove unused fetchRecruiterStats function since it's not being used
+  // const fetchRecruiterStats = async (token) => {
+  //   try {
+  //     console.log("🔄 Fetching recruiter stats...");
+  //   } catch (error) {
+  //     console.error("Error fetching recruiter stats:", error);
+  //   }
+  // };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    console.log("📊 Dashboard loading...");
+    console.log("Token exists:", !!token);
+    console.log("User exists:", !!savedUser);
+
+    if (token && savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        console.log("✅ User loaded:", userData);
+        setUser(userData);
+        fetchUserSkills(token, userData.id);
+        fetchAllJobs(token); // Fetch all jobs
+      } catch (error) {
+        console.error("❌ Error parsing user data:", error);
+        navigate("/login");
+      }
+    } else {
+      console.log("❌ No auth data, redirecting to login");
+      navigate("/login");
     }
-  };
+  }, [navigate, fetchUserSkills, fetchAllJobs]); // Add dependencies
 
   const handleLogout = () => {
     console.log("👋 Logging out...");
@@ -85,6 +111,30 @@ function Dashboard() {
     if (hour < 18) return "Good Afternoon";
     return "Good Evening";
   };
+
+  // Calculate recruiter's jobs
+  const recruiterJobs =
+    user?.role === "recruiter"
+      ? jobs.filter((job) => {
+          const match = Number(job.posted_by) === Number(user.id);
+          console.log(
+            `Comparing: job.posted_by=${
+              job.posted_by
+            } (${typeof job.posted_by}) vs user.id=${
+              user.id
+            } (${typeof user.id}) => ${match}`
+          );
+          return match;
+        })
+      : [];
+
+  // Debug logging
+  console.log("=== DASHBOARD DEBUG ===");
+  console.log("User:", user);
+  console.log("User ID:", user?.id, "Type:", typeof user?.id);
+  console.log("All jobs:", jobs.length);
+  console.log("Recruiter jobs:", recruiterJobs.length);
+  console.log("=========================");
 
   if (!user) {
     return (
@@ -182,8 +232,8 @@ function Dashboard() {
           {user.role === "recruiter" && (
             <div className="stat-card">
               <div className="stat-icon">👥</div>
-              <h3>Active Jobs</h3>
-              <p className="stat-number">0</p>
+              <h3>Your Jobs</h3>
+              <p className="stat-number">{recruiterJobs.length}</p>
               <p className="stat-label">Posted</p>
               <button
                 className="stat-action"
@@ -410,6 +460,14 @@ function Dashboard() {
                 Find and connect with talented students
               </p>
 
+              {/* Debug info */}
+              <div className="debug-info">
+                <p>
+                  User ID: {user.id} | Total jobs in system: {jobs.length} |
+                  Your jobs: {recruiterJobs.length}
+                </p>
+              </div>
+
               <div className="feature-grid">
                 <div
                   className="feature-card"
@@ -547,19 +605,48 @@ function Dashboard() {
 
             {/* Recent Job Posts */}
             <div className="recent-jobs">
-              <h2 className="section-title">Recent Job Posts</h2>
+              <h2 className="section-title">
+                Your Posted Jobs ({recruiterJobs.length})
+              </h2>
               <div className="jobs-list">
-                <div className="no-jobs">
-                  <div className="no-jobs-icon">📭</div>
-                  <h3>No jobs posted yet</h3>
-                  <p>Create your first job posting to find talented students</p>
-                  <button
-                    className="post-first-job"
-                    onClick={() => navigate("/post-job")}
-                  >
-                    Post Your First Job
-                  </button>
-                </div>
+                {recruiterJobs.length === 0 ? (
+                  <div className="no-jobs">
+                    <div className="no-jobs-icon">📭</div>
+                    <h3>No jobs posted yet</h3>
+                    <p>
+                      Create your first job posting to find talented students
+                    </p>
+                    <button
+                      className="post-first-job"
+                      onClick={() => navigate("/post-job")}
+                    >
+                      Post Your First Job
+                    </button>
+                  </div>
+                ) : (
+                  recruiterJobs.map((job) => (
+                    <div
+                      key={job.id}
+                      className="job-item"
+                      onClick={() => navigate(`/jobs/${job.id}`)}
+                    >
+                      <div className="job-item-header">
+                        <h4>{job.title}</h4>
+                        <span className="job-badge">{job.job_type}</span>
+                      </div>
+                      <div className="job-item-details">
+                        <span>📍 {job.location || "Remote"}</span>
+                        <span>💰 ${job.budget}</span>
+                        <span>
+                          📅 {new Date(job.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <div className="job-item-description">
+                        {job.description?.substring(0, 100)}...
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </>
@@ -581,16 +668,36 @@ function Dashboard() {
             <h4>Quick Links</h4>
             <ul>
               <li>
-                <a href="/help">Help Center</a>
+                <button
+                  className="footer-link"
+                  onClick={() => navigate("/help")}
+                >
+                  Help Center
+                </button>
               </li>
               <li>
-                <a href="/contact">Contact Support</a>
+                <button
+                  className="footer-link"
+                  onClick={() => navigate("/contact")}
+                >
+                  Contact Support
+                </button>
               </li>
               <li>
-                <a href="/privacy">Privacy Policy</a>
+                <button
+                  className="footer-link"
+                  onClick={() => navigate("/privacy")}
+                >
+                  Privacy Policy
+                </button>
               </li>
               <li>
-                <a href="/terms">Terms of Service</a>
+                <button
+                  className="footer-link"
+                  onClick={() => navigate("/terms")}
+                >
+                  Terms of Service
+                </button>
               </li>
             </ul>
           </div>
@@ -600,18 +707,30 @@ function Dashboard() {
             <p>Email: support@skillbridge.com</p>
             <p>Phone: (123) 456-7890</p>
             <div className="social-links">
-              <a href="#" className="social-link">
+              <button
+                className="social-link"
+                onClick={() => window.open("https://facebook.com", "_blank")}
+              >
                 📘
-              </a>
-              <a href="#" className="social-link">
+              </button>
+              <button
+                className="social-link"
+                onClick={() => window.open("https://twitter.com", "_blank")}
+              >
                 🐦
-              </a>
-              <a href="#" className="social-link">
+              </button>
+              <button
+                className="social-link"
+                onClick={() => window.open("https://linkedin.com", "_blank")}
+              >
                 💼
-              </a>
-              <a href="#" className="social-link">
+              </button>
+              <button
+                className="social-link"
+                onClick={() => window.open("https://instagram.com", "_blank")}
+              >
                 📸
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -620,11 +739,15 @@ function Dashboard() {
           <p>
             Logged in as: <strong>{user.name}</strong> ({user.email}) | Role:{" "}
             <strong>{user.role}</strong> |
+            {user.role === "recruiter" && ` Your Jobs: ${recruiterJobs.length}`}
             <button
               className="debug-btn"
               onClick={() => {
+                console.log("=== DEBUG INFO ===");
                 console.log("User:", user);
                 console.log("Skills:", userSkills);
+                console.log("All jobs:", jobs);
+                console.log("Recruiter jobs:", recruiterJobs);
                 console.log("Stats:", stats);
               }}
             >

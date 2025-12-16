@@ -29,7 +29,8 @@ function PostJob() {
   const fetchSkills = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/api/skills", {
+      const response = await axios.get("http://localhost:5000/api/skills/all", {
+
         headers: { Authorization: `Bearer ${token}` },
       });
       setSkills(response.data);
@@ -89,7 +90,7 @@ function PostJob() {
 
       const dataToSend = {
         ...jobData,
-        posted_by: user.id,
+        posted_by: user?.id || user?.user_id || user?._id,
         skills: selectedSkills,
         budget: Number(jobData.budget),
       };
@@ -121,13 +122,20 @@ function PostJob() {
   };
 
   const jobTypes = [
-    "Full-time",
-    "Part-time",
-    "Contract",
-    "Internship",
-    "Freelance",
-  ];
-  const experienceLevels = ["Entry", "Intermediate", "Senior", "Executive"];
+  { label: "Full-time", value: "full-time" },
+  { label: "Part-time", value: "part-time" },
+  { label: "Contract", value: "contract" },
+  { label: "Internship", value: "internship" },
+  { label: "Freelance", value: "freelance" },
+];
+
+const experienceLevels = [
+  { label: "Entry", value: "entry" },
+  { label: "Intermediate", value: "intermediate" },
+  { label: "Senior", value: "senior" },
+  { label: "Executive", value: "executive" },
+];
+
 
   return (
     <div className="post-job-container">
@@ -204,11 +212,12 @@ function PostJob() {
                   onChange={handleInputChange}
                   disabled={loading}
                 >
-                  {jobTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
+                    {jobTypes.map(t => (
+                    <option key={t.value} value={t.value}>
+                     {t.label}
+                     </option>
+                    ))}
+                 
                 </select>
               </div>
 
@@ -223,11 +232,11 @@ function PostJob() {
                   onChange={handleInputChange}
                   disabled={loading}
                 >
-                  {experienceLevels.map((level) => (
-                    <option key={level} value={level}>
-                      {level}
-                    </option>
-                  ))}
+                  {experienceLevels.map(e => (
+                    <option key={e.value} value={e.value}>
+                     {e.label}
+                     </option>
+                    ))}
                 </select>
               </div>
             </div>
