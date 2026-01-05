@@ -1,52 +1,61 @@
 import mysql from "mysql2";
+import dotenv from "dotenv";
 
-// Create connection (using callback style - compatible with your controller)
-const db = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "gayathri",
-  database: "skillbridge",
+dotenv.config();
+
+console.log("🔍 DB Config - Loading environment variables:");
+console.log("DB_HOST:", process.env.DB_HOST || "localhost");
+console.log("DB_USER:", process.env.DB_USER || "root");
+console.log("DB_NAME:", process.env.DB_NAME || "skillbridge");
+
+// Use createPool for better connection handling
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: process.env.DB_NAME || "skillbridge",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
 });
 
-// Connect to MySQL
-db.connect((err) => {
+// Test the connection
+pool.getConnection((err, connection) => {
   if (err) {
-    console.error("❌ MySQL Connection Failed!");
-    console.error("❌ Error:", err.message);
-    console.error("❌ Code:", err.code);
-    console.error("❌ Please check:");
-    console.error("   • MySQL is running");
-    console.error("   • Database 'skillbridge' exists");
-    console.error("   • Username/password is correct");
-    console.error("   • Port 3306 is accessible");
-    return;
-  }
+    console.error("❌ MySQL Connection Failed:", err.message);
+    console.error("Error Code:", err.code);
 
-  console.log("✅ MySQL Connected Successfully!");
-  console.log("✅ Database: skillbridge");
-  console.log("✅ Host: localhost");
-  console.log("✅ Thread ID:", db.threadId);
+    // Detailed troubleshooting
+    console.log("\n🔧 Troubleshooting:");
+    console.log("1. Check if MySQL is running");
+    console.log("2. Verify credentials in .env file");
+    console.log(
+      "3. Check if database exists:",
+      process.env.DB_NAME || "skillbridge"
+    );
+    console.log("4. Try: mysql -u root -p (in terminal)");
+  } else {
+    console.log("✅ MySQL Pool Connected Successfully!");
+    console.log("Database:", process.env.DB_NAME || "skillbridge");
+    console.log("Thread ID:", connection.threadId);
 
-  // Test query to verify skills table exists
-  db.query("SELECT COUNT(*) as count FROM skills", (err, results) => {
-    if (err) {
-      console.error("❌ Skills table check failed:", err.message);
-    } else {
-      console.log(`✅ Skills in database: ${results[0].count}`);
-    }
-  });
-});
-
-// Handle connection errors
-db.on("error", (err) => {
-  console.error("❌ MySQL Connection Error:", err.message);
-  if (err.code === "PROTOCOL_CONNECTION_LOST") {
-    console.log("⚠️ Reconnecting to MySQL...");
-    // Attempt to reconnect
-    setTimeout(() => {
-      db.connect();
-    }, 2000);
+    // Test query
+    connection.query("SELECT 1 + 1 AS test", (err, results) => {
+      if (err) {
+        console.error("❌ Test query failed:", err.message);
+      } else {
+        console.log("✅ Test query result:", results[0].test);
+      }
+      connection.release(); // Release back to pool
+    });
   }
 });
 
-export default db;
+// Handle pool errors
+pool.on("error", (err) => {
+  console.error("❌ MySQL Pool Error:", err.message);
+});
+
+export default pool;

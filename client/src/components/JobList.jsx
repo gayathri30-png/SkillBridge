@@ -22,7 +22,7 @@ function JobList() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/api/jobs", {
+      const response = await axios.get("http://localhost:5001/api/jobs", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setJobs(response.data);

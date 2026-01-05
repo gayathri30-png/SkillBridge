@@ -29,7 +29,7 @@ function PostJob() {
   const fetchSkills = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5000/api/skills/all", {
+      const response = await axios.get("http://localhost:5001/api/skills/all", {
 
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -98,7 +98,7 @@ function PostJob() {
       console.log("Submitting job:", dataToSend);
 
       const response = await axios.post(
-        "http://localhost:5000/api/jobs/create",
+        "http://localhost:5001/api/jobs/create",
         dataToSend,
         {
           headers: {

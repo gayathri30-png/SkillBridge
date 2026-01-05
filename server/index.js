@@ -1,80 +1,141 @@
+// index.js - ULTRA SIMPLE WORKING VERSION
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import express from "express";
 import cors from "cors";
-import db from "./config/db.js";
 
-import userRoutes from "./routes/userRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
-import skillRoutes from "./routes/skillRoutes.js";
-import jobRoutes from "./routes/jobRoutes.js";
-import applicationsRoutes from "./routes/applicationsRoutes.js";
+// Get current directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env
+dotenv.config({ path: path.join(__dirname, ".env") });
+
+console.log("\n🔧 ENVIRONMENT CHECK:");
+console.log("PORT:", process.env.PORT || 5001);
+console.log("JWT_SECRET:", process.env.JWT_SECRET ? "✓ Loaded" : "✗ Missing");
+console.log("DB_USER:", process.env.DB_USER || "root");
 
 const app = express();
+const PORT = process.env.PORT || 5001;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// ✅ HEALTH CHECK ROUTE
-app.get("/health", (req, res) => {
-  res.json({
-    status: "OK",
-    service: "SkillBridge API",
-    timestamp: new Date().toISOString(),
-    database: db.state === "connected" ? "Connected" : "Disconnected",
-  });
-});
+// =====================
+// IMPORT AND MOUNT ROUTES IMMEDIATELY
+// =====================
+import authRoutes from "./routes/authRoutes.js";
+import jobRoutes from "./routes/jobRoutes.js";
+import skillRoutes from "./routes/skillRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import applicationsRoutes from "./routes/applicationsRoutes.js";
 
-// ✅ DATABASE TEST ROUTE
-app.get("/api/debug/db", (req, res) => {
-  db.query("SELECT COUNT(*) as skill_count FROM skills", (err, results) => {
-    if (err) {
-      return res.json({
-        success: false,
-        message: "Database error",
-        error: err.message,
-      });
-    }
-
-    db.query("SELECT name FROM skills LIMIT 5", (err, skills) => {
-      res.json({
-        success: true,
-        message: "Database connected",
-        skill_count: results[0].skill_count,
-        sample_skills: skills.map((s) => s.name),
-        db_state: db.state,
-      });
-    });
-  });
-});
-
-// ✅ API ROUTES
-app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/skills", skillRoutes);
 app.use("/api/jobs", jobRoutes);
+app.use("/api/skills", skillRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/applications", applicationsRoutes);
 
-// Root Page
+console.log("\n✅ ALL ROUTES MOUNTED:");
+console.log("✅ POST /api/auth/register");
+console.log("✅ POST /api/auth/login");
+console.log("✅ GET  /api/jobs");
+console.log("✅ GET  /api/skills/all");
+console.log("✅ GET  /api/users");
+
+// =====================
+// VERIFICATION ROUTE
+// =====================
+app.get("/api/verify", (req, res) => {
+  res.json({
+    status: "Server is running",
+    timestamp: new Date().toISOString(),
+    port: PORT,
+    authRoutes: [
+      "POST /api/auth/register",
+      "POST /api/auth/login"
+    ],
+    message: "If you see this, routes are mounted correctly"
+  });
+});
+
+// =====================
+// ROOT PAGE
+// =====================
 app.get("/", (req, res) => {
   res.send(`
-    <h1>SkillBridge API</h1>
-    <p>Server is running</p>
-    <ul>
-      <li><a href="/health">Health Check</a></li>
-      <li><a href="/api/debug/db">Database Debug</a></li>
-      <li><a href="/api/skills/all">Get All Skills</a></li>
-      <li><a href="/api/jobs/all">Get All Jobs</a></li>
-      <li><a href="/api/applications/all">Get All Applications</a></li>
-    </ul>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>SkillBridge API</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .success { color: green; font-weight: bold; }
+        .test { background: #f0f8ff; padding: 15px; border-radius: 5px; margin: 10px 0; }
+      </style>
+    </head>
+    <body>
+      <h1>🎯 SkillBridge API</h1>
+      <p>Status: <span class="success">✅ RUNNING</span> on port ${PORT}</p>
+      
+      <div class="test">
+        <h2>🔧 First Test This:</h2>
+        <p><a href="/api/verify" target="_blank">Verify Routes</a></p>
+        <p>This should return JSON confirming routes are mounted.</p>
+      </div>
+      
+      <div class="test">
+        <h2>🔐 Then Test Authentication:</h2>
+        <p><strong>POST /api/auth/register</strong> - Register a new user</p>
+        <p><strong>POST /api/auth/login</strong> - Login with credentials</p>
+        <p><em>Use Postman or curl to test these POST endpoints</em></p>
+      </div>
+      
+      <div class="test">
+        <h2>📊 Debug Info</h2>
+        <p>Check server console for detailed logs when you make requests.</p>
+        <p>Your authController has excellent logging - watch the terminal!</p>
+      </div>
+    </body>
+    </html>
   `);
 });
 
-const PORT = 5000;
+// =====================
+// 404 HANDLER
+// =====================
+app.use((req, res) => {
+  console.log(`❌ 404: ${req.method} ${req.originalUrl}`);
+  res.status(404).json({
+    error: "Route not found",
+    path: req.originalUrl,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// =====================
+// ERROR HANDLER
+// =====================
+app.use((err, req, res, next) => {
+  console.error("❌ Server Error:", err);
+  res.status(500).json({
+    error: "Internal server error",
+    message: err.message
+  });
+});
+
+// =====================
+// START SERVER
+// =====================
 app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
-  console.log(`✅ Health check: http://localhost:${PORT}/health`);
-  console.log(`✅ DB Debug: http://localhost:${PORT}/api/debug/db`);
-  console.log(`✅ Skills API: http://localhost:${PORT}/api/skills/all`);
-  console.log(`✅ Jobs API: http://localhost:${PORT}/api/jobs/all`);
-  console.log(
-    `✅ Applications API: http://localhost:${PORT}/api/applications/all`
-  );
+  console.log(`\n✅ ============================================`);
+  console.log(`✅ SERVER RUNNING on http://localhost:${PORT}`);
+  console.log(`✅ ============================================`);
+  console.log(`\n🎯 IMMEDIATE TEST:`);
+  console.log(`1. GET  http://localhost:${PORT}/api/verify`);
+  console.log(`2. POST http://localhost:${PORT}/api/auth/register`);
+  console.log(`\n📋 Watch the terminal for authController logs!`);
 });

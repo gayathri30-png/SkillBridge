@@ -17,7 +17,7 @@ function Login() {
     console.log("🔄 Login attempt started...");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", {
+      const res = await axios.post("http://localhost:5001/api/auth/login", {
         email,
         password,
       });
@@ -190,7 +190,7 @@ function Login() {
           <li>Check Console (F12) for logs</li>
           <li>Token saved to localStorage</li>
           <li>Redirects to /dashboard</li>
-          <li>Backend running: http://localhost:5000</li>
+          <li>Backend running: http://localhost:5001</li>
         </ol>
       </div>*/}
     </div>

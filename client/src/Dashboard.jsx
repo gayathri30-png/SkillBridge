@@ -21,7 +21,7 @@ function Dashboard() {
     async (token) => {
       try {
         console.log("🔄 Fetching all jobs...");
-        const response = await axios.get("http://localhost:5000/api/jobs", {
+        const response = await axios.get("http://localhost:5001/api/jobs", {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("📊 All jobs loaded:", response.data);
@@ -50,7 +50,7 @@ function Dashboard() {
       setLoading(true);
       console.log("🔄 Fetching user skills...");
       const response = await axios.get(
-        `http://localhost:5000/api/skills/my-skills`,
+        `http://localhost:5001/api/skills/my-skills`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

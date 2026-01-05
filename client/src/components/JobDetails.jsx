@@ -19,7 +19,7 @@ function JobDetails() {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5000/api/jobs/${id}`, {
+      const response = await axios.get(`http://localhost:5001/api/jobs/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setJob(response.data);
@@ -37,7 +37,7 @@ function JobDetails() {
       const token = localStorage.getItem("token");
       // You'll need to create this endpoint
       await axios.post(
-        `http://localhost:5000/api/applications/apply`,
+        `http://localhost:5001/api/applications/apply`,
         {
           job_id: id,
         },
