@@ -5,15 +5,28 @@ import {
   getJobDetails,
 } from "../controllers/jobsController.js";
 
+import { protect } from "../middleware/auth.js";
+import { allowRoles } from "../middleware/role.js";
+
 const router = express.Router();
 
-// CREATE JOB (Recruiter)
-router.post("/create", createJob);
+// CREATE JOB
+router.post("/", protect, allowRoles("recruiter", "admin"), createJob);
 
-// GET ALL JOBS (Student + Recruiter)
-router.get("/", getAllJobs);
+// GET ALL JOBS
+router.get(
+  "/",
+  protect,
+  allowRoles("student", "recruiter", "admin"),
+  getAllJobs
+);
 
-// GET JOB DETAILS (Single job)
-router.get("/:id", getJobDetails);
+// GET JOB DETAILS
+router.get(
+  "/:id",
+  protect,
+  allowRoles("student", "recruiter", "admin"),
+  getJobDetails
+);
 
 export default router;

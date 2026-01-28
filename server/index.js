@@ -32,12 +32,14 @@ import jobRoutes from "./routes/jobRoutes.js";
 import skillRoutes from "./routes/skillRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import applicationsRoutes from "./routes/applicationsRoutes.js";
+import jobSkillsRoutes from "./routes/jobSkillsRoutes.js";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/applications", applicationsRoutes);
+app.use("/api/job-skills", jobSkillsRoutes);
 
 console.log("\n✅ ALL ROUTES MOUNTED:");
 console.log("✅ POST /api/auth/register");
@@ -54,11 +56,8 @@ app.get("/api/verify", (req, res) => {
     status: "Server is running",
     timestamp: new Date().toISOString(),
     port: PORT,
-    authRoutes: [
-      "POST /api/auth/register",
-      "POST /api/auth/login"
-    ],
-    message: "If you see this, routes are mounted correctly"
+    authRoutes: ["POST /api/auth/register", "POST /api/auth/login"],
+    message: "If you see this, routes are mounted correctly",
   });
 });
 
@@ -112,7 +111,7 @@ app.use((req, res) => {
   res.status(404).json({
     error: "Route not found",
     path: req.originalUrl,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -123,7 +122,7 @@ app.use((err, req, res, next) => {
   console.error("❌ Server Error:", err);
   res.status(500).json({
     error: "Internal server error",
-    message: err.message
+    message: err.message,
   });
 });
 

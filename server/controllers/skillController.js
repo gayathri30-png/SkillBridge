@@ -1,150 +1,157 @@
 import db from "../config/db.js";
 
-// Get all skills - CALLBACK VERSION (works with your db.js)
+// Allowed proficiency values (used in AI match score)
+const ALLOWED_PROFICIENCY = ["Beginner", "Intermediate", "Advanced"];
+
+// --------------------------------
+// GET ALL SKILLS (PUBLIC)
+// --------------------------------
 export const getAllSkills = (req, res) => {
-  console.log("📋 [API] Fetching all skills...");
-
   db.query("SELECT * FROM skills ORDER BY name ASC", (err, results) => {
-    if (err) {
-      console.error("❌ [API] Error fetching skills:", err);
-      return res.status(500).json({
-        error: "Database error",
-        message: err.message,
-      });
-    }
-
-    console.log(`✅ [API] Found ${results.length} skills`);
-
-    // Log first few skills for debugging
-    if (results.length > 0) {
-      console.log(
-        "📊 Sample skills:",
-        results.slice(0, 3).map((s) => s.name)
-      );
-    }
-
+    if (err) return res.status(500).json({ error: "Database error" });
     res.json(results);
   });
 };
 
-// Get user's skills - CALLBACK VERSION
+// --------------------------------
+// GET LOGGED-IN USER SKILLS
+// --------------------------------
 export const getMySkills = (req, res) => {
   const userId = req.user.id;
-  console.log(`👤 [API] Fetching skills for user ${userId}`);
 
   db.query(
-    `SELECT us.id, s.id AS skill_id, s.name, us.proficiency
-     FROM user_skills us
-     JOIN skills s ON us.skill_id = s.id
-     WHERE us.user_id = ?`,
+    `
+    SELECT 
+      us.id,
+      s.id AS skill_id,
+      s.name,
+      us.proficiency
+    FROM user_skills us
+    JOIN skills s ON us.skill_id = s.id
+    WHERE us.user_id = ?
+    `,
     [userId],
     (err, results) => {
-      if (err) {
-        console.error("❌ [API] Error fetching user skills:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
-
-      console.log(`✅ [API] User has ${results.length} skills`);
+      if (err) return res.status(500).json({ error: "Database error" });
       res.json(results);
-    }
+    },
   );
 };
 
-// Add skill - CALLBACK VERSION
+// --------------------------------
+// ADD SKILL TO USER
+// --------------------------------
 export const addSkill = (req, res) => {
   const userId = req.user.id;
   const { skillId, proficiency } = req.body;
 
-  console.log(`➕ [API] User ${userId} adding skill ${skillId}`);
+  if (!skillId) {
+    return res.status(400).json({ error: "skillId is required" });
+  }
 
-  // 1. Check if skill exists
+  const safeProficiency = ALLOWED_PROFICIENCY.includes(proficiency)
+    ? proficiency
+    : "Beginner";
+
+  // 1. Check skill exists
   db.query(
-    "SELECT * FROM skills WHERE id = ?",
+    "SELECT id, name FROM skills WHERE id = ?",
     [skillId],
     (err, skillResults) => {
-      if (err) {
-        console.error("❌ [API] Error checking skill:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
+      if (err) return res.status(500).json({ error: "Database error" });
 
       if (skillResults.length === 0) {
-        console.log(`❌ [API] Skill ${skillId} not found`);
         return res.status(404).json({ error: "Skill not found" });
       }
 
-      // 2. Check if already added
+      // 2. Prevent duplicate
       db.query(
-        "SELECT * FROM user_skills WHERE user_id = ? AND skill_id = ?",
+        "SELECT id FROM user_skills WHERE user_id = ? AND skill_id = ?",
         [userId, skillId],
-        (err, existingResults) => {
-          if (err) {
-            console.error("❌ [API] Error checking duplicate:", err);
-            return res.status(500).json({ error: "Database error" });
-          }
+        (err, existing) => {
+          if (err) return res.status(500).json({ error: "Database error" });
 
-          if (existingResults.length > 0) {
-            console.log(`❌ [API] Skill already added for user`);
+          if (existing.length > 0) {
             return res.status(409).json({ error: "Skill already added" });
           }
 
-          // 3. Add skill
+          // 3. Insert
           db.query(
-            "INSERT INTO user_skills (user_id, skill_id, proficiency) VALUES (?, ?, ?)",
-            [userId, skillId, proficiency || "Beginner"],
-            (err, insertResult) => {
-              if (err) {
-                console.error("❌ [API] Error adding skill:", err);
-                return res.status(500).json({ error: "Database error" });
-              }
+            `
+            INSERT INTO user_skills (user_id, skill_id, proficiency)
+            VALUES (?, ?, ?)
+            `,
+            [userId, skillId, safeProficiency],
+            (err, result) => {
+              if (err) return res.status(500).json({ error: "Database error" });
 
-              console.log(`✅ [API] Skill ${skillId} added successfully`);
-              res.json({
+              res.status(201).json({
                 success: true,
-                message: "Skill added successfully",
-                skillId: skillId,
-                skillName: skillResults[0].name,
+                message: "Skill added",
+                skill_id: skillId,
+                skill_name: skillResults[0].name,
+                proficiency: safeProficiency,
               });
-            }
+            },
           );
-        }
+        },
       );
-    }
+    },
   );
 };
 
-// Update proficiency - CALLBACK VERSION
+// --------------------------------
+// UPDATE SKILL PROFICIENCY
+// --------------------------------
 export const updateProficiency = (req, res) => {
+  const userId = req.user.id;
   const userSkillId = req.params.id;
   const { proficiency } = req.body;
 
+  if (!ALLOWED_PROFICIENCY.includes(proficiency)) {
+    return res.status(400).json({ error: "Invalid proficiency value" });
+  }
+
   db.query(
-    "UPDATE user_skills SET proficiency = ? WHERE id = ?",
-    [proficiency, userSkillId],
+    `
+    UPDATE user_skills
+    SET proficiency = ?
+    WHERE id = ? AND user_id = ?
+    `,
+    [proficiency, userSkillId, userId],
     (err, result) => {
-      if (err) {
-        console.error("❌ [API] Error updating proficiency:", err);
-        return res.status(500).json({ error: "Database error" });
+      if (err) return res.status(500).json({ error: "Database error" });
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Skill not found" });
       }
 
       res.json({ success: true, message: "Proficiency updated" });
-    }
+    },
   );
 };
 
-// Remove skill - CALLBACK VERSION
+// --------------------------------
+// REMOVE SKILL
+// --------------------------------
 export const removeSkill = (req, res) => {
+  const userId = req.user.id;
   const userSkillId = req.params.id;
 
   db.query(
-    "DELETE FROM user_skills WHERE id = ?",
-    [userSkillId],
+    `
+    DELETE FROM user_skills
+    WHERE id = ? AND user_id = ?
+    `,
+    [userSkillId, userId],
     (err, result) => {
-      if (err) {
-        console.error("❌ [API] Error removing skill:", err);
-        return res.status(500).json({ error: "Database error" });
+      if (err) return res.status(500).json({ error: "Database error" });
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Skill not found" });
       }
 
       res.json({ success: true, message: "Skill removed" });
-    }
+    },
   );
 };

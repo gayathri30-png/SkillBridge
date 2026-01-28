@@ -12,6 +12,7 @@ function JobList() {
     experience_level: "",
     location: "",
   });
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,10 +22,7 @@ function JobList() {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5001/api/jobs", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get("http://localhost:5001/api/jobs");
       setJobs(response.data);
     } catch (err) {
       setError("Failed to load jobs");
@@ -180,7 +178,7 @@ function JobList() {
           </p>
         </div>
 
-        {/* Error Message */}
+        {/* Error */}
         {error && <div className="error-message">{error}</div>}
 
         {/* Job Grid */}
@@ -220,7 +218,7 @@ function JobList() {
 
                   <div className="job-company">
                     <span className="company-icon">🏢</span>
-                    <span>{job.recruiter_name || "Company"}</span>
+                    <span>Recruiter</span>
                   </div>
 
                   <div className="job-details">
@@ -243,26 +241,6 @@ function JobList() {
                       ? `${job.description.substring(0, 150)}...`
                       : job.description}
                   </p>
-
-                  <div className="job-skills">
-                    <span className="skills-label">Skills:</span>
-                    <div className="skills-tags">
-                      {job.skills ? (
-                        job.skills.slice(0, 3).map((skill, index) => (
-                          <span key={index} className="skill-tag">
-                            {skill}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="no-skills">No skills specified</span>
-                      )}
-                      {job.skills && job.skills.length > 3 && (
-                        <span className="skill-tag more-tag">
-                          +{job.skills.length - 3} more
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 </div>
 
                 <div className="job-card-footer">

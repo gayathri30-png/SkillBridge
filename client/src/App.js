@@ -5,32 +5,34 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+
+// Pages
 import Login from "./Login";
 import Register from "./Register";
 import Dashboard from "./Dashboard";
-import SkillsManager from "./components/SkillsManager";
+
+// Student Pages
 import JobList from "./components/JobList";
 import JobDetails from "./components/JobDetails";
-import PostJob from "./components/PostJob"; // This line should exist
+import SkillsManager from "./components/SkillsManager";
+
+// Recruiter Pages
+import PostJob from "./components/PostJob";
+
+// -------------------------------------
+// 🔐 AUTH GUARD COMPONENT
+// -------------------------------------
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+  return token ? children : <Navigate to="/login" />;
+};
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem("token");
-      console.log("🔍 App.js checking auth. Token exists:", !!token);
-      setIsAuthenticated(!!token);
-      setLoading(false);
-    };
-
-    checkAuth();
-    window.addEventListener("storage", checkAuth);
-
-    return () => {
-      window.removeEventListener("storage", checkAuth);
-    };
+    // Just check once on load
+    setLoading(false);
   }, []);
 
   if (loading) {
@@ -41,9 +43,10 @@ function App() {
           justifyContent: "center",
           alignItems: "center",
           height: "100vh",
+          fontSize: "20px",
         }}
       >
-        <div>Loading SkillBridge...</div>
+        Loading SkillBridge...
       </div>
     );
   }
@@ -51,46 +54,76 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public routes */}
+        {/* ---------------- PUBLIC ROUTES ---------------- */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected routes */}
+        {/* ---------------- PROTECTED ROUTES ---------------- */}
+
+        {/* Dashboard */}
         <Route
           path="/dashboard"
-          element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />}
-        />
-
-        <Route
-          path="/skills"
           element={
-            isAuthenticated ? <SkillsManager /> : <Navigate to="/login" />
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
           }
         />
 
-        {/* Job routes */}
+        {/* Student Routes */}
+        <Route
+          path="/skills"
+          element={
+            <ProtectedRoute>
+              <SkillsManager />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/jobs"
-          element={isAuthenticated ? <JobList /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <JobList />
+            </ProtectedRoute>
+          }
         />
 
+        {/* IMPORTANT: /jobs MUST COME BEFORE /jobs/:id */}
         <Route
           path="/jobs/:id"
-          element={isAuthenticated ? <JobDetails /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <JobDetails />
+            </ProtectedRoute>
+          }
         />
 
+        {/* Recruiter Routes */}
         <Route
           path="/post-job"
-          element={isAuthenticated ? <PostJob /> : <Navigate to="/login" />}
+          element={
+            <ProtectedRoute>
+              <PostJob />
+            </ProtectedRoute>
+          }
         />
 
-        {/* Default route */}
+        {/* ---------------- DEFAULT & FALLBACK ---------------- */}
+
+        {/* Root */}
         <Route
           path="/"
-          element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />}
+          element={
+            localStorage.getItem("token") ? (
+              <Navigate to="/dashboard" />
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
         />
 
-        {/* Catch all route */}
+        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>
