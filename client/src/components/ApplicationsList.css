@@ -1,0 +1,28 @@
+.applications-view {
+  min-height: 100vh;
+}
+
+.status-chip {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-chip.applied { background: var(--primary-soft); color: var(--primary); }
+.status-chip.reviewed { background: var(--info-soft); color: var(--info); }
+.status-chip.accepted { background: var(--success-soft); color: var(--success); }
+.status-chip.rejected { background: var(--error-soft); color: var(--error); }
+
+.score-progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--slate-100);
+  overflow: hidden;
+}
+
+.score-fill {
+  height: 100%;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+}

@@ -1,9 +1,12 @@
 import express from "express";
-import { getUsers, addUser } from "../controllers/userController.js";
+import { getUsers, addUser, deleteUser } from "../controllers/userController.js";
+import { protect } from "../middleware/auth.js";
+import { allowRoles } from "../middleware/role.js";
 
 const router = express.Router();
 
-router.get("/", getUsers);
-router.post("/", addUser);
+router.get("/", protect, allowRoles("admin"), getUsers);
+router.post("/", protect, allowRoles("admin"), addUser);
+router.delete("/:id", protect, allowRoles("admin"), deleteUser);
 
 export default router;

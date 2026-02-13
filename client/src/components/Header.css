@@ -1,0 +1,132 @@
+
+.main-header {
+  height: 70px;
+  width: calc(100% - 280px);
+  position: fixed;
+  top: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-8);
+  z-index: 50;
+  border-bottom: 1px solid var(--border-main);
+  background: rgba(255, 255, 255, 0.8) !important;
+}
+
+.header-left {
+  flex: 1;
+  max-width: 600px;
+}
+
+.search-bar-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--slate-400);
+}
+
+.header-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--slate-200);
+  background: var(--slate-50);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.header-search-input:focus {
+  outline: none;
+  background: white;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-soft);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.notification-bell {
+  position: relative;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--slate-600);
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.notification-bell:hover {
+  background: var(--slate-100);
+}
+
+.notification-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: var(--error);
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.header-user-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  transition: background 0.2s;
+}
+
+.header-user-profile:hover {
+  background: var(--slate-50);
+}
+
+.header-avatar {
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+}
+
+.header-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--slate-900);
+}
+
+.header-user-role {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 6px;
+}
+
+@media (max-width: 1024px) {
+  .main-header {
+    width: 100%;
+    left: 0;
+  }
+}

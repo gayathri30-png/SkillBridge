@@ -5,13 +5,17 @@ import {
   getStudentApplications,
   updateStatus,
   getJobApplicantsSorted,
-  getSkillGapForJob
+  getSkillGapForJob,
+  getAllApplications
 } from "../controllers/applicationsController.js";
 
 import { protect } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/role.js";
 
 const router = express.Router();
+
+// ADMIN: GET ALL APPLICATIONS COUNT
+router.get("/all", protect, allowRoles("admin"), getAllApplications);
 
 // --------------------------------
 // STUDENT: APPLY TO JOB

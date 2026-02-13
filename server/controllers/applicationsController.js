@@ -294,3 +294,13 @@ export const getSkillGapForJob = (req, res) => {
     });
   });
 };
+
+// --------------------------------
+// 7. ADMIN: GET ALL APPLICATIONS (FOR DASHBOARD / STATS)
+// --------------------------------
+export const getAllApplications = (req, res) => {
+  db.query("SELECT count(*) as count FROM applications", (err, result) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+    res.json({ count: result[0].count });
+  });
+};

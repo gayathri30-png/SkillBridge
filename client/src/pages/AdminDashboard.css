@@ -1,0 +1,29 @@
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.bg-primary-soft { background-color: var(--primary-soft); }
+.bg-info-soft { background-color: var(--info-soft); }
+.bg-success-soft { background-color: var(--success-soft); }
+
+.bg-slate-900 { background-color: var(--slate-900); }
+
+.group:hover .group-hover\:bg-primary { background-color: var(--primary); }
+.group:hover .group-hover\:bg-info { background-color: var(--info); }
+.group:hover .group-hover\:bg-success { background-color: var(--success); }
+.group:hover .group-hover\:text-white { color: white; }
+
+@media (max-width: 1024px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

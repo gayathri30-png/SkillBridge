@@ -3,6 +3,7 @@ import {
   createJob,
   getAllJobs,
   getJobDetails,
+  deleteJob,
 } from "../controllers/jobsController.js";
 
 import { protect } from "../middleware/auth.js";
@@ -28,5 +29,8 @@ router.get(
   allowRoles("student", "recruiter", "admin"),
   getJobDetails
 );
+
+// DELETE JOB
+router.delete("/:id", protect, allowRoles("admin"), deleteJob);
 
 export default router;

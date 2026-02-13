@@ -24,13 +24,13 @@ function SkillsManager() {
       setError("");
 
       console.log("🔄 Fetching all skills...");
-      const allRes = await axios.get("http://localhost:5001/api/skills/all");
+      const allRes = await axios.get("/api/skills/all");
       console.log("✅ All skills:", allRes.data);
       setAllSkills(allRes.data);
 
       console.log("🔄 Fetching my skills...");
       const myRes = await axios.get(
-        "http://localhost:5001/api/skills/my-skills",
+        "/api/skills/my-skills",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -58,7 +58,7 @@ function SkillsManager() {
       console.log(`🔑 Token exists:`, !!token);
 
       const response = await axios.post(
-        "http://localhost:5001/api/skills/add",
+        "/api/skills",
         {
           skillId,
           proficiency: selectedProficiency,
@@ -111,7 +111,7 @@ function SkillsManager() {
 
     try {
       const response = await axios.delete(
-        `http://localhost:5001/api/skills/remove/${userSkillId}`,
+        `/api/skills/${userSkillId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -136,7 +136,7 @@ function SkillsManager() {
       console.log(`🔄 Updating ${skillName} to ${proficiency}`);
 
       const response = await axios.put(
-        `http://localhost:5001/api/skills/update/${userSkillId}`,
+        `/api/skills/${userSkillId}`,
         { proficiency },
         {
           headers: {

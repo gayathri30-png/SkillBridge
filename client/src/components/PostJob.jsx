@@ -29,8 +29,7 @@ function PostJob() {
   const fetchSkills = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("http://localhost:5001/api/skills/all", {
-
+      const response = await axios.get("/api/skills/all", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSkills(response.data);
@@ -98,7 +97,7 @@ function PostJob() {
       console.log("Submitting job:", dataToSend);
 
       const response = await axios.post(
-        "http://localhost:5001/api/jobs/create",
+        "/api/jobs/create",
         dataToSend,
         {
           headers: {
@@ -110,7 +109,7 @@ function PostJob() {
 
       console.log("Job created:", response.data);
       alert("Job posted successfully!");
-      navigate("/dashboard");
+      navigate("/my-jobs");
     } catch (error) {
       console.error("Error posting job:", error);
       alert(
@@ -383,8 +382,8 @@ const experienceLevels = [
             <div className="preview-header">
               <h3>{jobData.title || "Your Job Title"}</h3>
               <div className="preview-badges">
-                <span className="preview-badge type">{jobData.job_type}</span>
-                <span className="preview-badge level">
+                <span className="badge badge-primary">{jobData.job_type}</span>
+                <span className="badge badge-gray">
                   {jobData.experience_level}
                 </span>
               </div>

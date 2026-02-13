@@ -1,28 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./JobList.css";
 
-function JobList() {
+const JobList = () => {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState({
-    job_type: "",
-    experience_level: "",
+    job_type: [],
+    experience_level: [],
     location: "",
   });
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchJobs();
-  }, []);
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:5001/api/jobs");
+      const token = localStorage.getItem("token");
+      const response = await axios.get("/api/jobs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setJobs(response.data);
     } catch (err) {
       setError("Failed to load jobs");
@@ -30,232 +30,185 @@ function JobList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleJobClick = (jobId) => {
-    navigate(`/jobs/${jobId}`);
-  };
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleCheckboxChange = (category, value) => {
+    setFilters((prev) => {
+      const current = prev[category];
+      const updated = current.includes(value)
+        ? current.filter((v) => v !== value)
+        : [...current, value];
+      return { ...prev, [category]: updated };
+    });
   };
 
   const filteredJobs = jobs.filter((job) => {
-    return (
-      (!filters.job_type || job.job_type === filters.job_type) &&
-      (!filters.experience_level ||
-        job.experience_level === filters.experience_level) &&
-      (!filters.location ||
-        job.location?.toLowerCase().includes(filters.location.toLowerCase()))
-    );
+    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         job.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filters.job_type.length === 0 || filters.job_type.includes(job.job_type);
+    const matchesExperience = filters.experience_level.length === 0 || filters.experience_level.includes(job.experience_level);
+    const matchesLocation = !filters.location || job.location?.toLowerCase().includes(filters.location.toLowerCase());
+
+    return matchesSearch && matchesType && matchesExperience && matchesLocation;
   });
 
-  const getJobTypeColor = (type) => {
-    const colors = {
-      "Full-time": "#3498db",
-      "Part-time": "#2ecc71",
-      Contract: "#e74c3c",
-      Internship: "#f39c12",
-      Freelance: "#9b59b6",
-    };
-    return colors[type] || "#95a5a6";
-  };
-
-  const getExperienceColor = (level) => {
-    const colors = {
-      Entry: "#2ecc71",
-      Intermediate: "#f39c12",
-      Senior: "#e74c3c",
-      Executive: "#8e44ad",
-    };
-    return colors[level] || "#95a5a6";
-  };
-
-  const formatBudget = (budget) => {
-    if (budget >= 1000) {
-      return `$${(budget / 1000).toFixed(1)}k`;
-    }
-    return `$${budget}`;
-  };
-
-  if (loading) {
-    return (
-      <div className="job-list-container">
-        <div className="job-list-header">
-          <h1>Available Jobs</h1>
-        </div>
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading jobs...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="p-8 text-slate-500">Scanning for opportunities...</div>;
 
   return (
-    <div className="job-list-container">
-      <header className="job-list-header">
-        <div className="header-content">
-          <h1>Available Jobs</h1>
-          <button className="back-btn" onClick={() => navigate("/dashboard")}>
-            ← Back to Dashboard
-          </button>
-        </div>
-      </header>
-
-      <main className="job-list-main">
-        {/* Filters */}
-        <div className="filters-section">
-          <div className="filters-grid">
-            <div className="filter-group">
-              <label>Job Type</label>
-              <select
-                name="job_type"
-                value={filters.job_type}
-                onChange={handleFilterChange}
-              >
-                <option value="">All Types</option>
-                <option value="Full-time">Full-time</option>
-                <option value="Part-time">Part-time</option>
-                <option value="Contract">Contract</option>
-                <option value="Internship">Internship</option>
-                <option value="Freelance">Freelance</option>
-              </select>
+    <div className="job-explorer fade-in">
+      <div className="job-explorer-header card mb-6 p-6 glass">
+         <div className="flex-between flex-wrap gap-4">
+            <div>
+               <h2 className="mb-1">Explore Opportunities</h2>
+               <p className="text-sm text-slate-500">Find the perfect match for your career goals.</p>
             </div>
-
-            <div className="filter-group">
-              <label>Experience Level</label>
-              <select
-                name="experience_level"
-                value={filters.experience_level}
-                onChange={handleFilterChange}
-              >
-                <option value="">All Levels</option>
-                <option value="Entry">Entry Level</option>
-                <option value="Intermediate">Intermediate</option>
-                <option value="Senior">Senior</option>
-                <option value="Executive">Executive</option>
-              </select>
+            <div className="flex gap-4 items-center flex-1 max-w-md">
+               <div className="search-input-wrapper flex-1">
+                  <input 
+                    type="text" 
+                    placeholder="Search by title or keyword..." 
+                    className="input-field" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+               </div>
             </div>
+         </div>
+      </div>
 
-            <div className="filter-group">
-              <label>Location</label>
-              <input
-                type="text"
-                name="location"
-                placeholder="Search location..."
-                value={filters.location}
-                onChange={handleFilterChange}
-              />
-            </div>
-
-            <div className="filter-group">
-              <button
-                className="clear-filters"
-                onClick={() =>
-                  setFilters({
-                    job_type: "",
-                    experience_level: "",
-                    location: "",
-                  })
-                }
-              >
-                Clear Filters
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Job Count */}
-        <div className="job-count">
-          <p>
-            Showing <strong>{filteredJobs.length}</strong> of{" "}
-            <strong>{jobs.length}</strong> jobs
-          </p>
-        </div>
-
-        {/* Error */}
-        {error && <div className="error-message">{error}</div>}
-
-        {/* Job Grid */}
-        <div className="job-grid">
-          {filteredJobs.length === 0 ? (
-            <div className="no-jobs">
-              <div className="no-jobs-icon">📭</div>
-              <h3>No jobs found</h3>
-              <p>Try adjusting your filters or check back later.</p>
-            </div>
-          ) : (
-            filteredJobs.map((job) => (
-              <div
-                key={job.id}
-                className="job-card"
-                onClick={() => handleJobClick(job.id)}
-              >
-                <div className="job-card-header">
-                  <div
-                    className="job-type-badge"
-                    style={{ backgroundColor: getJobTypeColor(job.job_type) }}
-                  >
-                    {job.job_type}
-                  </div>
-                  <div
-                    className="job-experience-badge"
-                    style={{
-                      backgroundColor: getExperienceColor(job.experience_level),
-                    }}
-                  >
-                    {job.experience_level}
-                  </div>
-                </div>
-
-                <div className="job-card-body">
-                  <h3 className="job-title">{job.title}</h3>
-
-                  <div className="job-company">
-                    <span className="company-icon">🏢</span>
-                    <span>Recruiter</span>
-                  </div>
-
-                  <div className="job-details">
-                    <div className="job-detail">
-                      <span className="detail-icon">📍</span>
-                      <span>{job.location || "Remote"}</span>
-                    </div>
-                    <div className="job-detail">
-                      <span className="detail-icon">💰</span>
-                      <span>{formatBudget(job.budget)}</span>
-                    </div>
-                    <div className="job-detail">
-                      <span className="detail-icon">⏱️</span>
-                      <span>{job.duration || "Not specified"}</span>
-                    </div>
-                  </div>
-
-                  <p className="job-description">
-                    {job.description.length > 150
-                      ? `${job.description.substring(0, 150)}...`
-                      : job.description}
-                  </p>
-                </div>
-
-                <div className="job-card-footer">
-                  <div className="job-posted">
-                    Posted: {new Date(job.created_at).toLocaleDateString()}
-                  </div>
-                  <button className="view-details-btn">View Details →</button>
-                </div>
+      <div className="job-explorer-content">
+        {/* Filters Sidebar */}
+        <aside className="filters-sidebar">
+           <div className="card p-6 sticky top-24">
+              <div className="flex-between mb-6">
+                <h4 className="m-0">Filters</h4>
+                <button 
+                  className="text-xs text-primary font-bold bg-transparent border-0 cursor-pointer"
+                  onClick={() => setFilters({ job_type: [], experience_level: [], location: "" })}
+                >
+                  Clear All
+                </button>
               </div>
-            ))
-          )}
-        </div>
-      </main>
+
+              <div className="filter-group mb-6">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 block">Location</label>
+                <input 
+                  type="text" 
+                  placeholder="City or Remote..." 
+                  className="input-field text-sm"
+                  value={filters.location}
+                  onChange={(e) => setFilters({...filters, location: e.target.value})}
+                />
+              </div>
+
+              <div className="filter-group mb-6">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 block">Job Type</label>
+                {['Full-time', 'Part-time', 'Internship', 'Contract'].map(type => (
+                  <div key={type} className="flex items-center gap-2 mb-2">
+                    <input 
+                      type="checkbox" 
+                      id={type} 
+                      className="w-4 h-4 cursor-pointer"
+                      checked={filters.job_type.includes(type)}
+                      onChange={() => handleCheckboxChange('job_type', type)}
+                    />
+                    <label htmlFor={type} className="text-sm text-slate-600 cursor-pointer">{type}</label>
+                  </div>
+                ))}
+              </div>
+
+              <div className="filter-group">
+                <label className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 block">Experience</label>
+                {['Entry', 'Intermediate', 'Senior'].map(exp => (
+                  <div key={exp} className="flex items-center gap-2 mb-2">
+                    <input 
+                      type="checkbox" 
+                      id={exp}
+                      className="w-4 h-4 cursor-pointer"
+                      checked={filters.experience_level.includes(exp)}
+                      onChange={() => handleCheckboxChange('experience_level', exp)}
+                    />
+                    <label htmlFor={exp} className="text-sm text-slate-600 cursor-pointer">{exp}</label>
+                  </div>
+                ))}
+              </div>
+           </div>
+        </aside>
+
+        {/* Job Results Container */}
+        <main className="job-results-container">
+           <div className="results-info flex-between mb-4 px-2">
+              <span className="text-sm text-slate-500">Showing <strong>{filteredJobs.length}</strong> jobs</span>
+              <select className="bg-transparent border-0 text-xs font-bold text-slate-600 cursor-pointer outline-none">
+                 <option>Newest First</option>
+                 <option>Match Score</option>
+                 <option>Budget: High to Low</option>
+              </select>
+           </div>
+
+           <div className="space-y-4">
+              {filteredJobs.length > 0 ? filteredJobs.map(job => {
+                const randomMatch = Math.floor(Math.random() * 30) + 70; // Mock match score
+                return (
+                  <div key={job.id} className="card card-hover p-6 flex gap-6 job-card relative" onClick={() => navigate(`/jobs/${job.id}`)}>
+                    <div className="job-logo bg-slate-100 w-16 h-16 rounded-xl flex items-center justify-center text-2xl shadow-inner">
+                       {job.title.charAt(0)}
+                    </div>
+                    <div className="flex-1">
+                       <div className="flex-between mb-1">
+                          <h4 className="m-0 hover:text-primary transition-colors cursor-pointer">{job.title}</h4>
+                          <span className="text-xs font-bold text-primary bg-primary-soft px-3 py-1 rounded-full">
+                            {job.budget >= 1000 ? `$${(job.budget/1000).toFixed(1)}k` : `$${job.budget}`}
+                          </span>
+                       </div>
+                       <p className="text-sm text-slate-600 mb-3">{job.company_name || "SkillBridge Partner"}</p>
+                       
+                       <div className="flex gap-4 text-xs text-slate-500 mb-4">
+                          <span className="flex items-center gap-1">📍 {job.location || "Remote"}</span>
+                          <span className="flex items-center gap-1">⏱️ {job.job_type}</span>
+                          <span className="flex items-center gap-1">📊 {job.experience_level}</span>
+                       </div>
+
+                       <div className="flex gap-2">
+                          <span className="chip chip-outline text-[10px] py-0.5">React</span>
+                          <span className="chip chip-outline text-[10px] py-0.5">Node.js</span>
+                          <span className="chip chip-outline text-[10px] py-0.5">UI/UX</span>
+                       </div>
+                    </div>
+                    
+                    <div className="match-panel flex flex-col items-center justify-center border-left pl-6 min-w-[100px]">
+                        <div className="match-ring w-12 h-12 mb-2">
+                           <svg viewBox="0 0 36 36" className="w-full h-full">
+                              <circle className="bg" cx="18" cy="18" r="16" />
+                              <circle 
+                                className="progress" 
+                                cx="18" cy="18" r="16" 
+                                strokeDasharray={`${randomMatch}, 100`}
+                                stroke={randomMatch > 85 ? 'var(--success)' : 'var(--warning)'}
+                              />
+                           </svg>
+                           <span className="absolute text-[10px] font-bold text-slate-900">{randomMatch}%</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Match</span>
+                    </div>
+                  </div>
+                );
+              }) : (
+                <div className="card p-12 text-center text-slate-400">
+                   <div className="text-5xl mb-4">🏜️</div>
+                   <h4>No jobs found Matching your criteria.</h4>
+                   <p className="text-sm">Try broadening your filters or search terms.</p>
+                </div>
+              )}
+           </div>
+        </main>
+      </div>
     </div>
   );
-}
+};
 
 export default JobList;

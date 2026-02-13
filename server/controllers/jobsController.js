@@ -164,3 +164,26 @@ export const getJobDetails = (req, res) => {
     );
   });
 };
+
+/**
+ * DELETE JOB
+ * Admin only
+ */
+export const deleteJob = (req, res) => {
+  const { id } = req.params;
+
+  db.query("DELETE FROM jobs WHERE id = ?", [id], (err, result) => {
+    if (err) {
+      return res.status(500).json({
+        error: "Failed to delete job",
+        message: err.message,
+      });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    res.json({ message: "Job deleted successfully" });
+  });
+};

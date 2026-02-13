@@ -10,14 +10,26 @@ import {
 import Login from "./Login";
 import Register from "./Register";
 import Dashboard from "./Dashboard";
+import LandingPage from "./pages/LandingPage";
+import Layout from "./components/Layout";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 // Student Pages
 import JobList from "./components/JobList";
 import JobDetails from "./components/JobDetails";
 import SkillsManager from "./components/SkillsManager";
+import ApplicationsList from "./components/ApplicationsList";
 
 // Recruiter Pages
 import PostJob from "./components/PostJob";
+import RecruiterJobs from "./components/RecruiterJobs";
+import RecruiterApplicants from "./components/RecruiterApplicants";
+
+// Admin Pages
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./components/AdminUsers";
+import AdminJobs from "./components/AdminJobs";
 
 // -------------------------------------
 // 🔐 AUTH GUARD COMPONENT
@@ -55,8 +67,11 @@ function App() {
     <Router>
       <Routes>
         {/* ---------------- PUBLIC ROUTES ---------------- */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* ---------------- PROTECTED ROUTES ---------------- */}
 
@@ -65,7 +80,9 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Layout>
+                <Dashboard />
+              </Layout>
             </ProtectedRoute>
           }
         />
@@ -75,7 +92,9 @@ function App() {
           path="/skills"
           element={
             <ProtectedRoute>
-              <SkillsManager />
+              <Layout>
+                <SkillsManager />
+              </Layout>
             </ProtectedRoute>
           }
         />
@@ -84,7 +103,20 @@ function App() {
           path="/jobs"
           element={
             <ProtectedRoute>
-              <JobList />
+              <Layout>
+                <JobList />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/applications"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ApplicationsList />
+              </Layout>
             </ProtectedRoute>
           }
         />
@@ -94,7 +126,9 @@ function App() {
           path="/jobs/:id"
           element={
             <ProtectedRoute>
-              <JobDetails />
+              <Layout>
+                <JobDetails />
+              </Layout>
             </ProtectedRoute>
           }
         />
@@ -104,25 +138,68 @@ function App() {
           path="/post-job"
           element={
             <ProtectedRoute>
-              <PostJob />
+              <Layout>
+                <PostJob />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/my-jobs"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <RecruiterJobs />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/jobs/:jobId/applicants"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <RecruiterApplicants />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AdminDashboard />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AdminUsers />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/jobs"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AdminJobs />
+              </Layout>
             </ProtectedRoute>
           }
         />
 
         {/* ---------------- DEFAULT & FALLBACK ---------------- */}
-
-        {/* Root */}
-        <Route
-          path="/"
-          element={
-            localStorage.getItem("token") ? (
-              <Navigate to="/dashboard" />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

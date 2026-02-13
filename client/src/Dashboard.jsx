@@ -3,761 +3,227 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./Dashboard.css";
 
-function Dashboard() {
+const Dashboard = () => {
   const [user, setUser] = useState(null);
   const [userSkills, setUserSkills] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [jobs, setJobs] = useState([]); // Add jobs state
+  const [jobs, setJobs] = useState([]);
   const [stats, setStats] = useState({
     totalSkills: 0,
-    profileComplete: 100,
+    profileComplete: 85,
     applications: 0,
-    recruiterJobs: 0, // Add recruiter jobs count
+    recruiterJobs: 0,
   });
   const navigate = useNavigate();
 
-  // Add this function to fetch all jobs - using useCallback to prevent infinite re-renders
-  const fetchAllJobs = useCallback(
-    async (token) => {
-      try {
-        console.log("🔄 Fetching all jobs...");
-        const response = await axios.get("http://localhost:5001/api/jobs", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        console.log("📊 All jobs loaded:", response.data);
-        setJobs(response.data);
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
+  };
 
-        // Update recruiter jobs count if user is recruiter
-        if (user?.role === "recruiter") {
-          const recruiterJobs = response.data.filter(
-            (job) => Number(job.posted_by) === Number(user.id)
-          );
-          console.log("👤 Recruiter's jobs:", recruiterJobs.length);
-          setStats((prev) => ({
-            ...prev,
-            recruiterJobs: recruiterJobs.length,
-          }));
-        }
-      } catch (error) {
-        console.error("❌ Error fetching jobs:", error);
-      }
-    },
-    [user?.role, user?.id]
-  ); // Add dependencies
-
-  const fetchUserSkills = useCallback(async (token, userId) => {
+  const fetchAllJobs = useCallback(async (token) => {
     try {
-      setLoading(true);
-      console.log("🔄 Fetching user skills...");
-      const response = await axios.get(
-        `http://localhost:5001/api/skills/my-skills`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      console.log("✅ Skills loaded:", response.data.length, "skills");
+      const response = await axios.get("/api/jobs", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setJobs(response.data);
+      if (user?.role === "recruiter") {
+        const recruiterJobs = response.data.filter(
+          (job) => Number(job.posted_by) === Number(user.id)
+        );
+        setStats((prev) => ({ ...prev, recruiterJobs: recruiterJobs.length }));
+      }
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+    }
+  }, [user?.role, user?.id]);
+
+  const fetchUserSkills = useCallback(async (token) => {
+    try {
+      const response = await axios.get("/api/skills/my-skills", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setUserSkills(response.data);
       setStats((prev) => ({ ...prev, totalSkills: response.data.length }));
     } catch (error) {
-      console.error("❌ Error fetching skills:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching skills:", error);
     }
   }, []);
 
-  // Remove unused fetchRecruiterStats function since it's not being used
-  // const fetchRecruiterStats = async (token) => {
-  //   try {
-  //     console.log("🔄 Fetching recruiter stats...");
-  //   } catch (error) {
-  //     console.error("Error fetching recruiter stats:", error);
-  //   }
-  // };
+  const fetchStudentApplications = useCallback(async (token) => {
+    try {
+      const response = await axios.get("/api/applications/my", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setStats((prev) => ({ ...prev, applications: response.data.length }));
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+    }
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
 
-    console.log("📊 Dashboard loading...");
-    console.log("Token exists:", !!token);
-    console.log("User exists:", !!savedUser);
-
     if (token && savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        console.log("✅ User loaded:", userData);
-        setUser(userData);
-        fetchUserSkills(token, userData.id);
-        fetchAllJobs(token); // Fetch all jobs
-      } catch (error) {
-        console.error("❌ Error parsing user data:", error);
-        navigate("/login");
+      const userData = JSON.parse(savedUser);
+      setUser(userData);
+      fetchUserSkills(token);
+      fetchAllJobs(token);
+      if (userData.role === "student") {
+        fetchStudentApplications(token);
       }
+      setLoading(false);
     } else {
-      console.log("❌ No auth data, redirecting to login");
       navigate("/login");
     }
-  }, [navigate, fetchUserSkills, fetchAllJobs]); // Add dependencies
+  }, [navigate, fetchUserSkills, fetchAllJobs, fetchStudentApplications]);
 
-  const handleLogout = () => {
-    console.log("👋 Logging out...");
-    localStorage.clear();
-    navigate("/login");
-  };
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
-  };
-
-  // Calculate recruiter's jobs
-  const recruiterJobs =
-    user?.role === "recruiter"
-      ? jobs.filter((job) => {
-          const match = Number(job.posted_by) === Number(user.id);
-          console.log(
-            `Comparing: job.posted_by=${
-              job.posted_by
-            } (${typeof job.posted_by}) vs user.id=${
-              user.id
-            } (${typeof user.id}) => ${match}`
-          );
-          return match;
-        })
-      : [];
-
-  // Debug logging
-  console.log("=== DASHBOARD DEBUG ===");
-  console.log("User:", user);
-  console.log("User ID:", user?.id, "Type:", typeof user?.id);
-  console.log("All jobs:", jobs.length);
-  console.log("Recruiter jobs:", recruiterJobs.length);
-  console.log("=========================");
-
-  if (!user) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-        }}
-      >
-        <div>Loading dashboard...</div>
-      </div>
-    );
+  if (loading || !user) {
+    return <div className="p-8 text-slate-500">Loading your profile...</div>;
   }
 
+  const roleColor = user.role === "recruiter" ? "var(--accent)" : "var(--primary)";
+
   return (
-    <div className="dashboard-container">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-content">
-          <div className="brand-section">
-            <h1>SkillBridge</h1>
-            <p className="greeting">
-              {getGreeting()}! Ready to bridge your skills with opportunities?
-            </p>
+    <div className="dashboard-grid fade-in">
+      {/* Column 1: Profile & Identity */}
+      <aside className="dashboard-left-panel space-y-6">
+        <div className="card p-6 text-center space-y-4">
+          <div className="mx-auto w-20 h-20 rounded-full bg-slate-100 flex items-center justify-center text-3xl shadow-inner mb-4">
+             {user.name.charAt(0)}
           </div>
-
-          <div className="user-info">
-            <div className="user-details">
-              <span className="user-name">
-                Welcome back, <strong>{user.name}</strong>
-              </span>
-              <div className="user-badges">
-                <span className="user-role badge">{user.role}</span>
-                {user.role === "student" && (
-                  <span className="badge student-badge">🎓 Student</span>
-                )}
-                {user.role === "recruiter" && (
-                  <span className="badge recruiter-badge">💼 Recruiter</span>
-                )}
-              </div>
+          <div>
+            <h3 className="mb-1">{user.name}</h3>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{user.role}</p>
+          </div>
+          <div className="pt-4 border-top">
+            <div className="flex-between mb-2">
+              <span className="text-xs font-medium text-slate-500">Profile Completion</span>
+              <span className="text-xs font-bold text-primary">{stats.profileComplete}%</span>
             </div>
-            <button onClick={handleLogout} className="logout-btn">
-              Logout
-            </button>
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-500" 
+                style={{ width: `${stats.profileComplete}%` }}
+              ></div>
+            </div>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="dashboard-main">
-        {/* Quick Stats */}
-        <div className="quick-stats">
-          <div className="stat-card">
-            <div className="stat-icon">💼</div>
-            <h3>Your Skills</h3>
-            <p className="stat-number">{stats.totalSkills}</p>
-            <p className="stat-label">Total Skills</p>
-            {stats.totalSkills === 0 && (
-              <button
-                className="stat-action"
-                onClick={() => navigate("/skills")}
-              >
-                Add Your First Skill
-              </button>
-            )}
+        <div className="card p-6">
+          <h4 className="text-sm mb-4 flex items-center gap-2">
+            <span className="text-lg">⭐</span> Top Skills
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {userSkills.length > 0 ? userSkills.slice(0, 5).map(s => (
+              <span key={s.id} className="chip chip-info">{s.skill_name}</span>
+            )) : <p className="text-xs text-slate-400">Add skills to see your match score.</p>}
           </div>
+        </div>
+      </aside>
 
-          <div className="stat-card">
-            <div className="stat-icon">📊</div>
-            <h3>Profile</h3>
-            <p className="stat-number">{stats.profileComplete}%</p>
-            <p className="stat-label">Complete</p>
-            <button
-              className="stat-action"
-              onClick={() => navigate("/profile")}
-            >
-              Complete Profile
-            </button>
+      {/* Column 2: Activity & Actions */}
+      <section className="dashboard-center-panel space-y-8">
+        <div className="welcome-hero card p-8 glass flex-between" style={{ borderLeft: `6px solid ${roleColor}` }}>
+          <div>
+             <h1 className="mb-2">Hello, {user.name.split(' ')[0]}! 👋</h1>
+             <p className="text-slate-600">Your dashboard is looking great today. You have {user.role === 'student' ? `${stats.applications} active applications` : `${stats.recruiterJobs} active job listings`}.</p>
           </div>
-
-          <div className="stat-card">
-            <div className="stat-icon">📄</div>
-            <h3>Applications</h3>
-            <p className="stat-number">{stats.applications}</p>
-            <p className="stat-label">Submitted</p>
-            {user.role === "student" && stats.applications === 0 && (
-              <button className="stat-action" onClick={() => navigate("/jobs")}>
-                Browse Jobs
-              </button>
-            )}
+          <div className="hero-badge hidden sm:block">
+             <div className="text-4xl">🚀</div>
           </div>
-
-          {user.role === "recruiter" && (
-            <div className="stat-card">
-              <div className="stat-icon">👥</div>
-              <h3>Your Jobs</h3>
-              <p className="stat-number">{recruiterJobs.length}</p>
-              <p className="stat-label">Posted</p>
-              <button
-                className="stat-action"
-                onClick={() => navigate("/post-job")}
-              >
-                Post New Job
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Student Dashboard */}
-        {user.role === "student" && (
-          <>
-            <div className="dashboard-section">
-              <h2 className="section-title">Student Features</h2>
-              <p className="section-subtitle">
-                Everything you need to kickstart your career
-              </p>
+        <div>
+          <h3 className="section-title mb-6">Quick Actions</h3>
+          <div className="grid-cols-2">
+             {user.role === 'student' ? (
+               <>
+                 <div className="card card-hover p-6 cursor-pointer" onClick={() => navigate('/jobs')}>
+                   <div className="text-3xl mb-4">🔍</div>
+                   <h4>Explore Jobs</h4>
+                   <p className="text-xs mt-2">Find opportunities that match your skill set.</p>
+                 </div>
+                 <div className="card card-hover p-6 cursor-pointer" onClick={() => navigate('/skills')}>
+                   <div className="text-3xl mb-4">🛠️</div>
+                   <h4>Update Skills</h4>
+                   <p className="text-xs mt-2">Add new certifications and technologies.</p>
+                 </div>
+               </>
+             ) : (
+               <>
+                 <div className="card card-hover p-6 cursor-pointer" onClick={() => navigate('/post-job')}>
+                   <div className="text-3xl mb-4">📝</div>
+                   <h4>Post New Job</h4>
+                   <p className="text-xs mt-2">Create a new listing for your opening.</p>
+                 </div>
+                 <div className="card card-hover p-6 cursor-pointer" onClick={() => navigate('/my-jobs')}>
+                   <div className="text-3xl mb-4">📂</div>
+                   <h4>Monitor Jobs</h4>
+                   <p className="text-xs mt-2">Check applicant counts and statuses.</p>
+                 </div>
+               </>
+             )}
+          </div>
+        </div>
 
-              <div className="feature-grid">
-                {/* Manage Skills Card */}
-                <div
-                  className="feature-card"
-                  onClick={() => navigate("/skills")}
-                >
-                  <div className="feature-icon">💼</div>
-                  <div className="feature-content">
-                    <h3>Manage Skills</h3>
-                    <p>
-                      Add, edit, or remove your skills to attract recruiters
-                    </p>
-                    <div className="skill-preview">
-                      {loading ? (
-                        <div className="loading-skills">Loading skills...</div>
-                      ) : userSkills.length > 0 ? (
-                        <div className="skills-list">
-                          {userSkills.slice(0, 3).map((skill) => (
-                            <span key={skill.id} className="skill-tag">
-                              {skill.name}
-                            </span>
-                          ))}
-                          {userSkills.length > 3 && (
-                            <span className="skill-tag more-tag">
-                              +{userSkills.length - 3} more
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="no-skills">
-                          <p>No skills added yet</p>
-                          <small>Add skills to get better job matches</small>
-                        </div>
-                      )}
-                    </div>
-                    <button className="feature-btn">Manage Skills →</button>
-                  </div>
-                </div>
-
-                {/* Browse Jobs Card */}
-                <div className="feature-card" onClick={() => navigate("/jobs")}>
-                  <div className="feature-icon">🔍</div>
-                  <div className="feature-content">
-                    <h3>Browse Jobs</h3>
-                    <p>Find opportunities matching your skills and interests</p>
-                    <div className="job-preview">
-                      <div className="job-stats">
-                        <span className="stat-item">
-                          🎯 Skill-based matches
-                        </span>
-                        <span className="stat-item">💰 Competitive pay</span>
-                        <span className="stat-item">🚀 Quick apply</span>
-                      </div>
-                    </div>
-                    <button className="feature-btn">Browse Jobs →</button>
-                  </div>
-                </div>
-
-                {/* My Applications Card */}
-                <div
-                  className="feature-card"
-                  onClick={() => navigate("/applications")}
-                >
-                  <div className="feature-icon">📄</div>
-                  <div className="feature-content">
-                    <h3>My Applications</h3>
-                    <p>Track your job applications and status updates</p>
-                    <div className="applications-preview">
-                      {stats.applications === 0 ? (
-                        <div className="no-applications">
-                          <p>No applications yet</p>
-                          <small>Apply to jobs to track progress</small>
-                        </div>
-                      ) : (
-                        <div className="applications-stats">
-                          <div className="app-stat pending">Pending: 0</div>
-                          <div className="app-stat reviewed">Reviewed: 0</div>
-                          <div className="app-stat accepted">Accepted: 0</div>
-                        </div>
-                      )}
-                    </div>
-                    <button className="feature-btn">View Applications →</button>
-                  </div>
-                </div>
-
-                {/* AI Recommendations Card */}
-                <div
-                  className="feature-card"
-                  onClick={() => navigate("/recommendations")}
-                >
-                  <div className="feature-icon">🤖</div>
-                  <div className="feature-content">
-                    <h3>AI Recommendations</h3>
-                    <p>Get personalized job matches based on your skills</p>
-                    <div className="ai-preview">
-                      <div className="ai-benefits">
-                        <span className="benefit">🎯 Personalized</span>
-                        <span className="benefit">⚡ Instant</span>
-                        <span className="benefit">📈 Smart matches</span>
-                      </div>
-                    </div>
-                    <button className="feature-btn">View Matches →</button>
-                  </div>
-                </div>
-              </div>
+        {/* AI Recommendation Mockup (for Students) */}
+        {user.role === 'student' && (
+          <div className="card p-6 bg-slate-900 text-white overflow-hidden relative">
+            <div className="relative z-10">
+              <h4 className="mb-2">AI Match Recommendation</h4>
+              <p className="text-slate-400 text-sm mb-4">Based on your Profile, we found 12 new matches today!</p>
+              <button className="btn btn-primary" onClick={() => navigate('/jobs')}>View Matches</button>
             </div>
-
-            {/* Quick Actions */}
-            <div className="quick-actions-section">
-              <h2 className="section-title">Quick Actions</h2>
-              <div className="action-buttons">
-                <button
-                  className="action-btn primary"
-                  onClick={() => navigate("/skills")}
-                >
-                  <span className="action-icon">➕</span>
-                  Add New Skill
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/jobs")}
-                >
-                  <span className="action-icon">🔍</span>
-                  Search Jobs
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/profile")}
-                >
-                  <span className="action-icon">👤</span>
-                  Update Profile
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/resume")}
-                >
-                  <span className="action-icon">📄</span>
-                  Upload Resume
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/portfolio")}
-                >
-                  <span className="action-icon">🎨</span>
-                  Upload Portfolio
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/settings")}
-                >
-                  <span className="action-icon">⚙️</span>
-                  Settings
-                </button>
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="recent-activity">
-              <h2 className="section-title">Recent Activity</h2>
-              <div className="activity-list">
-                <div className="activity-item">
-                  <div className="activity-icon">🎯</div>
-                  <div className="activity-content">
-                    <p>
-                      <strong>Complete your profile</strong> to get better job
-                      recommendations
-                    </p>
-                    <span className="activity-time">Just now</span>
-                  </div>
-                  <button
-                    className="activity-action"
-                    onClick={() => navigate("/profile")}
-                  >
-                    Complete
-                  </button>
-                </div>
-                <div className="activity-item">
-                  <div className="activity-icon">💼</div>
-                  <div className="activity-content">
-                    <p>
-                      <strong>Add your first skill</strong> to start matching
-                      with jobs
-                    </p>
-                    <span className="activity-time">Pending</span>
-                  </div>
-                  <button
-                    className="activity-action"
-                    onClick={() => navigate("/skills")}
-                  >
-                    Add Skill
-                  </button>
-                </div>
-              </div>
-            </div>
-          </>
+            <div className="absolute right-[-20px] bottom-[-20px] text-9xl opacity-10">🤖</div>
+          </div>
         )}
+      </section>
 
-        {/* Recruiter Dashboard */}
-        {user.role === "recruiter" && (
-          <>
-            <div className="dashboard-section">
-              <h2 className="section-title">Recruiter Hub</h2>
-              <p className="section-subtitle">
-                Find and connect with talented students
-              </p>
-
-              {/* Debug info */}
-              <div className="debug-info">
-                <p>
-                  User ID: {user.id} | Total jobs in system: {jobs.length} |
-                  Your jobs: {recruiterJobs.length}
-                </p>
+      {/* Column 3: Stats & Status */}
+      <aside className="dashboard-right-panel space-y-6">
+        <div className="card p-6">
+          <h4 className="text-sm mb-6 uppercase tracking-widest text-slate-400 font-bold">Activity Overview</h4>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-success-light text-success flex items-center justify-center text-xl">
+                 {user.role === 'student' ? '📄' : '📬'}
               </div>
-
-              <div className="feature-grid">
-                <div
-                  className="feature-card"
-                  onClick={() => navigate("/post-job")}
-                >
-                  <div className="feature-icon">📝</div>
-                  <div className="feature-content">
-                    <h3>Post Job</h3>
-                    <p>Create new job listings to find talented students</p>
-                    <div className="job-form-preview">
-                      <div className="form-step active">1. Details</div>
-                      <div className="form-step">2. Requirements</div>
-                      <div className="form-step">3. Skills</div>
-                    </div>
-                    <button className="feature-btn">Post Job →</button>
-                  </div>
-                </div>
-
-                <div
-                  className="feature-card"
-                  onClick={() => navigate("/applicants")}
-                >
-                  <div className="feature-icon">👥</div>
-                  <div className="feature-content">
-                    <h3>View Applicants</h3>
-                    <p>Review and manage job applications</p>
-                    <div className="applicants-preview">
-                      <div className="applicant-stat">
-                        <span className="stat-label">Total:</span>
-                        <span className="stat-value">0</span>
-                      </div>
-                      <div className="applicant-stat">
-                        <span className="stat-label">New:</span>
-                        <span className="stat-value">0</span>
-                      </div>
-                      <div className="applicant-stat">
-                        <span className="stat-label">Reviewed:</span>
-                        <span className="stat-value">0</span>
-                      </div>
-                    </div>
-                    <button className="feature-btn">View Applicants →</button>
-                  </div>
-                </div>
-
-                <div
-                  className="feature-card"
-                  onClick={() => navigate("/messages")}
-                >
-                  <div className="feature-icon">💬</div>
-                  <div className="feature-content">
-                    <h3>Chat with Students</h3>
-                    <p>Communicate with potential candidates</p>
-                    <div className="chat-preview">
-                      <div className="chat-stats">
-                        <span className="chat-stat">Active: 0</span>
-                        <span className="chat-stat">Unread: 0</span>
-                        <span className="chat-stat">Total: 0</span>
-                      </div>
-                    </div>
-                    <button className="feature-btn">Open Chat →</button>
-                  </div>
-                </div>
-
-                <div
-                  className="feature-card"
-                  onClick={() => navigate("/manage-hires")}
-                >
-                  <div className="feature-icon">✅</div>
-                  <div className="feature-content">
-                    <h3>Manage Hires</h3>
-                    <p>Track and manage your hiring process</p>
-                    <div className="hires-preview">
-                      <div className="hires-stats">
-                        <span className="hire-stage offered">Offered: 0</span>
-                        <span className="hire-stage accepted">Accepted: 0</span>
-                        <span className="hire-stage completed">
-                          Completed: 0
-                        </span>
-                      </div>
-                    </div>
-                    <button className="feature-btn">Manage →</button>
-                  </div>
-                </div>
+              <div>
+                <h4 className="m-0">{user.role === 'student' ? stats.applications : 24}</h4>
+                <p className="text-xs m-0">{user.role === 'student' ? 'Applications' : 'Total Applicants'}</p>
               </div>
             </div>
-
-            {/* Recruiter Quick Actions */}
-            <div className="quick-actions-section">
-              <h2 className="section-title">Quick Actions</h2>
-              <div className="action-buttons">
-                <button
-                  className="action-btn primary"
-                  onClick={() => navigate("/post-job")}
-                >
-                  <span className="action-icon">📝</span>
-                  Post New Job
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/applicants")}
-                >
-                  <span className="action-icon">👥</span>
-                  View Applicants
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/search-students")}
-                >
-                  <span className="action-icon">🔍</span>
-                  Search Students
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/analytics")}
-                >
-                  <span className="action-icon">📊</span>
-                  View Analytics
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/company-profile")}
-                >
-                  <span className="action-icon">🏢</span>
-                  Company Profile
-                </button>
-                <button
-                  className="action-btn"
-                  onClick={() => navigate("/settings")}
-                >
-                  <span className="action-icon">⚙️</span>
-                  Settings
-                </button>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-lg bg-info-light text-info flex items-center justify-center text-xl">
+                 {user.role === 'student' ? '💼' : '📝'}
               </div>
-            </div>
-
-            {/* Recent Job Posts */}
-            <div className="recent-jobs">
-              <h2 className="section-title">
-                Your Posted Jobs ({recruiterJobs.length})
-              </h2>
-              <div className="jobs-list">
-                {recruiterJobs.length === 0 ? (
-                  <div className="no-jobs">
-                    <div className="no-jobs-icon">📭</div>
-                    <h3>No jobs posted yet</h3>
-                    <p>
-                      Create your first job posting to find talented students
-                    </p>
-                    <button
-                      className="post-first-job"
-                      onClick={() => navigate("/post-job")}
-                    >
-                      Post Your First Job
-                    </button>
-                  </div>
-                ) : (
-                  recruiterJobs.map((job) => (
-                    <div
-                      key={job.id}
-                      className="job-item"
-                      onClick={() => navigate(`/jobs/${job.id}`)}
-                    >
-                      <div className="job-item-header">
-                        <h4>{job.title}</h4>
-                        <span className="job-badge">{job.job_type}</span>
-                      </div>
-                      <div className="job-item-details">
-                        <span>📍 {job.location || "Remote"}</span>
-                        <span>💰 ${job.budget}</span>
-                        <span>
-                          📅 {new Date(job.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <div className="job-item-description">
-                        {job.description?.substring(0, 100)}...
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div>
+                <h4 className="m-0">{user.role === 'student' ? stats.totalSkills : stats.recruiterJobs}</h4>
+                <p className="text-xs m-0">{user.role === 'student' ? 'Verfied Skills' : 'Admin Status: Active'}</p>
               </div>
-            </div>
-          </>
-        )}
-      </main>
-
-      {/* Footer */}
-      <footer className="dashboard-footer">
-        <div className="footer-content">
-          <div className="footer-section">
-            <h4>SkillBridge</h4>
-            <p>Connecting Talent with Opportunities</p>
-            <p className="copyright">
-              © 2024 SkillBridge. All rights reserved.
-            </p>
-          </div>
-
-          <div className="footer-section">
-            <h4>Quick Links</h4>
-            <ul>
-              <li>
-                <button
-                  className="footer-link"
-                  onClick={() => navigate("/help")}
-                >
-                  Help Center
-                </button>
-              </li>
-              <li>
-                <button
-                  className="footer-link"
-                  onClick={() => navigate("/contact")}
-                >
-                  Contact Support
-                </button>
-              </li>
-              <li>
-                <button
-                  className="footer-link"
-                  onClick={() => navigate("/privacy")}
-                >
-                  Privacy Policy
-                </button>
-              </li>
-              <li>
-                <button
-                  className="footer-link"
-                  onClick={() => navigate("/terms")}
-                >
-                  Terms of Service
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          <div className="footer-section">
-            <h4>Contact Us</h4>
-            <p>Email: support@skillbridge.com</p>
-            <p>Phone: (123) 456-7890</p>
-            <div className="social-links">
-              <button
-                className="social-link"
-                onClick={() => window.open("https://facebook.com", "_blank")}
-              >
-                📘
-              </button>
-              <button
-                className="social-link"
-                onClick={() => window.open("https://twitter.com", "_blank")}
-              >
-                🐦
-              </button>
-              <button
-                className="social-link"
-                onClick={() => window.open("https://linkedin.com", "_blank")}
-              >
-                💼
-              </button>
-              <button
-                className="social-link"
-                onClick={() => window.open("https://instagram.com", "_blank")}
-              >
-                📸
-              </button>
             </div>
           </div>
         </div>
 
-        <div className="footer-bottom">
-          <p>
-            Logged in as: <strong>{user.name}</strong> ({user.email}) | Role:{" "}
-            <strong>{user.role}</strong> |
-            {user.role === "recruiter" && ` Your Jobs: ${recruiterJobs.length}`}
-            <button
-              className="debug-btn"
-              onClick={() => {
-                console.log("=== DEBUG INFO ===");
-                console.log("User:", user);
-                console.log("Skills:", userSkills);
-                console.log("All jobs:", jobs);
-                console.log("Recruiter jobs:", recruiterJobs);
-                console.log("Stats:", stats);
-              }}
-            >
-              Debug Info
-            </button>
-          </p>
+        <div className="card p-6">
+           <h4 className="text-sm mb-4">Recent Notifications</h4>
+           <div className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-lg border-left transition-all hover:bg-white cursor-pointer" style={{ borderLeftColor: 'var(--primary)' }}>
+                <p className="text-xs font-bold text-slate-900 m-0">Appplication Viewed</p>
+                <p className="text-[10px] text-slate-500 m-0">Google just viewed your profile.</p>
+              </div>
+              <div className="p-3 bg-slate-50 rounded-lg border-left transition-all hover:bg-white cursor-pointer" style={{ borderLeftColor: 'var(--success)' }}>
+                <p className="text-xs font-bold text-slate-900 m-0">New Skill Badge</p>
+                <p className="text-[10px] text-slate-500 m-0">You earned "React Pro" badge!</p>
+              </div>
+           </div>
         </div>
-      </footer>
+      </aside>
     </div>
   );
-}
+};
 
 export default Dashboard;
+

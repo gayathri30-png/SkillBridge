@@ -1,25 +1,22 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
 import "./JobDetails.css";
 
-function JobDetails() {
+const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [applying, setApplying] = useState(false);
+  const [proposal, setProposal] = useState("");
 
-  useEffect(() => {
-    fetchJobDetails();
-  }, [id]);
-
-  const fetchJobDetails = async () => {
+  const fetchJobDetails = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:5001/api/jobs/${id}`, {
+      const response = await axios.get(`/api/jobs/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setJob(response.data);
@@ -29,23 +26,28 @@ function JobDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchJobDetails();
+  }, [fetchJobDetails]);
 
   const handleApply = async () => {
+    if (!proposal.trim()) {
+      alert("Please write a proposal first.");
+      return;
+    }
+
     try {
       setApplying(true);
       const token = localStorage.getItem("token");
-      // You'll need to create this endpoint
       await axios.post(
-        `http://localhost:5001/api/applications/apply`,
-        {
-          job_id: id,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        `/api/applications/apply`,
+        { job_id: id, proposal: proposal },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Application submitted successfully!");
+      navigate('/applications');
     } catch (err) {
       alert(err.response?.data?.error || "Failed to apply");
     } finally {
@@ -53,211 +55,116 @@ function JobDetails() {
     }
   };
 
-  const getJobTypeColor = (type) => {
-    const colors = {
-      "Full-time": "#3498db",
-      "Part-time": "#2ecc71",
-      Contract: "#e74c3c",
-      Internship: "#f39c12",
-      Freelance: "#9b59b6",
-    };
-    return colors[type] || "#95a5a6";
-  };
-
-  const getExperienceColor = (level) => {
-    const colors = {
-      Entry: "#2ecc71",
-      Intermediate: "#f39c12",
-      Senior: "#e74c3c",
-      Executive: "#8e44ad",
-    };
-    return colors[level] || "#95a5a6";
-  };
-
-  if (loading) {
-    return (
-      <div className="job-details-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading job details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !job) {
-    return (
-      <div className="job-details-container">
-        <div className="error-container">
-          <div className="error-icon">❌</div>
-          <h3>{error || "Job not found"}</h3>
-          <button className="back-btn" onClick={() => navigate("/jobs")}>
-            ← Back to Jobs
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="job-details-container">
-      <header className="job-details-header">
-        <div className="header-content">
-          <button className="back-btn" onClick={() => navigate("/jobs")}>
-            ← Back to Jobs
-          </button>
-          <h1>Job Details</h1>
-        </div>
-      </header>
-
-      <main className="job-details-main">
-        <div className="job-details-content">
-          <div className="job-header">
-            <div className="job-header-left">
-              <h1 className="job-title">{job.title}</h1>
-              <div className="job-meta">
-                <div className="job-badges">
-                  <span
-                    className="job-type-badge"
-                    style={{ backgroundColor: getJobTypeColor(job.job_type) }}
-                  >
-                    {job.job_type}
-                  </span>
-                  <span
-                    className="job-experience-badge"
-                    style={{
-                      backgroundColor: getExperienceColor(job.experience_level),
-                    }}
-                  >
-                    {job.experience_level}
-                  </span>
-                </div>
-
-                <div className="job-company-info">
-                  <div className="company-name">
-                    <span className="company-icon">🏢</span>
-                    <strong>Posted by:</strong>{" "}
-                    {job.recruiter_name || "Company"}
-                  </div>
-                  <div className="job-location">
-                    <span className="location-icon">📍</span>
-                    {job.location || "Remote"}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="job-header-right">
-              <div className="job-salary">
-                <div className="salary-label">Budget</div>
-                <div className="salary-amount">${job.budget}</div>
-                <div className="salary-period">per project</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="job-details-grid">
-            {/* Main Job Info */}
-            <div className="job-info-section">
-              <h2 className="section-title">Job Description</h2>
-              <div className="job-description">
-                {job.description.split("\n").map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
-                ))}
-              </div>
-
-              <div className="job-requirements">
-                <h3 className="subsection-title">Requirements</h3>
-                <ul className="requirements-list">
-                  <li>Experience level: {job.experience_level}</li>
-                  <li>Job type: {job.job_type}</li>
-                  {job.duration && <li>Duration: {job.duration}</li>}
-                  {job.location && <li>Location: {job.location}</li>}
-                </ul>
-              </div>
-            </div>
-
-            {/* Job Sidebar */}
-            <div className="job-sidebar">
-              <div className="sidebar-card">
-                <h3 className="sidebar-title">Job Overview</h3>
-                <div className="overview-list">
-                  <div className="overview-item">
-                    <span className="overview-label">Job Type</span>
-                    <span className="overview-value">{job.job_type}</span>
-                  </div>
-                  <div className="overview-item">
-                    <span className="overview-label">Experience</span>
-                    <span className="overview-value">
-                      {job.experience_level}
-                    </span>
-                  </div>
-                  <div className="overview-item">
-                    <span className="overview-label">Budget</span>
-                    <span className="overview-value">${job.budget}</span>
-                  </div>
-                  {job.duration && (
-                    <div className="overview-item">
-                      <span className="overview-label">Duration</span>
-                      <span className="overview-value">{job.duration}</span>
-                    </div>
-                  )}
-                  {job.location && (
-                    <div className="overview-item">
-                      <span className="overview-label">Location</span>
-                      <span className="overview-value">{job.location}</span>
-                    </div>
-                  )}
-                  <div className="overview-item">
-                    <span className="overview-label">Posted</span>
-                    <span className="overview-value">
-                      {new Date(job.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="sidebar-card">
-                <h3 className="sidebar-title">Required Skills</h3>
-                <div className="skills-container">
-                  {job.skills && job.skills.length > 0 ? (
-                    <div className="skills-tags">
-                      {job.skills.map((skill, index) => (
-                        <span key={index} className="skill-tag">
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="no-skills">No skills specified</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="sidebar-card">
-                <h3 className="sidebar-title">Apply Now</h3>
-                <div className="apply-section">
-                  <p className="apply-description">
-                    Interested in this position? Submit your application now!
-                  </p>
-                  <button
-                    className="apply-btn"
-                    onClick={handleApply}
-                    disabled={applying}
-                  >
-                    {applying ? "Applying..." : "Apply Now"}
-                  </button>
-                  <p className="apply-note">
-                    Your profile and skills will be shared with the recruiter.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
+  if (loading) return <div className="p-8 text-center text-slate-500">Loading job details...</div>;
+  if (error || !job) return (
+    <div className="p-8 text-center">
+      <h3 className="text-error mb-4">{error || "Job not found"}</h3>
+      <button className="btn btn-primary" onClick={() => navigate("/jobs")}>Back to Jobs</button>
     </div>
   );
-}
+
+  return (
+    <div className="job-details-view fade-in">
+      {/* Back Link */}
+      <button className="back-link-btn mb-6" onClick={() => navigate("/jobs")}>
+         ← Back to Jobs
+      </button>
+
+      <div className="job-details-card card overflow-hidden max-w-4xl mx-auto shadow-xl">
+        {/* Job Hero Header */}
+        <div className="job-hero p-10 bg-slate-900 text-white relative">
+           <div className="relative z-10">
+              <div className="flex gap-2 mb-6">
+                <span className="badge badge-primary">{job.job_type}</span>
+                <span className="badge badge-success bg-opacity-20 border-0">{job.experience_level}</span>
+              </div>
+              <h1 className="text-white text-4xl mb-4">{job.title}</h1>
+              <div className="flex gap-8 text-sm text-slate-400">
+                 <span className="flex items-center gap-2">🏢 {job.recruiter_name || "Premium Partner"}</span>
+                 <span className="flex items-center gap-2">📍 {job.location || "Remote"}</span>
+                 <span className="flex items-center gap-2">🕒 Posted {new Date(job.created_at).toLocaleDateString()}</span>
+              </div>
+           </div>
+           <div className="absolute top-10 right-10 text-right">
+              <p className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-1">Project Budget</p>
+              <h2 className="text-primary text-3xl font-bold">${job.budget}</h2>
+           </div>
+           <div className="absolute right-0 bottom-0 text-9xl leading-none opacity-5 tracking-tighter">JOB</div>
+        </div>
+
+        <div className="p-10 space-y-12">
+           {/* Summary Perks */}
+           <div className="grid grid-cols-3 gap-6 border-bottom pb-10">
+              <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-full bg-primary-soft text-primary flex items-center justify-center text-xl">🚀</div>
+                 <div>
+                    <h5 className="m-0">Fast Apply</h5>
+                    <p className="text-xs text-slate-500 m-0">Apply in 1-click</p>
+                 </div>
+              </div>
+              <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-full bg-success-soft text-success flex items-center justify-center text-xl">🛡️</div>
+                 <div>
+                    <h5 className="m-0">Verified</h5>
+                    <p className="text-xs text-slate-500 m-0">SkillBridge Protected</p>
+                 </div>
+              </div>
+              <div className="flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-full bg-warning-soft text-warning flex items-center justify-center text-xl">💎</div>
+                 <div>
+                    <h5 className="m-0">AI Check</h5>
+                    <p className="text-xs text-slate-500 m-0">High Match Score</p>
+                 </div>
+              </div>
+           </div>
+
+           {/* Description */}
+           <section className="job-description-section">
+              <h3 className="section-title mb-6">Job Description</h3>
+              <div className="prose text-slate-600 leading-relaxed space-y-4">
+                {job.description.split('\n').map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+              </div>
+           </section>
+
+           {/* Skills */}
+           <section>
+              <h3 className="section-title mb-6">Expected Skills</h3>
+              <div className="flex flex-wrap gap-3">
+                 {['React', 'Node.js', 'Typescript', 'System Design'].map(s => (
+                   <span key={s} className="chip chip-info py-2 px-4">{s}</span>
+                 ))}
+              </div>
+           </section>
+
+           {/* Apply Form */}
+           <section className="apply-form-section bg-slate-50 p-8 rounded-2xl border">
+              <h3 className="mb-6">Ready to apply?</h3>
+              <div className="space-y-4">
+                 <label className="text-sm font-bold text-slate-700 block">Why are you a good fit?</label>
+                 <textarea 
+                    className="input-field min-h-[150px] resize-none p-4"
+                    placeholder="Describe your relevant experience and how you can help..."
+                    value={proposal}
+                    onChange={(e) => setProposal(e.target.value)}
+                 ></textarea>
+                 <div className="pt-4 flex justify-end">
+                    <button 
+                      className="btn btn-primary btn-lg px-12"
+                      onClick={handleApply}
+                      disabled={applying || !proposal.trim()}
+                    >
+                      {applying ? "Submitting..." : "Submit Application"}
+                    </button>
+                 </div>
+              </div>
+           </section>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default JobDetails;
+
