@@ -2,9 +2,12 @@
   "name": "skillhire",
   "version": "1.0.0",
   "type": "module",
-  "main": "index.js",
+  "main": "server/index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "node server/index.js",
+    "server": "nodemon server/index.js",
+    "client": "npm start --prefix client",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -15,6 +18,7 @@
     "mysql2": "^3.15.3"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "nodemon": "^3.1.11"
   }
 }
