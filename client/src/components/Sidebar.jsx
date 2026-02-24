@@ -26,9 +26,13 @@ const Sidebar = () => {
       { path: "/my-jobs", label: "My Jobs", icon: "💼" },
     ],
     admin: [
-      { path: "/admin", label: "Dashboard", icon: "📊" },
+      { path: "/admin", label: "Dashboard", icon: "🏠" },
       { path: "/admin/users", label: "Manage Users", icon: "👥" },
-      { path: "/admin/jobs", label: "Manage Jobs", icon: "💼" },
+      { path: "/admin/verify-recruiters", label: "Verify Recruiters", icon: "✅" },
+      { path: "/admin/jobs", label: "Monitor Jobs", icon: "📋" },
+      { path: "/admin/applications", label: "Monitor Applications", icon: "📄" },
+      { path: "/admin/reports", label: "View Reports", icon: "📊" },
+      { path: "/admin/notifications", label: "Notifications", icon: "🔔" },
     ],
   };
 

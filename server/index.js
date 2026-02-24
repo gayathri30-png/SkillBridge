@@ -33,6 +33,9 @@ import skillRoutes from "./routes/skillRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import applicationsRoutes from "./routes/applicationsRoutes.js";
 import jobSkillsRoutes from "./routes/jobSkillsRoutes.js";
+import reportsRoutes from "./routes/reportsRoutes.js";
+import notificationsRoutes from "./routes/notificationsRoutes.js";
+import healthRoutes from "./routes/healthRoutes.js";
 
 app.use("/api/auth", authRoutes);
 app.use("/api/jobs", jobRoutes);
@@ -40,6 +43,9 @@ app.use("/api/skills", skillRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/applications", applicationsRoutes);
 app.use("/api/job-skills", jobSkillsRoutes);
+app.use("/api/reports", reportsRoutes);
+app.use("/api/notifications", notificationsRoutes);
+app.use("/api/health", healthRoutes);
 
 console.log("\n✅ ALL ROUTES MOUNTED:");
 console.log("✅ POST /api/auth/register");

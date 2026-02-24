@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import bcrypt from "bcryptjs";
 
 // GET ALL USERS
 export const getUsers = (req, res) => {
@@ -41,4 +42,25 @@ export const deleteUser = (req, res) => {
 
     res.json({ message: "User deleted successfully" });
   });
+};
+
+// VERIFY USER (Admin only)
+export const verifyUser = (req, res) => {
+  const { id } = req.params;
+  const { is_verified } = req.body;
+
+  db.query(
+    "UPDATE users SET is_verified = ? WHERE id = ?",
+    [is_verified ? 1 : 0, id],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (result.affectedRows === 0)
+        return res.status(404).json({ error: "User not found" });
+
+      res.json({
+        success: true,
+        message: `User verification status updated to ${is_verified}`
+      });
+    }
+  );
 };

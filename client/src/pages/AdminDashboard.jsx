@@ -4,97 +4,153 @@ import { useNavigate } from "react-router-dom";
 import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
-  const [stats, setStats] = useState({
-    users: 0,
-    jobs: 0,
-    applications: 0,
+  const [data, setData] = useState({
+    stats: { users: 0, students: 0, recruiters: 0, jobs: 0, apps: 0, skills: 0 },
+    pendingVerifications: [],
+    recentActivity: []
   });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchStats();
+    fetchData();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchData = async () => {
     try {
       const token = localStorage.getItem("token");
-      const [usersRes, jobsRes, appsRes] = await Promise.all([
-        axios.get("/api/users", {
-            headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get("/api/jobs", {
-            headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get("/api/applications/all", {
-            headers: { Authorization: `Bearer ${token}` }
-        })
+      const [reportsRes, healthRes] = await Promise.all([
+        axios.get("/api/reports", { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get("/api/health", { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
-      setStats({
-        users: usersRes.data.length,
-        jobs: jobsRes.data.length,
-        applications: appsRes.data.count || 0,
+      setData({
+        stats: {
+          users: reportsRes.data.totalUsers?.[0]?.count || 0,
+          students: reportsRes.data.studentCount?.[0]?.count || 0,
+          recruiters: reportsRes.data.recruiterCount?.[0]?.count || 0,
+          jobs: reportsRes.data.totalJobs?.[0]?.count || 0,
+          apps: reportsRes.data.totalApps?.[0]?.count || 0,
+          hired: reportsRes.data.hiredCount?.[0]?.count || 0,
+          skills: reportsRes.data.skillsCount?.[0]?.count || 0
+        },
+        pendingVerifications: reportsRes.data.pendingVerifications || [],
+        recentActivity: reportsRes.data.recentActivity || [],
+        health: healthRes.data
       });
     } catch (error) {
-      console.error("Error fetching admin stats:", error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <div className="p-8 text-slate-500">Loading system stats...</div>;
+  const handleVerify = async (id, status) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(`/api/users/${id}/verify`, { is_verified: status }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchData(); // Refresh list
+    } catch (error) {
+      console.error("Error updating verification:", error);
+    }
+  };
+
+  if (loading) return <div className="p-8 text-slate-500">Loading Admin Dashboard...</div>;
 
   return (
-    <div className="admin-view fade-in p-8">
-      <header className="mb-10">
-        <h1 className="mb-2">Admin Control Center</h1>
-        <p className="text-slate-500">Real-time system oversight and statistics.</p>
-      </header>
+    <div className="admin-dashboard-container">
+      <h2 className="dashboard-title">Admin Dashboard</h2>
 
-      <div className="admin-stats-grid grid-cols-3">
-        <div className="card card-hover p-6 cursor-pointer group" onClick={() => navigate("/admin/users")}>
-          <div className="flex-between mb-4">
-             <div className="w-12 h-12 rounded-lg bg-primary-soft text-primary flex items-center justify-center text-2xl group-hover:bg-primary group-hover:text-white transition-all">👥</div>
-             <span className="text-xs font-bold text-success">+12% vs last month</span>
+      {/* STATS CARDS (6 across) */}
+      <div className="stats-grid-row">
+        {[
+          { label: 'Total Users', value: data.stats.users, color: 'primary' },
+          { label: 'Students', value: data.stats.students, color: 'info' },
+          { label: 'Recruiters', value: data.stats.recruiters, color: 'success' },
+          { label: 'Jobs', value: data.stats.jobs, color: 'warning' },
+          { label: 'Apps', value: data.stats.apps, color: 'danger' },
+          { label: 'Hired', value: data.stats.hired, color: 'secondary' }
+        ].map((stat, i) => (
+          <div key={i} className={`stat-pill ${stat.color}`}>
+            <span className="label text-xs uppercase font-bold">{stat.label}</span>
+            <span className="value text-lg font-bold">{stat.value.toLocaleString()}</span>
           </div>
-          <h4 className="text-slate-500 uppercase tracking-widest text-xs font-bold mb-1">Total Registered Users</h4>
-          <h2 className="text-4xl font-bold m-0">{stats.users}</h2>
+        ))}
+      </div>
+
+      <div className="dashboard-grid-main mt-8">
+        {/* RECENT ACTIVITY TABLE */}
+        <div className="dashboard-section">
+          <h3 className="flex items-center gap-2"><span>🕒</span> Recent Activity</h3>
+          <table className="dashboard-table-mini">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Detail</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.recentActivity.map((activity, i) => (
+                <tr key={i}>
+                  <td className="capitalize font-bold">{activity.type}</td>
+                  <td>{activity.detail}</td>
+                  <td className="text-slate-400 text-xs">{new Date(activity.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
-        <div className="card card-hover p-6 cursor-pointer group" onClick={() => navigate("/admin/jobs")}>
-          <div className="flex-between mb-4">
-             <div className="w-12 h-12 rounded-lg bg-info-soft text-info flex items-center justify-center text-2xl group-hover:bg-info group-hover:text-white transition-all">💼</div>
-             <span className="text-xs font-bold text-slate-400">Stable</span>
+        {/* VERIFICATION QUEUE */}
+        <div className="dashboard-section">
+          <h3 className="flex items-center gap-2"><span>🛡️</span> Verification Queue</h3>
+          <div className="verification-list">
+            {data.pendingVerifications.length > 0 ? data.pendingVerifications.map((item) => (
+              <div key={item.id} className="verification-item">
+                <div className="verification-info">
+                  <h5>{item.name}</h5>
+                  <p>{item.email}</p>
+                </div>
+                <div className="action-btns">
+                  <button className="btn-approve" onClick={() => handleVerify(item.id, true)}>Approve</button>
+                  <button className="btn-reject" onClick={() => handleVerify(item.id, false)}>Reject</button>
+                </div>
+              </div>
+            )) : (
+              <p className="text-slate-400 italic p-4 text-center">No recruiters waiting.</p>
+            )}
           </div>
-          <h4 className="text-slate-500 uppercase tracking-widest text-xs font-bold mb-1">Active Job Listings</h4>
-          <h2 className="text-4xl font-bold m-0">{stats.jobs}</h2>
-        </div>
-
-        <div className="card p-6 group">
-          <div className="flex-between mb-4">
-             <div className="w-12 h-12 rounded-lg bg-success-soft text-success flex items-center justify-center text-2xl group-hover:bg-success group-hover:text-white transition-all">📄</div>
-             <span className="text-xs font-bold text-primary">New Peak</span>
-          </div>
-          <h4 className="text-slate-500 uppercase tracking-widest text-xs font-bold mb-1">Processed Applications</h4>
-          <h2 className="text-4xl font-bold m-0">{stats.applications}</h2>
         </div>
       </div>
 
-      <section className="mt-12 bg-slate-900 rounded-3xl p-10 text-white relative overflow-hidden">
-         <div className="relative z-10 max-w-lg">
-            <h3 className="text-white mb-4">Quick Management</h3>
-            <p className="text-slate-400 mb-8">Directly access user verification logs or audit job postings for compliance.</p>
-            <div className="flex gap-4">
-               <button className="btn btn-primary" onClick={() => navigate('/admin/users')}>Manage Users</button>
-               <button className="btn btn-outline border-white text-white hover:bg-white hover:text-slate-900" onClick={() => navigate('/admin/jobs')}>Audit Jobs</button>
-            </div>
-         </div>
-         <div className="absolute right-[-20px] bottom-[-20px] text-[200px] leading-none opacity-5 font-bold">ADM</div>
+      {/* SYSTEM HEALTH */}
+      <section className="dashboard-section mt-8">
+        <h3>System Health</h3>
+        <div className="health-metrics-row">
+          <div className="health-metric">
+            <span className="dot online"></span>
+            <span className="label">Server Status:</span>
+            <span className="val">{data.health?.api || 'Running'}</span>
+          </div>
+          <div className="health-metric">
+            <span className="label">API Latency:</span>
+            <span className="val">{data.health?.responseTime || '0ms'}</span>
+          </div>
+          <div className="health-metric">
+            <span className="label">Active Errors:</span>
+            <span className="val text-danger">{data.health?.errorCount || 0}</span>
+          </div>
+          <div className="health-metric">
+            <span className="label">Uptime:</span>
+            <span className="val">{data.health?.uptime || '0h'}</span>
+          </div>
+        </div>
       </section>
     </div>
   );
 };
 
 export default AdminDashboard;
-

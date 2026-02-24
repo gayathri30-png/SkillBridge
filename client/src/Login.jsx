@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import "./Auth.css";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -20,181 +23,109 @@ function Login() {
         password,
       });
 
-      // Save to localStorage
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-
-      // Trigger storage event to update App.js or other components
       window.dispatchEvent(new Event("storage"));
 
-      // Role-based redirection
       if (res.data.user.role === "admin") {
         navigate("/admin");
       } else {
         navigate("/dashboard");
       }
     } catch (err) {
-      console.error("❌ Login error:", err);
       setError(err.response?.data?.error || "Login Failed. Please check your credentials.");
       setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Welcome Back</h2>
-        <p style={styles.subtitle}>Login to SkillBridge</p>
+    <div className="auth-page">
+      {/* LEFT SIDE - BRANDING */}
+      <div className="auth-branding">
+        <div className="auth-branding-content">
+          <h1 className="auth-logo">SkillBridge</h1>
+          <p className="auth-tagline">Your bridge to opportunities</p>
 
-        {error && <div style={styles.error}>{error}</div>}
+          <div className="auth-testimonial">
+            <p>"SkillBridge helped me find my dream engineering job in just two weeks. The matching algorithm is truly state-of-the-art."</p>
+            <div className="auth-testimonial-author">— Sarah Chen, Software Engineer</div>
+          </div>
+        </div>
+      </div>
 
-        <form onSubmit={handleLogin} style={styles.form}>
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Email Address</label>
+      {/* RIGHT SIDE - FORM */}
+      <div className="auth-form-container">
+        <div className="auth-form-header">
+          <h2>Welcome Back</h2>
+          <p>Please enter your details to sign in.</p>
+        </div>
+
+        {error && <div className="error-alert mb-6 p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100">{error}</div>}
+
+        <form onSubmit={handleLogin}>
+          <div className="floating-group">
             <input
               type="email"
-              placeholder="name@example.com"
+              className="floating-input"
+              placeholder=" "
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={loading}
-              style={styles.input}
             />
+            <label className="floating-label">Email Address</label>
           </div>
 
-          <div style={styles.inputGroup}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={styles.label}>Password</label>
-              <span 
-                onClick={() => navigate("/forgot-password")} 
-                style={{ ...styles.link, fontSize: '12px' }}
-              >
-                Forgot Password?
-              </span>
-            </div>
+          <div className="floating-group">
             <input
-              type="password"
-              placeholder="••••••••"
+              type={showPassword ? "text" : "password"}
+              className="floating-input"
+              placeholder=" "
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              disabled={loading}
-              style={styles.input}
             />
+            <label className="floating-label">Password</label>
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...styles.button,
-              opacity: loading ? 0.7 : 1,
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
-          >
-            {loading ? "Logging in..." : "Login"}
+          <div className="auth-extras">
+            <label className="checkbox-group">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
+              Remember me
+            </label>
+            <span onClick={() => navigate("/forgot-password")} className="forgot-link cursor-pointer">
+              Forgot Password?
+            </span>
+          </div>
+
+          <button type="submit" className="btn-primary-auth" disabled={loading}>
+            {loading ? "Signing in..." : "Sign In"}
+          </button>
+
+          <div className="auth-divider">or</div>
+
+          <button type="button" className="btn-google">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/0/google.svg" alt="Google" width="18" />
+            Sign in with Google
           </button>
         </form>
 
-        <div style={styles.footer}>
-          <p>
-            Don't have an account?{" "}
-            <span onClick={() => navigate("/register")} style={styles.link}>
-              Create Account
-            </span>
-          </p>
+        <div className="auth-switch">
+          Don't have an account? <span onClick={() => navigate("/register")}>Sign up for free</span>
         </div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f3f4f6", // Light grey background
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-  },
-  card: {
-    width: "100%",
-    maxWidth: "400px",
-    padding: "40px",
-    backgroundColor: "#ffffff",
-    borderRadius: "12px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-  },
-  title: {
-    fontSize: "24px",
-    fontWeight: "600",
-    color: "#111827",
-    textAlign: "center",
-    marginBottom: "8px",
-  },
-  subtitle: {
-    fontSize: "14px",
-    color: "#6b7280",
-    textAlign: "center",
-    marginBottom: "32px",
-  },
-  error: {
-    backgroundColor: "#fef2f2",
-    color: "#991b1b",
-    padding: "12px",
-    borderRadius: "6px",
-    fontSize: "14px",
-    marginBottom: "24px",
-    textAlign: "center",
-    border: "1px solid #fecaca",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
-  inputGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-  label: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#374151",
-  },
-  input: {
-    padding: "10px 12px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "16px",
-    outline: "none",
-    transition: "border-color 0.2s",
-  },
-  button: {
-    backgroundColor: "#4f46e5", // Indigo-600
-    color: "white",
-    padding: "12px",
-    borderRadius: "6px",
-    fontSize: "16px",
-    fontWeight: "500",
-    border: "none",
-    marginTop: "8px",
-    transition: "background-color 0.2s",
-  },
-  footer: {
-    marginTop: "24px",
-    textAlign: "center",
-    fontSize: "14px",
-    color: "#6b7280",
-  },
-  link: {
-    color: "#4f46e5",
-    fontWeight: "500",
-    cursor: "pointer",
-    textDecoration: "none",
-  },
-};
 
 export default Login;

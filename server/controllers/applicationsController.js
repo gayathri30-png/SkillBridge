@@ -299,8 +299,21 @@ export const getSkillGapForJob = (req, res) => {
 // 7. ADMIN: GET ALL APPLICATIONS (FOR DASHBOARD / STATS)
 // --------------------------------
 export const getAllApplications = (req, res) => {
-  db.query("SELECT count(*) as count FROM applications", (err, result) => {
+  const query = `
+    SELECT 
+      a.id,
+      a.status,
+      a.ai_match_score,
+      a.created_at,
+      u.name AS student_name,
+      j.title AS job_title
+    FROM applications a
+    JOIN users u ON a.student_id = u.id
+    JOIN jobs j ON a.job_id = j.id
+    ORDER BY a.created_at DESC
+  `;
+  db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: "Database error" });
-    res.json({ count: result[0].count });
+    res.json(results);
   });
 };

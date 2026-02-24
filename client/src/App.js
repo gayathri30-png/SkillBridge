@@ -30,6 +30,11 @@ import RecruiterApplicants from "./components/RecruiterApplicants";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./components/AdminUsers";
 import AdminJobs from "./components/AdminJobs";
+import AdminApplications from "./components/AdminApplications";
+import AdminNotifications from "./components/AdminNotifications";
+import AdminReports from "./components/AdminReports";
+import AdminSkills from "./components/AdminSkills";
+import AdminSettings from "./components/AdminSettings";
 
 // -------------------------------------
 // 🔐 AUTH GUARD COMPONENT
@@ -194,6 +199,56 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <AdminJobs />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/applications"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AdminApplications />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AdminNotifications />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AdminReports />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/skills"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AdminSkills />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/settings"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <AdminSettings />
               </Layout>
             </ProtectedRoute>
           }
