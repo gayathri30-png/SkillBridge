@@ -1,0 +1,106 @@
+[dotenv@17.2.3] injecting env (10) from server\.env -- tip: ???? add access controls to secrets: https://dotenvx.com/ops
+???? DB Config - Loading environment variables:
+DB_HOST: localhost
+DB_USER: root
+DB_NAME: skillbridge
+[dotenv@17.2.3] injecting env (0) from server\.env -- tip: ??????  load multiple .env files with { path: ['.env.local', '.env'] }
+
+???? ENVIRONMENT CHECK:
+PORT: 5001
+JWT_SECRET: ??? Loaded
+DB_USER: root
+
+??? ALL ROUTES MOUNTED:
+??? POST /api/auth/register
+??? POST /api/auth/login
+??? GET  /api/jobs
+??? GET  /api/skills/all
+??? GET  /api/users
+node : 
+node:events:486
+At line:1 char:1
++ node 
+--trace-uncaught 
+server/index.js 2>&1 
+| Out-File -Encoding 
+ascii ...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (node:ev   
+ ents:486:String)    
+ [], RemoteExcep    
+tion
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+      throw er; // 
+Unhandled 'error' 
+event
+      ^
+
+Error: listen 
+EADDRINUSE: address 
+already in use 
+:::5001
+    at Server.setupLi
+stenHandle [as 
+_listen2] 
+(node:net:1940:16)
+    at 
+listenInCluster 
+(node:net:1997:12)
+    at Server.listen 
+(node:net:2102:7)
+    at file:///D:/Ski
+llBridge/server/index
+.js:187:12
+    at ModuleJob.run 
+(node:internal/module
+s/esm/module_job:377:
+25)
+    at async onImport
+.tracePromise.__proto
+__ (node:internal/mod
+ules/esm/loader:671:2
+6)
+    at async asyncRun
+EntryPointWithESMLoad
+er (node:internal/mod
+ules/run_main:101:5)
+Emitted 'error' 
+event on Server 
+instance at:
+    at emitErrorNT 
+(node:net:1976:8)
+    at process.proces
+sTicksAndRejections (
+node:internal/process
+/task_queues:89:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 5001
+}
+Thrown at:
+    at 
+setupListenHandle 
+(node:net:1940:16)
+    at 
+listenInCluster 
+(node:net:1997:12)
+    at Server.listen 
+(node:net:2102:7)
+    at file:///D:/Ski
+llBridge/server/index
+.js:187:12
+    at run (node:inte
+rnal/modules/esm/modu
+le_job:377:25)
+
+
+Node.js v24.11.1

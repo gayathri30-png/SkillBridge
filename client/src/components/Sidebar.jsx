@@ -1,72 +1,99 @@
-import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import "./Sidebar.css";
+import React from 'react'; // Force recompile
+import { NavLink, useNavigate } from 'react-router-dom';
+import { 
+  Home, 
+  User, 
+  Settings, 
+  LogOut, 
+  Briefcase, 
+  FileText, 
+  MessageSquare, 
+  Sparkles, 
+  Layout,
+  Code,
+  CheckCircle
+} from 'lucide-react';
+import './Sidebar.css';
 
-const Sidebar = () => {
-  const location = useLocation();
+const Sidebar = ({ user }) => {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
-  const role = user?.role || "student";
+
+  const studentLinks = [
+    { title: 'Dashboard', path: '/dashboard', icon: <Home size={20} /> },
+    { title: 'My Profile', path: '/profile', icon: <User size={20} /> },
+    { title: 'My Skills', path: '/skills', icon: <Code size={20} /> },
+    { title: 'My Portfolio', path: '/portfolio', icon: <Layout size={20} /> },
+    { title: 'Find Jobs', path: '/jobs', icon: <Briefcase size={20} /> },
+    { title: 'My Applications', path: '/applications', icon: <FileText size={20} /> },
+    { title: 'Messages', path: '/chat', icon: <MessageSquare size={20} /> },
+    { title: 'AI Hub', path: '/ai', icon: <Sparkles size={20} /> },
+  ];
+
+  const recruiterLinks = [
+    { title: 'Dashboard', path: '/dashboard', icon: <Home size={20} /> },
+    { title: 'Post Job', path: '/post-job', icon: <Briefcase size={20} /> },
+    { title: 'My Jobs', path: '/my-jobs', icon: <FileText size={20} /> },
+    { title: 'Messages', path: '/chat', icon: <MessageSquare size={20} /> },
+    { title: 'AI Hub', path: '/ai', icon: <Sparkles size={20} /> },
+  ];
+
+  const adminLinks = [
+    { title: 'Dashboard', path: '/admin', icon: <Home size={20} /> },
+    { title: 'Users', path: '/admin/users', icon: <User size={20} /> },
+    { title: 'Verify', path: '/admin/verify', icon: <CheckCircle size={20} /> },
+    { title: 'Jobs', path: '/admin/jobs', icon: <Briefcase size={20} /> },
+    { title: 'Applications', path: '/admin/applications', icon: <FileText size={20} /> },
+    { title: 'Reports', path: '/admin/reports', icon: <Layout size={20} /> },
+    { title: 'AI Workspace', path: '/ai', icon: <Sparkles size={20} /> },
+  ];
+
+  let navLinks = studentLinks;
+  if (user?.role === 'recruiter') navLinks = recruiterLinks;
+  if (user?.role === 'admin') navLinks = adminLinks;
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
   };
-
-  const menuItems = {
-    student: [
-      { path: "/dashboard", label: "Dashboard", icon: "📊" },
-      { path: "/skills", label: "My Skills", icon: "💼" },
-      { path: "/jobs", label: "Find Jobs", icon: "🔍" },
-      { path: "/applications", label: "Applications", icon: "📄" },
-    ],
-    recruiter: [
-      { path: "/dashboard", label: "Dashboard", icon: "📊" },
-      { path: "/post-job", label: "Post a Job", icon: "📝" },
-      { path: "/my-jobs", label: "My Jobs", icon: "💼" },
-    ],
-    admin: [
-      { path: "/admin", label: "Dashboard", icon: "📊" },
-      { path: "/admin/users", label: "Manage Users", icon: "👥" },
-      { path: "/admin/jobs", label: "Manage Jobs", icon: "💼" },
-    ],
-  };
-
-  const currentItems = menuItems[role] || [];
 
   return (
-    <aside className="sidebar shadow-md">
-      <div className="sidebar-branding">
-        <h2 className="sidebar-logo">SkillBridge</h2>
-        <span className="logo-dot">.</span>
+    <div className="sidebar-container">
+      {/* 1. Logo */}
+      <div className="sidebar-logo">
+        <Sparkles size={24} className="text-[#0057D9]" fill="currentColor" />
+        <span className="logo-text">SkillBridge</span>
       </div>
 
+
+      {/* 3. Navigation Links */}
       <nav className="sidebar-nav">
-        <div className="nav-section-label">Main Menu</div>
-        {currentItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`sidebar-item ${location.pathname === item.path ? "active" : ""}`}
+        {navLinks.map((link, index) => (
+          <NavLink
+            key={index}
+            to={link.path}
+            className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
           >
-            <span className="nav-icon">{item.icon}</span>
-            <span className="nav-label">{item.label}</span>
-          </Link>
+            <span className="nav-icon">{link.icon}</span>
+            <span className="nav-title">{link.title}</span>
+            {link.badge && <span className="nav-badge">{link.badge}</span>}
+          </NavLink>
         ))}
       </nav>
 
+      {/* 4. Footer Actions */}
       <div className="sidebar-footer">
-        <div className="sidebar-logout-card" onClick={handleLogout}>
-          <div className="logout-icon-bg">🚪</div>
-          <div className="logout-text">
-            <span className="logout-title">Logout</span>
-            <span className="logout-subtitle">See you soon!</span>
-          </div>
-        </div>
+        <button className="nav-link w-full text-left" onClick={() => navigate('/settings')}>
+          <span className="nav-icon"><Settings size={20} /></span>
+          <span className="nav-title">Settings</span>
+        </button>
+        <button className="nav-link logout-btn w-full text-left" onClick={handleLogout}>
+          <span className="nav-icon"><LogOut size={20} /></span>
+          <span className="nav-title">Logout</span>
+        </button>
       </div>
-    </aside>
+    </div>
   );
 };
 
 export default Sidebar;
-

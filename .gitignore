@@ -7,3 +7,4 @@ client/.env.development.bak
 # dependencies
 node_modules/
 package-lock.json
+node_modules

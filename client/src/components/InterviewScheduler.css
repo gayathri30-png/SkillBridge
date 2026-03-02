@@ -1,0 +1,249 @@
+.scheduler-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(16px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+}
+
+.scheduler-container {
+    background: #ffffff;
+    width: 95%;
+    max-width: 1200px;
+    height: 85vh;
+    border-radius: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.scheduler-header {
+    padding: 2rem 3rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.scheduler-header h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.scheduler-layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    overflow: hidden;
+}
+
+/* Left Pane: Calendar & Slots */
+.scheduler-left {
+    padding: 3rem;
+    overflow-y: auto;
+    border-right: 1px solid #f1f5f9;
+}
+
+.calendar-mock {
+    background: #f8fafc;
+    border-radius: 2rem;
+    padding: 2rem;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 3rem;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.calendar-header h3 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.calendar-day.active {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
+}
+
+.calendar-day.suggested {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    font-weight: 700;
+    border: 1px dashed #3b82f6;
+}
+
+.slots-section h4 {
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.time-slots {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.time-slot {
+    padding: 1.25rem;
+    border-radius: 1.25rem;
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.time-slot:hover {
+    border-color: #3b82f6;
+    background: #f8fafc;
+}
+
+.time-slot.selected {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.time-slot.ai-recommended {
+    border-color: #60a5fa;
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.slot-time {
+    font-weight: 700;
+}
+
+.slot-reason {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+/* Right Pane: AI Insights & Preview */
+.scheduler-right {
+    background: #f8fafc;
+    padding: 3rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.ai-briefing-card {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.ai-briefing-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #0f172a;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.briefing-item {
+    padding: 1rem;
+    background: #f1f5f9;
+    border-radius: 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+    color: #475569;
+}
+
+.email-preview-card {
+    background: #ffffff;
+    border-radius: 1.5rem;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.preview-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.preview-body {
+    padding: 1.5rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: #334155;
+    line-height: 1.6;
+    flex: 1;
+}
+
+.preview-footer {
+    padding: 1.5rem;
+    background: #f8fafc;
+    border-radius: 0 0 1.5rem 1.5rem;
+}
+
+.btn-schedule {
+    width: 100%;
+    padding: 1rem;
+    background: #3b82f6;
+    color: white;
+    border-radius: 1rem;
+    font-weight: 700;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.btn-schedule:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
+}

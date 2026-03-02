@@ -1,0 +1,224 @@
+.skills-manager-v2 {
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: var(--font-sans);
+}
+
+.skills-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.skills-manager-header h1 {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #0057D9 0%, #00C6FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.skills-grid-wrapper {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 32px;
+}
+
+.skills-card-v2 {
+  background: white;
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.skills-card-v2 h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skill-list-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.skill-pill-v2 {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.skill-pill-v2:hover {
+  transform: translateY(-4px);
+  border-color: #0057D9;
+  box-shadow: 0 12px 24px rgba(0, 87, 217, 0.1);
+}
+
+.skill-pill-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.skill-pill-header h4 {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #0f172a;
+}
+
+.skill-meta-tags {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.skill-tag-v2 {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.skill-tag-v2.beginner { background: #eff6ff; color: #1d4ed8; }
+.skill-tag-v2.intermediate { background: #faf5ff; color: #7e22ce; }
+.skill-tag-v2.advanced { background: #f0fdf4; color: #15803d; }
+
+.skill-exp-v2 {
+  font-size: 0.8rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.skill-delete-btn {
+  background: #fff1f2;
+  color: #e11d48;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.skill-pill-v2:hover .skill-delete-btn {
+  opacity: 1;
+}
+
+.skill-delete-btn:hover {
+  background: #e11d48;
+  color: white;
+}
+
+.search-section-v2 {
+  position: sticky;
+  top: 40px;
+}
+
+.search-input-wrapper-v2 {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.search-input-wrapper-v2 input {
+  width: 100%;
+  padding: 16px 20px 16px 48px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.search-input-wrapper-v2 input:focus {
+  background: white;
+  border-color: #0057D9;
+  box-shadow: 0 0 0 4px rgba(0, 87, 217, 0.08);
+}
+
+.search-icon-v2 {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.available-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.available-pills::-webkit-scrollbar {
+  width: 6px;
+}
+
+.available-pills::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+.add-pill-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-pill-btn:hover {
+  border-color: #0057D9;
+  background: #f0f7ff;
+  transform: translateX(4px);
+}
+
+.add-pill-btn span:first-child {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.add-pill-btn .plus-icon {
+  color: #0057D9;
+  background: #eff6ff;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+@media (max-width: 1024px) {
+  .skills-grid-wrapper {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,113 @@
+.project-modal {
+  max-width: 560px !important;
+}
+
+.tags-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  min-height: 48px;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.tags-input-container:focus-within {
+  border-color: #0057D9;
+  box-shadow: 0 0 0 4px rgba(0, 87, 217, 0.08);
+  background: white;
+}
+
+.tag-chip {
+  background: #e0f2fe;
+  color: #0057D9;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag-chip button {
+  background: transparent;
+  border: none;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tags-input-container input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 4px !important;
+  flex: 1;
+  min-width: 120px;
+  font-size: 0.875rem !important;
+}
+
+.image-upload-dropzone {
+  width: 100%;
+  height: 160px;
+  border: 2px dashed #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.2s;
+}
+
+.image-upload-dropzone:hover {
+  border-color: #0057D9;
+  background: #f8fafc;
+}
+
+.dropzone-label {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropzone-label .placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-body-v2 textarea {
+  width: 100%;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 0.2s;
+  resize: vertical;
+}
+
+.modal-body-v2 textarea:focus {
+  background: white;
+  border-color: #0057D9;
+  box-shadow: 0 0 0 4px rgba(0, 87, 217, 0.08);
+}

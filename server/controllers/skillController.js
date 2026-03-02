@@ -25,7 +25,9 @@ export const getMySkills = (req, res) => {
       us.id,
       s.id AS skill_id,
       s.name,
-      us.proficiency
+      us.proficiency,
+      us.endorsements,
+      us.years_of_experience
     FROM user_skills us
     JOIN skills s ON us.skill_id = s.id
     WHERE us.user_id = ?
@@ -43,7 +45,7 @@ export const getMySkills = (req, res) => {
 // --------------------------------
 export const addSkill = (req, res) => {
   const userId = req.user.id;
-  const { skillId, proficiency } = req.body;
+  const { skillId, proficiency, years_of_experience } = req.body;
 
   if (!skillId) {
     return res.status(400).json({ error: "skillId is required" });
@@ -78,10 +80,10 @@ export const addSkill = (req, res) => {
           // 3. Insert
           db.query(
             `
-            INSERT INTO user_skills (user_id, skill_id, proficiency)
-            VALUES (?, ?, ?)
+            INSERT INTO user_skills (user_id, skill_id, proficiency, years_of_experience)
+            VALUES (?, ?, ?, ?)
             `,
-            [userId, skillId, safeProficiency],
+            [userId, skillId, safeProficiency, years_of_experience || 0],
             (err, result) => {
               if (err) return res.status(500).json({ error: "Database error" });
 

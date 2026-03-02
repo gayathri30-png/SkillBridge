@@ -199,6 +199,24 @@ export const login = (req, res) => {
 };
 
 // =======================
+// GET CURRENT USER (/me)
+// =======================
+export const getMe = (req, res) => {
+  // If we reach here, protect middleware has already verified the token
+  // and attached decoed user to req.user
+  db.query("SELECT id, name, email, role FROM users WHERE id = ?", [req.user.id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (results.length === 0) return res.status(404).json({ error: "User not found" });
+
+    res.json({
+      success: true,
+      user: results[0]
+    });
+  });
+};
+
+
+// =======================
 // JWT CONFIG TEST
 // =======================
 export const testJWTConfig = (req, res) => {

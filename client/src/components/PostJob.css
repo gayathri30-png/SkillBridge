@@ -8,20 +8,20 @@
 .post-job-header {
   background-color: var(--bg-surface);
   padding: 30px 40px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
   margin-bottom: 40px;
 }
 
 .header-content {
-  max-width: 1200px;
+  max-width: 1400px; /* Aligned with Dashboard */
   margin: 0 auto;
 }
 
 .back-btn {
   background-color: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
+  color: var(--slate-500);
+  border: 1px solid var(--border-light);
   padding: 8px 16px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -33,30 +33,31 @@
 
 .back-btn:hover {
   background-color: var(--bg-body);
-  color: var(--text-main);
-  border-color: var(--text-secondary);
+  color: var(--slate-900);
+  border-color: var(--slate-400);
 }
 
 .header-content h1 {
-  color: var(--text-main);
+  color: var(--slate-900);
   margin: 0 0 8px 0;
   font-size: 2rem;
   font-weight: 700;
+  font-family: 'Outfit', sans-serif;
 }
 
 .header-subtitle {
-  color: var(--text-secondary);
+  color: var(--slate-500);
   margin: 0;
   font-size: 1rem;
 }
 
 .post-job-main {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 40px;
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 30px;
+  gap: 32px;
 }
 
 /* Form Styling */
@@ -69,22 +70,23 @@
 .form-section {
   background-color: var(--bg-surface);
   padding: 30px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-light);
 }
 
 .section-title {
-  color: var(--text-main);
+  color: var(--slate-900);
   margin: 0 0 16px 0;
   font-size: 1.25rem;
-  font-weight: 600;
+  font-weight: 700;
   padding-bottom: 12px;
-  border-bottom: 2px solid var(--primary-light);
+  border-bottom: 2px solid var(--primary-soft);
+  font-family: 'Outfit', sans-serif;
 }
 
 .section-subtitle {
-  color: var(--text-secondary);
+  color: var(--slate-500);
   margin: 0 0 20px 0;
   font-size: 0.95rem;
 }
@@ -96,7 +98,7 @@
 .form-group label {
   display: block;
   margin-bottom: 8px;
-  color: var(--text-main);
+  color: var(--slate-700);
   font-weight: 600;
   font-size: 0.95rem;
 }
@@ -111,13 +113,13 @@
 .form-group textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-main);
   border-radius: var(--radius-sm);
-  font-family: inherit;
+  font-family: 'DM Sans', sans-serif;
   font-size: 0.95rem;
   transition: all 0.2s;
   background-color: var(--bg-surface);
-  color: var(--text-main);
+  color: var(--slate-900);
 }
 
 .form-group input:focus,
@@ -125,18 +127,13 @@
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-light);
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
 
 .form-group input.error,
 .form-group textarea.error {
   border-color: var(--error);
   background-color: #fef2f2;
-}
-
-.form-group input.error:focus,
-.form-group textarea.error:focus {
-  box-shadow: 0 0 0 3px #fee2e2;
 }
 
 .error-message {
@@ -147,7 +144,7 @@
 }
 
 .hint {
-  color: var(--text-secondary);
+  color: var(--slate-400);
   font-size: 0.85rem;
   margin-top: 6px;
   display: block;
@@ -167,7 +164,7 @@
 .loading-skills {
   text-align: center;
   padding: 30px;
-  color: var(--text-secondary);
+  color: var(--slate-400);
   font-style: italic;
 }
 
@@ -183,24 +180,24 @@
   padding: 8px 16px;
   border-radius: 20px;
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: var(--slate-600);
   cursor: pointer;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-light);
   transition: all 0.2s;
   position: relative;
   font-weight: 500;
 }
 
 .skill-chip:hover {
-  background-color: #e5e7eb;
-  color: var(--text-main);
+  background-color: var(--slate-100);
+  color: var(--slate-900);
 }
 
 .skill-chip.selected {
   background-color: var(--primary);
   color: white;
   border-color: var(--primary);
-  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .checkmark {
@@ -211,11 +208,11 @@
 .selected-skills {
   margin-top: 24px;
   padding-top: 20px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--border-light);
 }
 
 .selected-skills h4 {
-  color: var(--text-main);
+  color: var(--slate-800);
   margin: 0 0 12px 0;
   font-size: 1rem;
   font-weight: 600;
@@ -252,10 +249,6 @@
   justify-content: center;
 }
 
-.remove-skill:hover {
-  opacity: 0.7;
-}
-
 /* Form Actions */
 .form-actions {
   display: flex;
@@ -278,13 +271,13 @@
 
 .cancel-btn {
   background-color: var(--bg-body);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
+  color: var(--slate-500);
+  border: 1px solid var(--border-main);
 }
 
 .cancel-btn:hover:not(:disabled) {
-  background-color: #e5e7eb;
-  color: var(--text-main);
+  background-color: var(--slate-200);
+  color: var(--slate-900);
 }
 
 .submit-btn {
@@ -303,11 +296,9 @@
   box-shadow: var(--shadow-md);
 }
 
-.submit-btn:disabled,
-.cancel-btn:disabled {
-  opacity: 0.6;
+.submit-btn:disabled {
+  background-color: var(--slate-300);
   cursor: not-allowed;
-  transform: none !important;
 }
 
 .spinner {
@@ -332,11 +323,11 @@
 }
 
 .preview-card {
-  background-color: var(--bg-surface);
+  background-color: white;
   padding: 24px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-light);
 }
 
 .preview-header {
@@ -344,16 +335,43 @@
 }
 
 .preview-header h3 {
-  color: var(--text-main);
+  color: var(--slate-900);
   margin: 0 0 12px 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 800;
   line-height: 1.3;
+  letter-spacing: -0.02em;
 }
 
 .preview-badges {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.preview-badges .badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-badges .badge-primary {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.preview-badges .badge-gray {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
 .preview-details {
@@ -362,60 +380,37 @@
   gap: 16px;
   margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--border-light);
 }
 
 .preview-detail {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--text-secondary);
+  color: var(--slate-500);
   font-size: 0.9rem;
   background-color: var(--bg-body);
   padding: 4px 10px;
   border-radius: 4px;
 }
 
-.detail-icon {
-  font-size: 1rem;
-}
-
-.preview-description {
-  margin-bottom: 24px;
-}
-
 .preview-description h4 {
-  color: var(--text-main);
+  color: var(--slate-900);
   margin: 0 0 8px 0;
   font-size: 1rem;
   font-weight: 600;
 }
 
 .preview-description p {
-  color: var(--text-secondary);
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  max-height: 200px;
-  overflow-y: auto;
-  white-space: pre-wrap;
+  color: var(--slate-600);
 }
 
 .preview-skills h4 {
-  color: var(--text-main);
-  margin: 0 0 10px 0;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.preview-skills-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  color: var(--slate-900);
 }
 
 .preview-skill-tag {
-  background-color: var(--primary-light);
+  background-color: var(--primary-soft);
   color: var(--primary);
   padding: 4px 10px;
   border-radius: 20px;
@@ -427,36 +422,10 @@
 @media (max-width: 900px) {
   .post-job-main {
     grid-template-columns: 1fr;
+    padding: 0 20px;
   }
 
   .preview-section {
     position: static;
-  }
-}
-
-@media (max-width: 768px) {
-  .post-job-header {
-    padding: 24px;
-  }
-
-  .header-content h1 {
-    font-size: 1.75rem;
-  }
-
-  .form-section {
-    padding: 20px;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .cancel-btn,
-  .submit-btn {
-    width: 100%;
   }
 }

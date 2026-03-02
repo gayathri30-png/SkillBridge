@@ -1,13 +1,16 @@
-
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { motion } from "framer-motion";
+import { Mail, ArrowRight, Zap, ShieldCheck, ChevronLeft } from "lucide-react";
+import "../AuthPages.css";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,7 +19,7 @@ const ForgotPassword = () => {
     setError('');
 
     try {
-      const { data } = await axios.post('http://localhost:5001/api/auth/forgot-password', { email });
+      const { data } = await axios.post('/api/auth/forgot-password', { email });
       if (data.success) {
         setMessage('Password reset link sent to your email.');
       }
@@ -28,56 +31,90 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
-          Forgot your password?
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-500">
-          Enter your email address and we'll send you a link to reset your password.
-        </p>
-      </div>
-
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-              Email address
-            </label>
-            <div className="mt-2">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6 pl-2"
-              />
+    <div className="auth-page-wrapper">
+      {/* Branding Side */}
+      <motion.div 
+        className="auth-branding-side"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      >
+        <div className="auth-logo-container">
+          <div className="auth-logo">
+            <div className="logo-icon">
+              <Zap size={24} color="white" fill="white" />
             </div>
+            <span>SkillBridge</span>
           </div>
+        </div>
+        <div className="auth-branding-content">
+          <h1 className="auth-branding-title">Secure your professional bridge.</h1>
+          <p className="auth-branding-tagline">
+            We use industry-standard encryption to ensure your data and access remain protected at all times.
+          </p>
+        </div>
+      </motion.div>
 
-          {message && <div className="text-sm text-green-600">{message}</div>}
-          {error && <div className="text-sm text-red-600">{error}</div>}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:bg-indigo-400"
+      {/* Form Side */}
+      <div className="auth-form-side">
+        <motion.div 
+          className="auth-form-container"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          <div className="mb-8">
+            <button 
+              onClick={() => navigate("/login")}
+              className="flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors"
             >
-              {loading ? 'Sending...' : 'Send Reset Link'}
+              <ChevronLeft size={16} /> Back to Login
             </button>
           </div>
-        </form>
 
-        <p className="mt-10 text-center text-sm text-gray-500">
-          Remembered your password?{' '}
-          <Link to="/login" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
-            Sign in
-          </Link>
-        </p>
+          <div className="auth-form-header">
+            <h2>Forgot Password?</h2>
+            <p>Enter your email and we'll send a secure reset link.</p>
+          </div>
+
+          {message && (
+            <div className="auth-alert bg-green-50 text-green-600 border border-green-100">
+               <ShieldCheck size={18} /> {message}
+            </div>
+          )}
+          {error && (
+            <div className="auth-alert error">
+               <ShieldCheck size={18} /> {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="floating-group">
+              <input 
+                type="email" 
+                className="floating-input"
+                placeholder=" "
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <label className="floating-label">Email Address</label>
+              <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+            </div>
+
+            <button 
+              type="submit" 
+              className="auth-btn-primary"
+              disabled={loading}
+            >
+              {loading ? "Sending link..." : (
+                <>
+                  Send Reset Link <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </form>
+        </motion.div>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import { createNotification } from "./notificationController.js";
 
 // --------------------------------
 // 1. STUDENT APPLY TO JOB (WITH AI MATCH SCORE)
@@ -13,7 +14,7 @@ export const applyToJob = (req, res) => {
 
   // 0. Check job exists and is open
   db.query(
-    "SELECT id, status FROM jobs WHERE id = ?",
+    "SELECT id, status, posted_by, title FROM jobs WHERE id = ?",
     [job_id],
     (err, jobs) => {
       if (err) return res.status(500).json({ error: "Database error" });
@@ -81,6 +82,17 @@ export const applyToJob = (req, res) => {
                   if (err)
                     return res.status(500).json({ error: "Insert failed" });
 
+                  // NOTIFY RECRUITER
+                  const recruiterId = jobs[0].posted_by;
+                  const jobTitle = jobs[0].title;
+                  createNotification(
+                      recruiterId, 
+                      'application', 
+                      `New application for ${jobTitle}`,
+                      job_id
+                  ).catch(console.error);
+
+
                   res.status(201).json({
                     success: true,
                     message: "Application submitted",
@@ -113,7 +125,11 @@ export const getJobApplications = (req, res) => {
       a.created_at,
       u.id AS student_id,
       u.name AS student_name,
-      u.email AS student_email
+      u.email AS student_email,
+      (SELECT GROUP_CONCAT(s.name) 
+       FROM user_skills us 
+       JOIN skills s ON us.skill_id = s.id 
+       WHERE us.user_id = u.id) as student_skills
     FROM applications a
     JOIN users u ON a.student_id = u.id
     JOIN jobs j ON a.job_id = j.id
@@ -144,12 +160,17 @@ export const getStudentApplications = (req, res) => {
       a.status,
       a.ai_match_score,
       a.created_at,
-      j.title,
+      j.id AS job_id,
+      j.title AS job_title,
       j.job_type,
       j.budget,
-      j.experience_level
+      j.experience_level,
+      j.location,
+      j.description AS job_description,
+      u.name AS company_name
     FROM applications a
     JOIN jobs j ON a.job_id = j.id
+    JOIN users u ON j.posted_by = u.id
     WHERE a.student_id = ?
     ORDER BY a.created_at DESC
     `,
@@ -166,24 +187,37 @@ export const getStudentApplications = (req, res) => {
 // --------------------------------
 export const updateStatus = (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
+  const { status, hiringDetails } = req.body;
   const recruiter_id = req.user.id;
 
-  const allowedStatus = ["pending", "accepted", "rejected"];
+  const allowedStatus = ["pending", "accepted", "rejected", "hired"];
   if (!allowedStatus.includes(status)) {
     return res.status(400).json({ error: "Invalid status value" });
   }
 
   // SECURITY: recruiter can update ONLY their job’s applications
-  db.query(
-    `
+  let query = `
     UPDATE applications a
     JOIN jobs j ON a.job_id = j.id
     SET a.status = ?
-    WHERE a.id = ? AND j.posted_by = ?
-    `,
-    [status, id, recruiter_id],
-    (err, result) => {
+  `;
+  let params = [status];
+
+  if (status === 'hired' && hiringDetails) {
+    query += `, a.start_date = ?, a.salary = ?, a.contract_type = ?, a.offer_letter = ?, a.additional_notes = ?, a.hired_at = NOW()`;
+    params.push(
+      hiringDetails.start_date,
+      hiringDetails.salary,
+      hiringDetails.contract_type,
+      hiringDetails.offer_letter,
+      hiringDetails.additional_notes
+    );
+  }
+
+  query += ` WHERE a.id = ? AND j.posted_by = ?`;
+  params.push(id, recruiter_id);
+
+  db.query(query, params, (err, result) => {
       if (err) return res.status(500).json({ error: "Database error" });
 
       if (result.affectedRows === 0) {
@@ -191,6 +225,29 @@ export const updateStatus = (req, res) => {
           error: "Application not found or not authorized",
         });
       }
+
+      // NOTIFY STUDENT
+      // We need to fetch student_id first to notify them. 
+      // The update query doesn't return the record.
+      // Optimization: We can do this async or fetch before update.
+      // Let's just fetch student_id from application first or use a subquery if we were using raw SQL for insert.
+      // Since we already did the update, let's fetch the application details to notify.
+      db.query("SELECT student_id, job_id FROM applications WHERE id = ?", [id], (err, appRows) => {
+          if(!err && appRows.length > 0) {
+              const studentId = appRows[0].student_id;
+              const jobId = appRows[0].job_id;
+              
+              db.query("SELECT title FROM jobs WHERE id = ?", [jobId], (err, jobRows) => {
+                  const jobTitle = jobRows[0]?.title || "Job";
+                  createNotification(
+                      studentId,
+                      'status_update',
+                      `Your application for ${jobTitle} was ${status}`,
+                      jobId
+                  ).catch(console.error);
+              });
+          }
+      });
 
       res.json({
         success: true,
@@ -216,7 +273,11 @@ export const getJobApplicantsSorted = (req, res) => {
 
       u.id AS student_id,
       u.name AS student_name,
-      u.email AS student_email
+      u.email AS student_email,
+      (SELECT GROUP_CONCAT(s.name) 
+       FROM user_skills us 
+       JOIN skills s ON us.skill_id = s.id 
+       WHERE us.user_id = u.id) as student_skills
 
     FROM applications a
     JOIN users u ON a.student_id = u.id
@@ -299,8 +360,132 @@ export const getSkillGapForJob = (req, res) => {
 // 7. ADMIN: GET ALL APPLICATIONS (FOR DASHBOARD / STATS)
 // --------------------------------
 export const getAllApplications = (req, res) => {
-  db.query("SELECT count(*) as count FROM applications", (err, result) => {
+  const query = `
+    SELECT 
+      a.id,
+      a.status,
+      a.ai_match_score,
+      a.created_at,
+      j.title AS job_title,
+      u.name AS student_name,
+      r.name AS recruiter_name
+    FROM applications a
+    JOIN jobs j ON a.job_id = j.id
+    JOIN users u ON a.student_id = u.id
+    JOIN users r ON j.posted_by = r.id
+    ORDER BY a.created_at DESC
+  `;
+
+  db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: "Database error" });
-    res.json({ count: result[0].count });
+    res.json(results);
   });
+};
+
+// --------------------------------
+// 8. STUDENT: WITHDRAW APPLICATION
+// --------------------------------
+export const withdrawApplication = (req, res) => {
+  const { id } = req.params;
+  const student_id = req.user.id;
+
+  // Security: Students can only delete their own PENDING applications
+  db.query(
+    "DELETE FROM applications WHERE id = ? AND student_id = ? AND status = 'pending'",
+    [id, student_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          error: "Application not found, not authorized, or already processed by recruiter",
+        });
+      }
+
+      res.json({
+        success: true,
+        message: "Application withdrawn successfully",
+      });
+    }
+  );
+};
+
+// --------------------------------
+// 9. STUDENT: ACCEPT OFFER
+// --------------------------------
+export const acceptOffer = (req, res) => {
+  const { id } = req.params;
+  const student_id = req.user.id;
+
+  db.query(
+    `UPDATE applications SET is_offer_accepted = TRUE, offer_accepted_at = NOW() WHERE id = ? AND student_id = ? AND status = 'hired'`,
+    [id, student_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      if (result.affectedRows === 0)
+        return res
+          .status(404)
+          .json({ error: "Offer not found or already processed" });
+
+      // Notify Recruiter
+      db.query(
+        "SELECT job_id FROM applications WHERE id = ?",
+        [id],
+        (err, rows) => {
+          if (!err && rows.length > 0) {
+            const jobId = rows[0].job_id;
+            db.query(
+              "SELECT posted_by, title FROM jobs WHERE id = ?",
+              [jobId],
+              (err, job) => {
+                if (!err && job.length > 0) {
+                  createNotification(
+                    job[0].posted_by,
+                    "offer_accepted",
+                    `Offer for ${job[0].title} was accepted!`,
+                    jobId
+                  ).catch(console.error);
+                }
+              },
+            );
+          }
+        },
+      );
+
+      res.json({ success: true, message: "Offer accepted successfully" });
+    },
+  );
+};
+
+// --------------------------------
+// 10. GET OFFER DETAILS (FOR STUDENT OR RECRUITER)
+// --------------------------------
+export const getOfferDetails = (req, res) => {
+  const { id } = req.params;
+  const user_id = req.user.id;
+
+  db.query(
+    `
+        SELECT 
+            a.*, 
+            j.title as job_title, 
+            j.budget as job_budget,
+            j.job_type as job_type,
+            u.name as recruiter_name,
+            u.email as recruiter_email,
+            s.name as student_name
+        FROM applications a
+        JOIN jobs j ON a.job_id = j.id
+        JOIN users u ON j.posted_by = u.id
+        JOIN users s ON a.student_id = s.id
+        WHERE a.id = ? AND (a.student_id = ? OR j.posted_by = ?)
+        `,
+    [id, user_id, user_id],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+      if (results.length === 0)
+        return res.status(404).json({ error: "Offer details not found" });
+      res.json(results[0]);
+    },
+  );
 };

@@ -1,12 +1,21 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { 
+  Eye, EyeOff, Mail, Lock, Check, 
+  ArrowRight, Github, Globe, MessageSquare,
+  Award, Zap, ShieldCheck
+} from "lucide-react";
+import "./AuthPages.css";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -20,14 +29,10 @@ function Login() {
         password,
       });
 
-      // Save to localStorage
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-
-      // Trigger storage event to update App.js or other components
       window.dispatchEvent(new Event("storage"));
 
-      // Role-based redirection
       if (res.data.user.role === "admin") {
         navigate("/admin");
       } else {
@@ -41,160 +46,157 @@ function Login() {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Welcome Back</h2>
-        <p style={styles.subtitle}>Login to SkillBridge</p>
-
-        {error && <div style={styles.error}>{error}</div>}
-
-        <form onSubmit={handleLogin} style={styles.form}>
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Email Address</label>
-            <input
-              type="email"
-              placeholder="name@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={loading}
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label style={styles.label}>Password</label>
-              <span 
-                onClick={() => navigate("/forgot-password")} 
-                style={{ ...styles.link, fontSize: '12px' }}
-              >
-                Forgot Password?
-              </span>
+    <div className="auth-page-wrapper">
+      {/* --- Left Branding Side --- */}
+      <motion.div 
+        className="auth-branding-side"
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+      >
+        <div className="auth-logo-container">
+          <div className="auth-logo">
+            <div className="logo-icon">
+              <Zap size={24} color="white" fill="white" />
             </div>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-              style={styles.input}
-            />
+            <span>SkillBridge</span>
+          </div>
+        </div>
+
+        <div className="auth-branding-content">
+          <h1 className="auth-branding-title">Connect to your professional future.</h1>
+          <p className="auth-branding-tagline">
+            SkillBridge is your intelligent bridge connecting top student talent to exclusive industry opportunities.
+          </p>
+
+          <div className="auth-illustration-box">
+             {/* Abstract CSS Bridge Graphic */}
+             <div className="relative w-full h-64 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-3xl overflow-hidden border border-white/10 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center opacity-50">
+                   <div className="w-64 h-64 border-2 border-blue-500/30 rounded-full animate-ping"></div>
+                </div>
+                <div className="z-10 text-center">
+                   <div className="text-6xl mb-4">🌉</div>
+                   <div className="text-sm font-bold tracking-widest text-blue-400 uppercase">Seamless Connectivity</div>
+                </div>
+             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              ...styles.button,
-              opacity: loading ? 0.7 : 1,
-              cursor: loading ? "not-allowed" : "pointer",
-            }}
+          <motion.div 
+            className="auth-testimonial"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
           >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-        </form>
-
-        <div style={styles.footer}>
-          <p>
-            Don't have an account?{" "}
-            <span onClick={() => navigate("/register")} style={styles.link}>
-              Create Account
-            </span>
-          </p>
+            <p className="testimonial-text">
+              "SkillBridge didn't just find me an internship; it matched me with a role that perfectly aligned with my specific tech stack and career goals."
+            </p>
+            <div className="testimonial-author">
+              <div className="author-avatar flex items-center justify-center text-xs font-bold text-slate-400">SR</div>
+              <div className="author-info">
+                <h4>Sarah Richards</h4>
+                <p>Full-Stack Developer @ FinTech flow</p>
+              </div>
+            </div>
+          </motion.div>
         </div>
+      </motion.div>
+
+      {/* --- Right Form Side --- */}
+      <div className="auth-form-side">
+        <motion.div 
+          className="auth-form-container"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          <div className="auth-form-header text-center lg:text-left">
+            <h2>Welcome Back</h2>
+            <p>Enter your credentials to access your dashboard.</p>
+          </div>
+
+          {error && (
+            <div className="auth-alert error">
+              <ShieldCheck size={18} /> {error}
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="auth-form">
+            <div className="floating-group">
+              <input 
+                type="email" 
+                className="floating-input"
+                placeholder=" "
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <label className="floating-label">Email Address</label>
+              <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+            </div>
+
+            <div className="floating-group">
+              <input 
+                type={showPassword ? "text" : "password"}
+                className="floating-input"
+                placeholder=" "
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <label className="floating-label">Password</label>
+              <div className="pass-toggle" onClick={() => setShowPassword(!showPassword)}>
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </div>
+            </div>
+
+            <div className="form-extras">
+              <label className="remember-me">
+                <input 
+                  type="checkbox" 
+                  className="checkbox-custom"
+                  checked={rememberMe}
+                  onChange={() => setRememberMe(!rememberMe)}
+                />
+                Remember me
+              </label>
+              <a href="/forgot-password" onClick={(e) => { e.preventDefault(); navigate("/forgot-password"); }} className="forgot-pass">
+                Forgot password?
+              </a>
+            </div>
+
+            <button 
+              type="submit" 
+              className="auth-btn-primary"
+              disabled={loading}
+            >
+              {loading ? "Verifying..." : (
+                <>
+                  Log In <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+
+            <div className="auth-divider">
+              <span>or continue with</span>
+            </div>
+
+            <button type="button" className="auth-btn-social">
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/smartlock/google.svg" width="18" height="18" alt="Google" />
+              Sign in with Google
+            </button>
+          </form>
+
+          <p className="auth-footer">
+            Don't have an account? 
+            <a href="/register" onClick={(e) => { e.preventDefault(); navigate("/register"); }} className="auth-link">
+               Create one for free
+            </a>
+          </p>
+        </motion.div>
       </div>
     </div>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f3f4f6", // Light grey background
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-  },
-  card: {
-    width: "100%",
-    maxWidth: "400px",
-    padding: "40px",
-    backgroundColor: "#ffffff",
-    borderRadius: "12px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-  },
-  title: {
-    fontSize: "24px",
-    fontWeight: "600",
-    color: "#111827",
-    textAlign: "center",
-    marginBottom: "8px",
-  },
-  subtitle: {
-    fontSize: "14px",
-    color: "#6b7280",
-    textAlign: "center",
-    marginBottom: "32px",
-  },
-  error: {
-    backgroundColor: "#fef2f2",
-    color: "#991b1b",
-    padding: "12px",
-    borderRadius: "6px",
-    fontSize: "14px",
-    marginBottom: "24px",
-    textAlign: "center",
-    border: "1px solid #fecaca",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
-  inputGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-  label: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#374151",
-  },
-  input: {
-    padding: "10px 12px",
-    border: "1px solid #d1d5db",
-    borderRadius: "6px",
-    fontSize: "16px",
-    outline: "none",
-    transition: "border-color 0.2s",
-  },
-  button: {
-    backgroundColor: "#4f46e5", // Indigo-600
-    color: "white",
-    padding: "12px",
-    borderRadius: "6px",
-    fontSize: "16px",
-    fontWeight: "500",
-    border: "none",
-    marginTop: "8px",
-    transition: "background-color 0.2s",
-  },
-  footer: {
-    marginTop: "24px",
-    textAlign: "center",
-    fontSize: "14px",
-    color: "#6b7280",
-  },
-  link: {
-    color: "#4f46e5",
-    fontWeight: "500",
-    cursor: "pointer",
-    textDecoration: "none",
-  },
-};
 
 export default Login;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "./PostJob.css";
 
 function PostJob() {
@@ -22,14 +22,46 @@ function PostJob() {
 
   const [errors, setErrors] = useState({});
 
+  const location = useLocation();
+  const editId = new URLSearchParams(location.search).get("edit");
+
   useEffect(() => {
     fetchSkills();
-  }, []);
+    if (editId) fetchJobToEdit();
+  }, [editId]);
+
+  const fetchJobToEdit = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`/api/jobs/${editId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const job = res.data;
+      setJobData({
+        title: job.title || "",
+        description: job.description || "",
+        job_type: job.job_type || "Full-time",
+        budget: job.budget || "",
+        duration: job.duration || "",
+        location: job.location || "",
+        experience_level: job.experience_level || "Entry",
+        skills: job.skills_required || [],
+      });
+      if (job.skills_required_ids) {
+        setSelectedSkills(job.skills_required_ids);
+      }
+    } catch (err) {
+      console.error("Error fetching job for edit:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchSkills = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get("/api/skills/all", {
+      const response = await axios.get("/api/skills/", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSkills(response.data);
@@ -96,8 +128,11 @@ function PostJob() {
 
       console.log("Submitting job:", dataToSend);
 
-      const response = await axios.post(
-        "/api/jobs/create",
+      const url = editId ? `/api/jobs/${editId}` : "/api/jobs";
+      const method = editId ? "put" : "post";
+
+      const response = await axios[method](
+        url,
         dataToSend,
         {
           headers: {
@@ -107,8 +142,8 @@ function PostJob() {
         }
       );
 
-      console.log("Job created:", response.data);
-      alert("Job posted successfully!");
+      console.log("Job processed:", response.data);
+      alert(editId ? "Job updated successfully!" : "Job posted successfully!");
       navigate("/my-jobs");
     } catch (error) {
       console.error("Error posting job:", error);
@@ -140,10 +175,10 @@ const experienceLevels = [
     <div className="post-job-container">
       <header className="post-job-header">
         <div className="header-content">
-          <button className="back-btn" onClick={() => navigate("/dashboard")}>
-            ← Back to Dashboard
+          <button className="back-btn" onClick={() => navigate("/my-jobs")}>
+            ← Back to My Jobs
           </button>
-          <h1>Post a New Job</h1>
+          <h1>{editId ? "Edit Job Posting" : "Post a New Job"}</h1>
           <p className="header-subtitle">
             Fill in the details to create a new job listing
           </p>
@@ -369,7 +404,7 @@ const experienceLevels = [
                   Posting Job...
                 </>
               ) : (
-                "Post Job"
+                editId ? "Update Job" : "Post Job"
               )}
             </button>
           </div>

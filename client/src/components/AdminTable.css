@@ -110,7 +110,7 @@
 }
 
 .page-title {
-    font-family: 'Outfit', sans-serif;
+    font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 700;
     color: var(--slate-900);
@@ -165,7 +165,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border-light);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-display);
 }
 
 .admin-table td,

@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* SkillBridge Design Tokens */
+    /* Primary: Deep Navy → Azure Blue */
+    --color-navy: 220 65% 15%;
+    --color-azure: 215 90% 52%;
+    --color-azure-light: 215 85% 62%;
+    --color-azure-pale: 215 80% 95%;
+
+    /* AI Accent: Warm Amber */
+    --color-amber: 38 92% 55%;
+    --color-amber-light: 38 88% 70%;
+
+    /* Semantic */
+    --color-success: 152 60% 42%;
+    --color-warning: 38 92% 55%;
+    --color-error: 0 72% 55%;
+    --color-info: 215 90% 52%;
+
+    /* shadcn tokens */
+    --background: 220 20% 98%;
+    --foreground: 220 65% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 65% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 65% 12%;
+    --primary: 215 90% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 220 65% 15%;
+    --muted: 220 15% 93%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 38 92% 55%;
+    --accent-foreground: 220 65% 12%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 215 90% 52%;
+    --radius: 0.625rem;
+
+    /* Sidebar */
+    --sidebar-background: 220 65% 12%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 215 90% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 50% 20%;
+    --sidebar-accent-foreground: 220 15% 90%;
+    --sidebar-border: 220 40% 20%;
+    --sidebar-ring: 215 90% 52%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+/* Glass Effect Utilities */
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/30;
+  }
+  .glass-dark {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+  .gradient-navy {
+    background: linear-gradient(135deg, hsl(220 65% 12%) 0%, hsl(220 55% 22%) 50%, hsl(215 70% 28%) 100%);
+  }
+  .gradient-azure {
+    background: linear-gradient(135deg, hsl(215 90% 52%) 0%, hsl(215 85% 62%) 100%);
+  }
+  .gradient-mesh {
+    background:
+      radial-gradient(ellipse at 20% 50%, hsla(215, 90%, 52%, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, hsla(38, 92%, 55%, 0.1) 0%, transparent 50%),
+      radial-gradient(ellipse at 60% 80%, hsla(215, 85%, 62%, 0.08) 0%, transparent 50%);
+  }
+  .ai-glow {
+    box-shadow: 0 0 20px hsla(38, 92%, 55%, 0.25), 0 0 60px hsla(38, 92%, 55%, 0.08);
+  }
+  .card-elevated {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.06);
+  }
+  .card-floating {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03), 0 20px 48px rgba(0,0,0,0.08);
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(220 15% 80%);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(220 15% 65%);
+}

@@ -1,0 +1,282 @@
+.comparison-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 2rem;
+}
+
+.comparison-container {
+    background: #ffffff;
+    width: 95%;
+    max-width: 1400px;
+    height: 90vh;
+    border-radius: 2rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.comparison-header {
+    padding: 2rem 3rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.comparison-header h2 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.comparison-header h2 svg {
+    color: #3b82f6;
+}
+
+.comparison-body {
+    flex: 1;
+    overflow-x: auto;
+    padding: 3rem;
+    background: #ffffff;
+}
+
+.comparison-table {
+    min-width: 1000px;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 1.5rem 0;
+}
+
+.comparison-row {
+    display: table-row;
+}
+
+.comparison-cell {
+    display: table-cell;
+    vertical-align: top;
+    padding-bottom: 2rem;
+}
+
+/* Header Cells / Candidate Identity */
+.candidate-card-header {
+    background: #f8fafc;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    border: 1px solid #e2e8f0;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.candidate-card-header.is-winner {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #3b82f6;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.2);
+}
+
+.winner-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #3b82f6;
+    color: white;
+    padding: 0.25rem 1rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.candidate-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 1.5rem;
+    background: #3b82f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.75rem;
+    font-weight: 700;
+    border: 4px solid white;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.candidate-name {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+}
+
+.candidate-role {
+    font-size: 0.875rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+}
+
+.match-score-radial {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.score-value {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #3b82f6;
+}
+
+.score-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+/* Comparison Sections */
+.section-label {
+    padding: 2rem 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 2px solid #f1f5f9;
+    margin-bottom: 1.5rem;
+}
+
+.metric-card {
+    background: #f8fafc;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    height: 100%;
+}
+
+.metric-card.highlight {
+    background: white;
+    border-color: #3b82f6;
+}
+
+.metric-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.metric-v {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.skill-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.skill-pill {
+    padding: 0.4rem 0.75rem;
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+    border-radius: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.verdict-box {
+    padding: 1rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    font-weight: 500;
+}
+
+.verdict-box.positive {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.verdict-box.neutral {
+    background: #fefce8;
+    color: #854d0e;
+    border: 1px solid #fef08a;
+}
+
+/* AI Recommendation Footer */
+.comparison-footer {
+    padding: 2.5rem 3rem;
+    background: #1e293b;
+    color: white;
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+.footer-icon {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #60a5fa;
+}
+
+.footer-content {
+    flex: 1;
+}
+
+.footer-content h4 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.footer-content p {
+    color: #94a3b8;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.btn-close {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.btn-close:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}

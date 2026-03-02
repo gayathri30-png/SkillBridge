@@ -1,7 +1,14 @@
 import mysql from "mysql2";
 import dotenv from "dotenv";
 
-dotenv.config();
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env explicitly to handle ESM hoisting issues
+dotenv.config({ path: path.join(__dirname, "../.env") });
 
 console.log("🔍 DB Config - Loading environment variables:");
 console.log("DB_HOST:", process.env.DB_HOST || "localhost");
@@ -25,30 +32,11 @@ const pool = mysql.createPool({
 pool.getConnection((err, connection) => {
   if (err) {
     console.error("❌ MySQL Connection Failed:", err.message);
-    console.error("Error Code:", err.code);
-
-    // Detailed troubleshooting
-    console.log("\n🔧 Troubleshooting:");
-    console.log("1. Check if MySQL is running");
-    console.log("2. Verify credentials in .env file");
-    console.log(
-      "3. Check if database exists:",
-      process.env.DB_NAME || "skillbridge"
-    );
-    console.log("4. Try: mysql -u root -p (in terminal)");
   } else {
     console.log("✅ MySQL Pool Connected Successfully!");
-    console.log("Database:", process.env.DB_NAME || "skillbridge");
-    console.log("Thread ID:", connection.threadId);
-
-    // Test query
     connection.query("SELECT 1 + 1 AS test", (err, results) => {
-      if (err) {
-        console.error("❌ Test query failed:", err.message);
-      } else {
-        console.log("✅ Test query result:", results[0].test);
-      }
-      connection.release(); // Release back to pool
+      if (!err) console.log("✅ Test query result:", results[0].test);
+      connection.release();
     });
   }
 });

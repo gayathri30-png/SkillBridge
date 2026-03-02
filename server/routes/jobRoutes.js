@@ -2,8 +2,13 @@ import express from "express";
 import {
   createJob,
   getAllJobs,
+  getMyJobs,
   getJobDetails,
+  updateJob,
   deleteJob,
+  toggleSaveJob,
+  getSavedJobs,
+  getRecruiterDashboardStats
 } from "../controllers/jobsController.js";
 
 import { protect } from "../middleware/auth.js";
@@ -22,6 +27,12 @@ router.get(
   getAllJobs
 );
 
+// GET RECRUITER JOBS
+router.get("/recruiter", protect, allowRoles("recruiter", "admin"), getMyJobs);
+
+// GET RECRUITER DASHBOARD STATS
+router.get("/dashboard", protect, allowRoles("recruiter", "admin"), getRecruiterDashboardStats);
+
 // GET JOB DETAILS
 router.get(
   "/:id",
@@ -30,7 +41,16 @@ router.get(
   getJobDetails
 );
 
+// UPDATE JOB
+router.put("/:id", protect, allowRoles("recruiter", "admin"), updateJob);
+
+// GET SAVED JOBS (Specific for students)
+router.get("/saved", protect, allowRoles("student"), getSavedJobs);
+
+// TOGGLE SAVE JOB
+router.post("/save/:id", protect, allowRoles("student"), toggleSaveJob);
+
 // DELETE JOB
-router.delete("/:id", protect, allowRoles("admin"), deleteJob);
+router.delete("/:id", protect, allowRoles("recruiter", "admin"), deleteJob);
 
 export default router;

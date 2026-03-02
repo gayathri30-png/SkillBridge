@@ -33,13 +33,30 @@ import skillRoutes from "./routes/skillRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import applicationsRoutes from "./routes/applicationsRoutes.js";
 import jobSkillsRoutes from "./routes/jobSkillsRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
+import uploadRoutes from "./routes/uploadRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import chatRoutes from "./routes/chatRoutes.js";
+import portfolioRoutes from "./routes/portfolioRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+
+// Serve Uploads
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/upload", uploadRoutes); // Mount upload route
 app.use("/api/jobs", jobRoutes);
 app.use("/api/skills", skillRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/applications", applicationsRoutes);
 app.use("/api/job-skills", jobSkillsRoutes);
+app.use("/api/ai", aiRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/chat", chatRoutes);
+app.use("/api/portfolio", portfolioRoutes);
+app.use("/api/admin", adminRoutes);
 
 console.log("\n✅ ALL ROUTES MOUNTED:");
 console.log("✅ POST /api/auth/register");
@@ -127,14 +144,69 @@ app.use((err, req, res, next) => {
 });
 
 // =====================
-// START SERVER
+// START SERVER WITH SOCKET.IO
 // =====================
-app.listen(PORT, () => {
+import { createServer } from "http";
+import { Server } from "socket.io";
+import { createMessage, getMessagesByRoom } from "./models/Chat.js";
+import { updateRoomLastMessage } from "./controllers/chatController.js";
+import { createNotification } from "./controllers/notificationController.js";
+
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log(`⚡ Client connected: ${socket.id}`);
+
+  socket.on("join_room", async (roomId) => {
+    socket.join(roomId);
+    console.log(`User matched in room: ${roomId}`);
+    
+    // Send history
+    try {
+        const history = await getMessagesByRoom(roomId);
+        socket.emit("receive_history", history);
+    } catch (e) {
+        console.error("Error fetching history:", e);
+    }
+  });
+
+  socket.on("send_message", async (data) => {
+    // data = { room, author, message, senderId, receiverId }
+    try {
+        await createMessage(data.room, data.senderId, data.receiverId, data.message);
+        // Update room's last message
+        await updateRoomLastMessage(data.room, data.message);
+        // Notify recipient
+        await createNotification(
+          data.receiverId,
+          "message",
+          `New message from ${data.author}`,
+          data.room
+        );
+        // Broadcast to room (including sender)
+        io.to(data.room).emit("receive_message", {
+          ...data,
+          created_at: new Date().toISOString()
+        });
+    } catch (e) {
+        console.error("Error saving message:", e);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected");
+  });
+});
+
+httpServer.listen(PORT, () => {
   console.log(`\n✅ ============================================`);
   console.log(`✅ SERVER RUNNING on http://localhost:${PORT}`);
+  console.log(`✅ SOCKET.IO ACTIVE`);
   console.log(`✅ ============================================`);
-  console.log(`\n🎯 IMMEDIATE TEST:`);
-  console.log(`1. GET  http://localhost:${PORT}/api/verify`);
-  console.log(`2. POST http://localhost:${PORT}/api/auth/register`);
-  console.log(`\n📋 Watch the terminal for authController logs!`);
 });

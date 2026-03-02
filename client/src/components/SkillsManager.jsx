@@ -1,305 +1,187 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import "./SkillsManager.css";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Search, Plus, Trash2, Zap, Award, Star, Shield, 
+  ChevronRight, ArrowLeft, Filter, RefreshCw
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import './SkillsManager-v2.css';
 
-function SkillsManager() {
+const SkillsManager = () => {
   const [allSkills, setAllSkills] = useState([]);
   const [mySkills, setMySkills] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProficiency, setSelectedProficiency] = useState("Beginner");
+  const [search, setSearch] = useState('');
+  const [proficiency, setProficiency] = useState('Beginner');
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  
+  const navigate = useNavigate();
 
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  // Fetch skills on load
   useEffect(() => {
-    fetchSkills();
+    fetchData();
   }, []);
 
-  const fetchSkills = async () => {
+  const fetchData = async () => {
+    setRefreshing(true);
     try {
-      setLoading(true);
-      setError("");
-
-      console.log("🔄 Fetching all skills...");
-      const allRes = await axios.get("/api/skills/all");
-      console.log("✅ All skills:", allRes.data);
+      const token = localStorage.getItem('token');
+      const [allRes, myRes] = await Promise.all([
+        axios.get('/api/skills/'),
+        axios.get('/api/skills/my-skills', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
       setAllSkills(allRes.data);
-
-      console.log("🔄 Fetching my skills...");
-      const myRes = await axios.get(
-        "/api/skills/my-skills",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("✅ My skills:", myRes.data);
       setMySkills(myRes.data);
-
+    } catch (err) {
+      console.error("Error fetching skills:", err);
+    } finally {
       setLoading(false);
-    } catch (error) {
-      console.error("❌ Error fetching skills:", error);
-      setError("Failed to load skills. Please try again.");
-      setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const addSkill = async (skillId, skillName) => {
+  const addSkill = async (skillId) => {
     try {
-      console.log(`➕ Adding skill: ${skillName} (ID: ${skillId})`);
-      console.log(`📤 Sending to backend:`, {
+      const token = localStorage.getItem('token');
+      await axios.post('/api/skills/user', {
         skillId,
-        proficiency: selectedProficiency,
+        proficiency,
+        years_of_experience: 0
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      console.log(`🔑 Token exists:`, !!token);
-
-      const response = await axios.post(
-        "/api/skills",
-        {
-          skillId,
-          proficiency: selectedProficiency,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("✅ Backend response:", response.data);
-
-      if (response.data.success) {
-        alert(`✅ ${skillName} added successfully!`);
-        fetchSkills();
-      } else {
-        alert(`❌ ${response.data.error || "Failed to add skill"}`);
-      }
-    } catch (error) {
-      console.error("❌ Error adding skill:", error);
-
-      if (error.response) {
-        // Server responded with error
-        console.error("Server error:", error.response.data);
-        console.error("Status:", error.response.status);
-        alert(
-          `❌ Server Error: ${
-            error.response.data?.error || "Failed to add skill"
-          }`
-        );
-      } else if (error.request) {
-        // No response received
-        console.error("No response received:", error.request);
-        alert(
-          "❌ No response from server. Check if backend is running on port 5000."
-        );
-      } else {
-        // Request setup error
-        console.error("Request error:", error.message);
-        alert(`❌ Request Error: ${error.message}`);
-      }
+      fetchData();
+    } catch (err) {
+      console.error("Error adding skill:", err);
     }
   };
 
-  const removeSkill = async (userSkillId, skillName) => {
-    if (!window.confirm(`Are you sure you want to remove "${skillName}"?`))
-      return;
-
+  const removeSkill = async (userSkillId) => {
     try {
-      const response = await axios.delete(
-        `/api/skills/${userSkillId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("✅ Remove response:", response.data);
-
-      if (response.data.success) {
-        alert(`✅ ${skillName} removed successfully!`);
-        fetchSkills();
-      }
-    } catch (error) {
-      console.error("Error removing skill:", error);
-      alert("❌ Failed to remove skill");
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/skills/user/${userSkillId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchData();
+    } catch (err) {
+      console.error("Error removing skill:", err);
     }
   };
 
-  const updateProficiency = async (userSkillId, proficiency, skillName) => {
-    try {
-      console.log(`🔄 Updating ${skillName} to ${proficiency}`);
-
-      const response = await axios.put(
-        `/api/skills/${userSkillId}`,
-        { proficiency },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("✅ Update response:", response.data);
-
-      // Update local state
-      setMySkills(
-        mySkills.map((skill) =>
-          skill.id === userSkillId ? { ...skill, proficiency } : skill
-        )
-      );
-    } catch (error) {
-      console.error("Error updating proficiency:", error);
-      alert(`❌ Failed to update ${skillName}`);
-    }
-  };
-
-  // IDs of skills user already has
-  const mySkillIds = mySkills.map((s) => s.skill_id);
-
-  // Filter available skills
-  const availableSkills = allSkills.filter(
-    (skill) =>
-      !mySkillIds.includes(skill.id) &&
-      skill.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAvailable = allSkills.filter(skill => 
+    !mySkills.find(ms => ms.skill_id === skill.id) &&
+    skill.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) return <div className="loading">Loading skills...</div>;
+  if (loading) return <div className="p-8 text-center text-slate-500">Loading Expertise Center...</div>;
 
   return (
-    <div className="skills-manager">
-      <h1>My Skills</h1>
-
-      {error && <div className="error-message">{error}</div>}
-
-      <div
-        className="debug-info"
-        style={{
-          background: "#f0f0f0",
-          padding: "10px",
-          marginBottom: "20px",
-          borderRadius: "5px",
-          fontSize: "12px",
-        }}
-      >
-        <strong>Debug Info:</strong>
-        User: {user?.name} ({user?.role}) | Token:{" "}
-        {token ? "Present ✅" : "Missing ❌"} | All Skills: {allSkills.length} |
-        My Skills: {mySkills.length}
+    <div className="skills-manager-v2 fade-in">
+      <div className="skills-manager-header">
+        <div>
+           <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 mb-2 font-semibold">
+              <ArrowLeft size={16} /> Back to Dashboard
+           </button>
+           <h1>Expertise Center</h1>
+        </div>
+        <button onClick={fetchData} className={`icon-btn-large ${refreshing ? 'animate-spin' : ''}`}>
+           <RefreshCw size={20} />
+        </button>
       </div>
 
-      {/* My Skills */}
-      <div className="my-skills-section">
-        <h2>Your Current Skills ({mySkills.length})</h2>
-
-        {mySkills.length === 0 ? (
-          <div className="no-skills">
-            <p>You haven't added any skills yet. Add some below!</p>
-          </div>
-        ) : (
-          <div className="skills-grid">
-            {mySkills.map((skill) => (
-              <div key={skill.id} className="skill-card">
-                <div className="skill-header">
-                  <h3>{skill.name}</h3>
-                  <button
-                    className="remove-btn"
-                    onClick={() => removeSkill(skill.id, skill.name)}
-                    title={`Remove ${skill.name}`}
+      <div className="skills-grid-wrapper">
+        {/* Left: My Skills Hub */}
+        <div className="skills-hub">
+          <section className="skills-card-v2">
+            <h2><Award className="text-blue-600" /> Your Endorsed Expertise</h2>
+            <div className="skill-list-grid">
+              <AnimatePresence>
+                {mySkills.length > 0 ? mySkills.map(skill => (
+                  <motion.div 
+                    key={skill.id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="skill-pill-v2"
                   >
-                    ×
-                  </button>
-                </div>
-
-                <div className="proficiency-selector">
-                  <label>Proficiency:</label>
-                  <select
-                    value={skill.proficiency}
-                    onChange={(e) =>
-                      updateProficiency(skill.id, e.target.value, skill.name)
-                    }
-                  >
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                  </select>
-                </div>
-
-                <div
-                  className={`proficiency-badge ${skill.proficiency.toLowerCase()}`}
-                >
-                  {skill.proficiency}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Add Skills */}
-      <div className="add-skills-section">
-        <h2>Add New Skills</h2>
-
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search skills..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-
-          <div className="proficiency-filter">
-            <label>Set proficiency:</label>
-            <select
-              value={selectedProficiency}
-              onChange={(e) => setSelectedProficiency(e.target.value)}
-            >
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate">Intermediate</option>
-              <option value="Advanced">Advanced</option>
-            </select>
-          </div>
+                    <div className="skill-pill-header">
+                      <h4>{skill.name}</h4>
+                      <button onClick={() => removeSkill(skill.id)} className="skill-delete-btn">
+                         <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <div className="skill-meta-tags">
+                      <span className={`skill-tag-v2 ${skill.proficiency.toLowerCase()}`}>
+                        {skill.proficiency}
+                      </span>
+                    </div>
+                    <div className="skill-exp-v2">
+                       <Star size={12} className="text-amber-500" /> {skill.endorsements || 0} Endorsements
+                    </div>
+                  </motion.div>
+                )) : (
+                  <div className="col-span-full py-12 text-center text-slate-400">
+                     <Zap size={48} className="mx-auto mb-4 opacity-20" />
+                     <p>Your expertise is quiet... Start adding skills below!</p>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+          </section>
         </div>
 
-        {availableSkills.length === 0 ? (
-          <p className="no-results">
-            {searchTerm
-              ? "No skills found matching your search"
-              : "No more skills to add!"}
-          </p>
-        ) : (
-          <div className="available-skills">
-            {availableSkills.map((skill) => (
-              <button
-                key={skill.id}
-                className="skill-btn"
-                onClick={() => addSkill(skill.id, skill.name)}
-                title={`Add ${skill.name} as ${selectedProficiency}`}
-              >
-                {skill.name}
-                <span className="proficiency-preview">
-                  ({selectedProficiency})
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
+        {/* Right: Search & Discover */}
+        <div className="search-sidebar">
+          <section className="skills-card-v2 search-section-v2">
+            <h2><Filter className="text-blue-600" /> Discover Skills</h2>
+            
+            <div className="search-input-wrapper-v2">
+              <Search className="search-icon-v2" size={20} />
+              <input 
+                type="text" 
+                placeholder="Search technologies..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
 
-      {/* Stats */}
-      <div className="skills-stats">
-        <p>Total Skills Available: {allSkills.length}</p>
-        <p>Your Skills: {mySkills.length}</p>
-        <p>Skills Remaining: {availableSkills.length}</p>
+            <div className="proficiency-selector-v2 flex gap-2 mb-6">
+               {['Beginner', 'Intermediate', 'Advanced'].map(level => (
+                 <button 
+                    key={level}
+                    onClick={() => setProficiency(level)}
+                    className={`flex-1 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                      proficiency === level ? 'bg-blue-600 border-blue-600 text-white shadow-lg' : 'border-slate-100 text-slate-500 hover:border-blue-200'
+                    }`}
+                 >
+                    {level}
+                 </button>
+               ))}
+            </div>
+
+            <div className="available-pills">
+              {filteredAvailable.slice(0, 15).map(skill => (
+                <button 
+                  key={skill.id} 
+                  className="add-pill-btn"
+                  onClick={() => addSkill(skill.id)}
+                >
+                  <span>{skill.name}</span>
+                  <div className="plus-icon"><Plus size={16} /></div>
+                </button>
+              ))}
+              {filteredAvailable.length === 0 && (
+                <p className="text-sm text-center text-slate-400 py-4">No skills found.</p>
+              )}
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   );
-}
+};
 
 export default SkillsManager;
