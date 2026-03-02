@@ -13,10 +13,10 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchStats();
+    fetchData();
   }, []);
 
-  const fetchStats = async () => {
+  const fetchData = async () => {
     try {
       const token = localStorage.getItem("token");
       const res = await axios.get("/api/admin/reports", {
@@ -24,11 +24,12 @@ const AdminDashboard = () => {
       });
       setData(res.data);
     } catch (error) {
-      console.error("Error fetching admin stats:", error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
   };
+
 
   if (loading) return <div className="p-12 text-center text-slate-500 fade-in">Initializing administrative oversight...</div>;
   if (!data) return (
@@ -192,6 +193,7 @@ const AdminDashboard = () => {
         </aside>
 
       </div>
+
     </div>
   );
 };

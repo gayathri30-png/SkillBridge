@@ -28,4 +28,10 @@ router.post("/photo", protect, (req, res) => {
 
 router.get("/:id", getUserById);
 
+// ADMIN
+router.get("/", protect, allowRoles("admin"), getUsers);
+router.post("/", protect, allowRoles("admin"), addUser);
+router.patch("/:id/verify", protect, allowRoles("admin"), verifyRecruiter);
+router.delete("/:id", protect, allowRoles("admin"), deleteUser);
+
 export default router;

@@ -21,7 +21,6 @@ function Register() {
     role: "student",
     termsAccepted: false
   });
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -37,6 +36,10 @@ function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    if (!terms) {
+      setError("Please agree to the Terms & Conditions.");
+      return;
+    }
     setError("");
 
     if (formData.password !== formData.confirmPassword) {
@@ -61,11 +64,10 @@ function Register() {
         location: formData.location,
         company_name: formData.role === 'recruiter' ? formData.company_name : undefined
       });
-      
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       window.dispatchEvent(new Event("storage"));
-      
+
       navigate("/dashboard");
     } catch (err) {
       console.error("❌ Registration error:", err);
@@ -300,7 +302,6 @@ function Register() {
                 Agree to Terms & Conditions
               </label>
             </div>
-
             <button 
               type="submit" 
               className="auth-btn-primary"

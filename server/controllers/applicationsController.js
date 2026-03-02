@@ -375,7 +375,6 @@ export const getAllApplications = (req, res) => {
     JOIN users r ON j.posted_by = r.id
     ORDER BY a.created_at DESC
   `;
-
   db.query(query, (err, results) => {
     if (err) return res.status(500).json({ error: "Database error" });
     res.json(results);

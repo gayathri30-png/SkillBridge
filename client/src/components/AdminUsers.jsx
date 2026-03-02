@@ -74,16 +74,16 @@ const AdminUsers = () => {
   const deleteUser = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete user "${name}"? This cannot be undone.`)) return;
 
+  const deleteUser = async (id, name) => {
+    if (!window.confirm(`Delete user "${name}"?`)) return;
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`/api/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      alert("User deleted successfully");
       fetchUsers();
     } catch (error) {
       console.error("Error deleting user:", error);
-      alert("Failed to delete user");
     }
   };
 
@@ -209,6 +209,9 @@ const AdminUsers = () => {
             ))}
           </tbody>
         </table>
+        {filteredUsers.length === 0 && (
+          <div className="p-12 text-center text-slate-400">No users found matching your criteria.</div>
+        )}
       </div>
     </div>
   );

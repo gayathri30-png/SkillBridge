@@ -12,10 +12,10 @@ import "./AuthPages.css";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -39,7 +39,6 @@ function Login() {
         navigate("/dashboard");
       }
     } catch (err) {
-      console.error("❌ Login error:", err);
       setError(err.response?.data?.error || "Login Failed. Please check your credentials.");
       setLoading(false);
     }

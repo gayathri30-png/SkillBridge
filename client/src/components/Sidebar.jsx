@@ -57,6 +57,7 @@ const Sidebar = ({ user }) => {
     navigate('/login');
   };
 
+
   return (
     <div className="sidebar-container">
       {/* 1. Logo */}
