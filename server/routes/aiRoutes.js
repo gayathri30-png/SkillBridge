@@ -21,7 +21,8 @@ import {
   getSavedProposals,
   generateAdvancedProposal,
   updateSavedProposal,
-  deleteSavedProposal
+  deleteSavedProposal,
+  generateJobPost
 } from "../controllers/aiController.js";
 import { protect } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/role.js";
@@ -34,12 +35,14 @@ router.get("/proposal/:jobId", protect, generateProposal);
 router.get("/analyze/:applicationId", protect, allowRoles("recruiter", "admin"), analyzeApplicationInsights);
 router.get("/materials/:applicationId", protect, allowRoles("recruiter", "admin"), generateInterviewMaterials);
 router.post("/compare", protect, allowRoles("recruiter", "admin"), compareCandidates);
+router.post("/generate-job-post", protect, allowRoles("recruiter", "admin", "student"), generateJobPost);
 
 // Tier 3
 router.post("/source-similar", protect, allowRoles("recruiter", "admin"), findSimilarCandidates);
 router.get("/scheduling-advice/:applicationId", protect, allowRoles("recruiter", "admin"), getInterviewSchedulingAdvice);
 
 // Tier 4
+router.get("/market-intelligence", protect, allowRoles("recruiter", "admin"), getMarketIntelligence);
 router.get("/market-intelligence/:jobId", protect, allowRoles("recruiter", "admin"), getMarketIntelligence);
 router.post("/automate", protect, allowRoles("recruiter", "admin"), runApplicantAutomation);
 

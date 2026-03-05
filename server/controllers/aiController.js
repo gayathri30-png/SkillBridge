@@ -328,40 +328,83 @@ export const getInterviewSchedulingAdvice = async (req, res) => {
 };
 
 // --------------------------------
-// AI 24: MARKET INTELLIGENCE (Salary Benchmarks)
+// AI 24: MARKET INTELLIGENCE (Salary Benchmarks & Dashboard)
 // --------------------------------
 export const getMarketIntelligence = async (req, res) => {
   const { jobId } = req.params;
 
   try {
-    const [skills] = await db.promise().query(
-      `SELECT s.name FROM skills s JOIN job_skills js ON s.id = js.skill_id WHERE js.job_id = ?`,
-      [jobId]
-    );
+    if (jobId) {
+      // Logic for a specific job post
+      const [skills] = await db.promise().query(
+        `SELECT s.name FROM skills s JOIN job_skills js ON s.id = js.skill_id WHERE js.job_id = ?`,
+        [jobId]
+      );
 
-    const skillNames = skills.map(s => s.name);
-    
-    // Heuristic: Base 40k + 10k per high-demand skill
-    const highDemand = ['React', 'Node.js', 'Python', 'AI', 'Cloud'];
-    const matchedHighDemand = skillNames.filter(s => highDemand.includes(s));
-    
-    const minSalary = 45000 + (matchedHighDemand.length * 8000);
-    const maxSalary = minSalary + 25000;
+      const skillNames = skills.map(s => s.name);
+      
+      const highDemand = ['React', 'Node.js', 'Python', 'AI', 'Cloud', 'TypeScript', 'Docker', 'AWS', 'Next.js'];
+      const matchedHighDemand = skillNames.filter(s => highDemand.includes(s));
+      
+      const minSalary = 45000 + (matchedHighDemand.length * 8000);
+      const maxSalary = minSalary + 25000;
 
+      return res.json({
+        jobId,
+        benchmarks: {
+          currency: "USD",
+          min: minSalary,
+          max: maxSalary,
+          median: (minSalary + maxSalary) / 2,
+          market_demand: matchedHighDemand.length > 2 ? "High" : "Moderate",
+          insight: matchedHighDemand.length > 0 
+            ? `High demand for ${matchedHighDemand.join(", ")} is driving up local benchmarks.`
+            : "Standard market rates apply for this skill set."
+        }
+      });
+    }
+
+    // GENERAL DASHBOARD LOGIC
+    // Get total active candidates
+    const [[candidatesRes]] = await db.promise().query(`SELECT COUNT(*) as total FROM users WHERE role = 'student'`);
+    
+    // Get top trending skills based on student profiles
+    const [topSkillsList] = await db.promise().query(`
+      SELECT s.name as skill, COUNT(us.skill_id) as demand
+      FROM skills s
+      JOIN user_skills us ON s.id = us.skill_id
+      GROUP BY s.id, s.name
+      ORDER BY demand DESC
+      LIMIT 5
+    `);
+
+    // Get average match score historically (Mock heuristic for now based on applications)
+    const [[avgScoreRes]] = await db.promise().query(`SELECT AVG(ai_match_score) as avgScore FROM applications WHERE ai_match_score IS NOT NULL`);
+    
+    // Generate some insights based on data
+    const insights = [];
+    if (topSkillsList.length > 0) {
+      insights.push(`**${topSkillsList[0].skill}** is the most abundant skill among candidates on the platform.`);
+      if (topSkillsList[0].demand > 5) {
+        insights.push(`There is an oversupply of ${topSkillsList[0].skill} developers. Consider raising requirements to filter top talent.`);
+      }
+    }
+    insights.push(`The platform average candidate match score is currently ${Math.round(avgScoreRes.avgScore || 75)}%.`);
+
+    // Format for the dashboard
     res.json({
-      jobId,
-      benchmarks: {
-        currency: "USD",
-        min: minSalary,
-        max: maxSalary,
-        median: (minSalary + maxSalary) / 2,
-        market_demand: matchedHighDemand.length > 2 ? "High" : "Moderate",
-        insight: matchedHighDemand.length > 0 
-          ? `High demand for ${matchedHighDemand.join(", ")} is driving up local benchmarks.`
-          : "Standard market rates apply for this skill set."
+      success: true,
+      data: {
+        totalCandidates: candidatesRes.total || 0,
+        averageMatchScore: Math.round(avgScoreRes.avgScore || 75),
+        topSkills: topSkillsList.map(s => ({ name: s.skill, count: s.demand })),
+        marketVelocity: 88, // Mock metric
+        insights
       }
     });
+
   } catch (error) {
+    console.error("Market analysis failed:", error);
     res.status(500).json({ error: "Market analysis failed" });
   }
 };
@@ -528,6 +571,59 @@ export const getFunnelOptimization = async (req, res) => {
     res.status(500).json({ error: "Funnel analysis failed" });
   }
 };
+// --------------------------------
+// AI 31: SMART JOB POST GENERATOR (COPILOT)
+// --------------------------------
+export const generateJobPost = async (req, res) => {
+  const { title, skills, tone = 'Professional' } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ error: "Job title is required for generation." });
+  }
+
+  try {
+    const prompt = `
+      You are an expert technical recruiter and copywriter.
+      Write a compelling, detailed, and professional job description for the role of "${title}".
+      
+      Requirements:
+      1. Essential Skills to emphasize: ${skills && skills.length > 0 ? skills.join(", ") : "general technical skills relevant to the role"}.
+      2. Tone: The tone must be strictly ${tone}. (e.g., if Engaging, use energetic language; if Professional, keep it formal and structured; if Urgent, emphasize immediate impact).
+      3. Structure the output clearly with the following sections (do NOT use markdown markdown code blocks like \`\`\`markdown):
+         - A short, engaging summary paragraph.
+         - "Key Responsibilities" (bullet points).
+         - "Requirements" (bullet points, including the essential skills).
+      4. Output ONLY the generated job description text. Do NOT include any conversational filler.
+    `;
+
+    const generatedPost = await generateGeminiResponse(prompt, "You are an expert tech recruiter writing a job description. Return only the description text.");
+
+    if (!generatedPost || generatedPost.trim() === "") {
+        throw new Error("AI returned an empty response.");
+    }
+
+    res.json({
+        success: true,
+        generatedDescription: generatedPost.replace(/```markdown\n?/g, '').replace(/```\n?/g, '').trim()
+    });
+
+  } catch (error) {
+    console.error("AI Job Post Generation Error:", error);
+    // Fallback if AI fails
+    let fallbackText = `We are looking for a talented ${title} to join our growing team.\n\nKey Responsibilities:\n- Collaborate with cross-functional teams to design, build, and maintain software.\n- Ensure code quality and performance.\n\nRequirements:\n- Proficiency in ${skills && skills.length > 0 ? skills.join(", ") : "relevant technologies"}.\n- Strong problem-solving skills and teamwork.\n\nIf you are passionate about this field, apply now!`;
+    
+    if (tone === 'Engaging') {
+        fallbackText = `Are you ready to make a massive impact? We're on the hunt for a rockstar ${title}!\n\nWhat you'll do:\n- Build amazing products with an incredible team.\n- Drive innovation every single day.\n\nWhat you need:\n- Deep expertise in ${skills && skills.length > 0 ? skills.join(", ") : "your craft"}.\n- A passion for learning and growing.\n\nCome build the future with us!`;
+    }
+
+    res.json({
+        success: true,
+        generatedDescription: fallbackText,
+        note: "Generated using fallback templates due to AI service unavailability."
+    });
+  }
+};
+
 // --------------------------------
 // MODULE 12: PHASE 2 - SPECIALIZED AI
 // --------------------------------

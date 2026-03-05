@@ -1,0 +1,94 @@
+# SkillBridge Database Lab Guide
+
+## 1. Importing the Database
+Here are the steps to set up the database in your college lab. 
+
+### Method A: Using XAMPP (phpMyAdmin)
+1. Open the XAMPP Control Panel and start **Apache** and **MySQL**.
+2. Open your web browser and navigate to `http://localhost/phpmyadmin`.
+3. Click on **New** in the left sidebar and create a database named `skillbridge` (Collation: `utf8mb4_general_ci`).
+4. Select the newly created `skillbridge` database, then click on the **Import** tab at the top.
+5. Click **Choose File** and select your `skillbridge_backup.sql` file from your flash drive or local folder.
+6. Scroll to the bottom and click **Import** (or **Go**).
+
+### Method B: Using MySQL Command Line
+1. Open your Command Prompt or Terminal.
+2. Log in to MySQL: 
+   ```sql
+   mysql -u root -p
+   ```
+3. Create the database and switch to it:
+   ```sql
+   CREATE DATABASE skillbridge;
+   USE skillbridge;
+   ```
+4. Import the file (assuming it's in the D: drive):
+   ```sql
+   -- Use forward slashes for the path
+   SOURCE d:/SkillBridge/skillbridge_backup.sql;
+   ```
+
+---
+
+## 2. Database Schema Overview
+If your lab evaluator asks you to explain the database, you can mention that it consists of **17 tables** built for a job matching and skill evaluation platform.
+
+**Core Tables:**
+* **`users`**: Stores all students, recruiters, and admins. Includes authentication and profile data.
+* **`jobs`**: Stores job postings created by recruiters (title, budget, experience level).
+* **`applications`**: Links users (students) to the jobs they are applying for. Contains AI match scores and application status.
+* **`skills`**: A dictionary of all tech skills (e.g., React, Node.js, Python).
+* **`user_skills`**: Junction table mapping users to their skills along with proficiency levels.
+* **`job_skills`**: Junction table mapping jobs to required skills.
+
+**AI & Analytics Tables:**
+* **`ai_proposals`**: AI-generated cover letters/proposals for users.
+* **`ai_recommendations`**: Suggested skills and jobs based on algorithms.
+* **`skill_gap_analysis`**: Stores the comparison between a user's current skills and a specific job's required skills.
+
+---
+
+## 3. Useful SQL Queries to Demonstrate
+Keep these queries handy to quickly show how your database works during the lab session.
+
+**A. View all registered students:**
+```sql
+SELECT id, name, email, phone 
+FROM users 
+WHERE role = 'student';
+```
+
+**B. View all active jobs and who posted them:**
+```sql
+SELECT j.title, j.job_type, j.budget, u.name AS recruiter_name 
+FROM jobs j
+JOIN users u ON j.posted_by = u.id
+WHERE j.status = 'open';
+```
+
+**C. View a specific student's skills (e.g., User ID 41, Gayathri):**
+```sql
+SELECT s.name AS skill_name, us.proficiency, us.years_of_experience
+FROM user_skills us
+JOIN skills s ON us.skill_id = s.id
+WHERE us.user_id = 41;
+```
+
+**D. Check all applications submitted for a specific job (e.g., Frontend Developer):**
+```sql
+SELECT a.id AS application_id, u.name AS applicant, a.ai_match_score, a.status 
+FROM applications a
+JOIN users u ON a.student_id = u.id
+JOIN jobs j ON a.job_id = j.id
+WHERE j.title = 'Frontend Developer';
+```
+
+---
+
+## 4. Lab Checklist
+Before the evaluator approaches your desk, ensure you have:
+- [ ] Started the MySQL server.
+- [ ] Imported the `skillbridge_backup.sql` file without errors.
+- [ ] Opened a SQL query tab/window ready to execute queries.
+- [ ] Familiarized yourself with the relationships between `users`, `jobs`, and `applications`.
+

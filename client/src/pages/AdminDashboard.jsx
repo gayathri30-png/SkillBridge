@@ -37,7 +37,7 @@ const AdminDashboard = () => {
       <div className="text-4xl mb-4">⚠️</div>
       <h2 className="text-xl font-bold mb-2">Platform Connection Error</h2>
       <p className="mb-4">Unable to retrieve system statistics. Please verify the backend service is running.</p>
-      <button onClick={fetchStats} className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold">Retry Connection</button>
+      <button onClick={fetchData} className="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold">Retry Connection</button>
     </div>
   );
 

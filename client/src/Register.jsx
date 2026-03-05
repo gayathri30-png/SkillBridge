@@ -36,7 +36,7 @@ function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if (!terms) {
+    if (!formData.termsAccepted) {
       setError("Please agree to the Terms & Conditions.");
       return;
     }

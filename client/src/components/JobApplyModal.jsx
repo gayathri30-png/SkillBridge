@@ -225,7 +225,7 @@ const JobApplyModal = ({ isOpen, onClose, job, userSkills }) => {
                   style={{
                     width: '100%', minHeight: '180px', padding: '16px', borderRadius: '16px',
                     border: '1px solid #e2e8f0', fontFamily: 'inherit', fontSize: '14px', lineHeight: '1.6',
-                    resize: 'none', background: '#f8fafc'
+                    resize: 'none', background: '#f8fafc', color: '#0f172a'
                   }}
                 />
               </div>

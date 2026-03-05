@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
+import { Sparkles } from "lucide-react";
 import "./PostJob.css";
 
 function PostJob() {
@@ -8,6 +9,8 @@ function PostJob() {
   const [loading, setLoading] = useState(false);
   const [skills, setSkills] = useState([]);
   const [selectedSkills, setSelectedSkills] = useState([]);
+  const [generatingAi, setGeneratingAi] = useState(false);
+  const [aiTone, setAiTone] = useState("Professional");
 
   const [jobData, setJobData] = useState({
     title: "",
@@ -90,6 +93,48 @@ function PostJob() {
         return [...prev, skillId];
       }
     });
+  };
+
+  const handleGenerateWithAI = async () => {
+    if (!jobData.title.trim()) {
+      alert("Please enter a Job Title first so the AI knows what to write about.");
+      return;
+    }
+
+    try {
+      setGeneratingAi(true);
+      const token = localStorage.getItem("token");
+      
+      // Get names of selected skills for the prompt
+      const selectedSkillNames = skills
+        .filter(s => selectedSkills.includes(s.id))
+        .map(s => s.name);
+
+      const res = await axios.post(
+        "/api/ai/generate-job-post", 
+        { 
+          title: jobData.title, 
+          skills: selectedSkillNames,
+          tone: aiTone
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.data.success) {
+        setJobData(prev => ({
+          ...prev,
+          description: res.data.generatedDescription
+        }));
+        if (errors.description) {
+          setErrors(prev => ({ ...prev, description: "" }));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to generate job post:", error);
+      alert("AI generation failed. Please try again.");
+    } finally {
+      setGeneratingAi(false);
+    }
   };
 
   const validateForm = () => {
@@ -211,9 +256,35 @@ const experienceLevels = [
             </div>
 
             <div className="form-group">
-              <label htmlFor="description">
-                Job Description <span className="required">*</span>
-              </label>
+              <div className="flex justify-between items-end mb-2">
+                <label htmlFor="description" className="mb-0">
+                  Job Description <span className="required">*</span>
+                </label>
+                
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={aiTone} 
+                    onChange={(e) => setAiTone(e.target.value)}
+                    className="text-xs border border-slate-200 rounded-md py-1 px-2 text-slate-600 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="Professional">Professional</option>
+                    <option value="Engaging">Engaging</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                  <button 
+                    type="button" 
+                    onClick={handleGenerateWithAI}
+                    disabled={generatingAi || loading}
+                    className="flex items-center gap-1.5 text-xs font-bold bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-3 py-1.5 rounded-md hover:shadow-md hover:shadow-indigo-500/20 transition-all disabled:opacity-50"
+                  >
+                    {generatingAi ? (
+                       <span className="flex items-center gap-1"><span className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></span> Thinking...</span>
+                    ) : (
+                       <><Sparkles size={14} /> Auto-Generate</>
+                    )}
+                  </button>
+                </div>
+              </div>
               <textarea
                 id="description"
                 name="description"

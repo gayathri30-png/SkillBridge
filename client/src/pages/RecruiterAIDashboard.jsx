@@ -142,7 +142,7 @@ const RecruiterAIDashboard = () => {
         <motion.div 
           whileHover={{ y: -5 }}
           className="bg-white p-6 rounded-[32px] shadow-xl border border-slate-100 relative overflow-hidden group cursor-pointer"
-          onClick={() => { alert("Market Analytics Dashboard module coming soon!"); }}
+          onClick={() => navigate('/market-intelligence')}
         >
           <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
             <Brain size={80} />

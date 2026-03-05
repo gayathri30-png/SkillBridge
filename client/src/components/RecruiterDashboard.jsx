@@ -236,39 +236,30 @@ const RecruiterDashboard = () => {
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
                   >
-                    <div className="c-score-badge">
-                       <div className="stars">{'★'.repeat(Math.floor(c.rating))}{c.rating % 1 !== 0 ? '☆' : ''}</div>
-                       <span className="score-text">{c.match}% Match</span>
-                    </div>
                     <div className="c-card-content">
                        <div className="c-left">
                           <div className="c-avatar-large">{c.name.split(' ').map(n=>n[0]).join('')}</div>
-                          <div className="c-info">
-                             <h4>{c.name}</h4>
-                             <p className="c-role">{c.role}</p>
-                             <div className="c-meta-row">
-                                <span>{c.exp} exp</span>
-                                <span className="dot">•</span>
-                                <span>{c.location}</span>
+                          <div className="c-info min-w-0">
+                             <h4 className="truncate">{c.name}</h4>
+                             <div className="text-[0.8rem] font-semibold text-slate-500 flex flex-wrap items-center gap-2">
+                               <span className="whitespace-nowrap">Applied for:</span>
+                               <span className="bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-lg border border-indigo-100 font-bold whitespace-nowrap truncate max-w-[150px]">{c.appliedJob}</span>
                              </div>
                           </div>
                        </div>
-                       <div className="c-center">
-                          <div className="c-skills">
-                             {c.skills.map((s, si) => <span key={si} className="skill-chip">{s}</span>)}
-                          </div>
-                          <div className="c-tags">
-                             {c.tags.map((t, ti) => <span key={ti} className="tag-chip">{t}</span>)}
-                          </div>
-                       </div>
+                       
                        <div className="c-right">
+                          <div className="c-score-badge">
+                             <div className="stars">{'★'.repeat(Math.floor(c.rating))}{c.rating % 1 !== 0 ? '☆' : ''}</div>
+                             <span className="score-text">{c.match}% Match</span>
+                          </div>
                           <div className="ai-comment">
                              <Brain size={16} />
                              <p>{c.ai}</p>
                           </div>
                           <div className="c-actions">
-                             <button className="c-btn view" onClick={() => navigate(`/profile/${c.id}`)}>View Profile</button>
-                             <button className="c-btn msg" onClick={() => navigate('/chat')}><MessageSquare size={14} /></button>
+                             <button className="c-btn msg" onClick={() => navigate('/chat')} title="Message Candidate"><MessageSquare size={16} /></button>
+                             <button className="c-btn view flex-1 text-center" onClick={() => navigate(`/profile/${c.id}`)}>View Profile</button>
                           </div>
                        </div>
                     </div>

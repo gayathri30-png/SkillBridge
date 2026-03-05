@@ -13,7 +13,8 @@ import {
   MapPin, 
   Search, 
   Clock,
-  ArrowRight
+  ArrowRight,
+  Sparkles
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./ApplicationsList.css";
@@ -193,16 +194,19 @@ const ApplicationsList = () => {
                     </motion.div>
                  )}
 
-                 <div className="score-module">
+                 {/* AI SUITABILITY SCORE HIGHLIGHT */}
+                 <div className="score-module highlighted-score-box">
                     <div className="flex justify-between mb-2">
-                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">AI Suitability Score</span>
+                       <span className="text-[11px] font-black text-indigo-500 uppercase tracking-widest flex items-center gap-1">
+                         <Sparkles size={12} /> AI Suitability Score
+                       </span>
                        <span className={`text-sm font-black ${app.ai_match_score > 75 ? 'text-emerald-600' : app.ai_match_score > 40 ? 'text-amber-500' : 'text-slate-400'}`}>
                           {app.ai_match_score}%
                        </span>
                     </div>
                     <div className="score-progress">
                        <motion.div 
-                          className="score-fill"
+                          className="score-fill pulse-glow"
                           initial={{ width: 0 }}
                           animate={{ width: `${app.ai_match_score}%` }}
                           transition={{ duration: 1.5, delay: 0.5 }}

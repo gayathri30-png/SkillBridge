@@ -40,6 +40,7 @@ import PostJob from "./components/PostJob";
 import RecruiterJobs from "./components/RecruiterJobs";
 import RecruiterApplicants from "./components/RecruiterApplicants";
 import RecruiterAIDashboard from "./pages/RecruiterAIDashboard";
+import RecruiterMarketIntelligence from "./pages/RecruiterMarketIntelligence";
 
 // Admin Pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -431,6 +432,17 @@ function App() {
               <ProtectedRoute allowedRoles={["recruiter", "admin"]}>
                 <Layout>
                   <RecruiterApplicants />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/market-intelligence"
+            element={
+              <ProtectedRoute allowedRoles={["recruiter", "admin"]}>
+                <Layout>
+                  <RecruiterMarketIntelligence />
                 </Layout>
               </ProtectedRoute>
             }

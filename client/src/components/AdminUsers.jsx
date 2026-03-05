@@ -72,9 +72,6 @@ const AdminUsers = () => {
   };
 
   const deleteUser = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to delete user "${name}"? This cannot be undone.`)) return;
-
-  const deleteUser = async (id, name) => {
     if (!window.confirm(`Delete user "${name}"?`)) return;
     try {
       const token = localStorage.getItem("token");

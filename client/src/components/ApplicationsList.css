@@ -175,6 +175,21 @@
   border: 1px solid #f1f5f9;
 }
 
+.highlighted-score-box {
+  background: linear-gradient(145deg, #ffffff, #f8fafc);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  box-shadow: 0 10px 30px -5px rgba(99, 102, 241, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.highlighted-score-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 4px;
+  background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+}
+
 .score-progress {
   height: 10px;
   border-radius: 100px;
@@ -188,6 +203,15 @@
   border-radius: 100px;
   transition: width 1.5s cubic-bezier(0.165, 0.84, 0.44, 1);
   box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+}
+
+.pulse-glow {
+  animation: score-pulse 2s infinite alternate;
+}
+
+@keyframes score-pulse {
+  0% { filter: brightness(1); box-shadow: 0 0 15px rgba(99, 102, 241, 0.3); }
+  100% { filter: brightness(1.1); box-shadow: 0 0 25px rgba(99, 102, 241, 0.6); }
 }
 
 /* 5. Action Hub */

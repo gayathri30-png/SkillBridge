@@ -420,7 +420,7 @@ const JobList = () => {
                       <path className={`circle ${job.matchScore >= 75 ? 'high' : job.matchScore >= 50 ? 'mid' : 'low'}`} 
                         strokeDasharray={`${job.matchScore}, 100`} 
                         d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                      <text x="18" y="20.35" className="percentage">{job.matchScore}%</text>
+                      <text x="18" y="18" className="percentage" dominantBaseline="middle" textAnchor="middle">{job.matchScore}%</text>
                     </svg>
                   </div>
                 </div>

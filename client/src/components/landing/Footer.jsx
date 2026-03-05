@@ -24,18 +24,18 @@ const Footer = () => {
           <div>
             <h4 className="text-white font-bold mb-4">Platform</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">Browse Jobs</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">For Recruiters</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
+              <li><a href="/register?type=student" className="hover:text-white transition-colors">Browse Jobs</a></li>
+              <li><a href="/register?type=recruiter" className="hover:text-white transition-colors">For Recruiters</a></li>
+              <li><a href="/#pricing" className="hover:text-white transition-colors">Pricing</a></li>
             </ul>
           </div>
           
            <div>
             <h4 className="text-white font-bold mb-4">Company</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+              <li><a href="/#how-it-works" className="hover:text-white transition-colors">About Us</a></li>
+              <li><a href="/" className="hover:text-white transition-colors">Blog</a></li>
+              <li><a href="/" className="hover:text-white transition-colors">Contact</a></li>
             </ul>
           </div>
 
@@ -43,13 +43,13 @@ const Footer = () => {
           <div>
             <h4 className="text-white font-bold mb-4">Connect</h4>
             <div className="flex gap-4">
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
                 <Github size={20} />
               </a>
-              <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
                 <Twitter size={20} />
               </a>
-               <a href="#" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
+               <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center hover:bg-primary hover:text-white transition-all">
                 <Linkedin size={20} />
               </a>
             </div>

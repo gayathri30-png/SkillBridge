@@ -460,6 +460,7 @@ export const getRecruiterDashboardStats = async (req, res) => {
       SELECT 
         u.id, u.name, u.location,
         a.ai_match_score as match_score, 'AI Analysis Complete' as ai,
+        j.title as applied_job,
         GROUP_CONCAT(DISTINCT s.name) as skills
       FROM applications a
       JOIN jobs j ON a.job_id = j.id
@@ -467,7 +468,7 @@ export const getRecruiterDashboardStats = async (req, res) => {
       LEFT JOIN user_skills us ON u.id = us.user_id
       LEFT JOIN skills s ON us.skill_id = s.id
       WHERE j.posted_by = ?
-      GROUP BY a.id, u.id, u.name, u.location, a.ai_match_score
+      GROUP BY a.id, u.id, u.name, u.location, a.ai_match_score, j.title
       ORDER BY a.ai_match_score DESC
       LIMIT 5
     `, [recruiterId]);
@@ -501,6 +502,7 @@ export const getRecruiterDashboardStats = async (req, res) => {
         role: c.role || 'Applicant',
         exp: c.experience || 'Entry Level',
         location: c.location || 'Remote',
+        appliedJob: c.applied_job || 'General',
         match: c.match_score || 0,
         ai: c.ai || "AI matching in progress",
         skills: c.skills ? c.skills.split(',') : [],

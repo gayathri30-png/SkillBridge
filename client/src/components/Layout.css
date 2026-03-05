@@ -6,7 +6,8 @@
 
 .layout-main-content {
   flex: 1;
-  margin-left: 280px; /* Matches Sidebar width */
+  margin-left: 320px; /* Accommodate floating sidebar (280px + 20px left + 20px gap) */
+  padding-right: 20px; /* Right edge breathing room */
   display: flex;
   flex-direction: column;
   min-width: 0;
