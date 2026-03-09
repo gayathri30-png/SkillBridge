@@ -3,7 +3,6 @@ import Navbar from '../components/landing/Navbar';
 import HeroSection from '../components/landing/HeroSection';
 import HowItWorks from '../components/landing/HowItWorks';
 import AIFeatures from '../components/landing/AIFeatures';
-import Pricing from '../components/landing/Pricing';
 import CTASection from '../components/landing/CTASection';
 import Footer from '../components/landing/Footer';
 
@@ -14,7 +13,6 @@ const LandingPage = () => {
             <HeroSection />
             <HowItWorks />
             <AIFeatures />
-            <Pricing />
             <CTASection />
             <Footer />
         </div>

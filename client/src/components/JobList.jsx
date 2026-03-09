@@ -40,6 +40,7 @@ const JobList = () => {
   const [viewMode, setViewMode] = useState('grid');
   
   const [savedJobIds, setSavedJobIds] = useState(new Set());
+  const [appliedJobIds, setAppliedJobIds] = useState(new Set());
   const [filterTopMatches, setFilterTopMatches] = useState(false);
   
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ const JobList = () => {
   useEffect(() => {
     fetchUserSkills();
     fetchSavedJobs();
+    fetchAppliedJobs();
   }, []);
 
   useEffect(() => {
@@ -62,6 +64,18 @@ const JobList = () => {
       setUserSkills(res.data.skills || []);
     } catch (error) {
       console.error('Error fetching user skills:', error);
+    }
+  };
+
+  const fetchAppliedJobs = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/api/applications/student', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAppliedJobIds(new Set(res.data.map(a => a.job_id)));
+    } catch (error) {
+      console.error('Error fetching applied jobs:', error);
     }
   };
 
@@ -401,12 +415,17 @@ const JobList = () => {
                   hidden: { opacity: 0, y: 30 },
                   show: { opacity: 1, y: 0 }
                 }}
-                className={`job-card-premium ${job.matchScore >= 85 ? 'top-match' : ''}`}
+                className={`job-card-premium ${viewMode === 'list' ? 'list-view' : ''} ${job.matchScore >= 85 ? 'top-match' : ''} ${appliedJobIds.has(job.id) ? 'applied' : ''}`}
                 onClick={() => navigate(`/jobs/${job.id}`)}
               >
                 {job.matchScore >= 85 && (
                   <div className="top-match-badge">
                     <Sparkles size={12} /> TOP MATCH
+                  </div>
+                )}
+                {appliedJobIds.has(job.id) && (
+                  <div className="applied-badge">
+                    <CheckCircle2 size={12} /> APPLIED
                   </div>
                 )}
                 
@@ -461,10 +480,19 @@ const JobList = () => {
                      <Heart size={18} fill={savedJobIds.has(job.id) ? "currentColor" : "none"} />
                    </button>
                    <button 
-                    className="apply-btn-premium"
-                    onClick={(e) => openApplyModal(job, e)}
+                    className={`apply-btn-premium ${appliedJobIds.has(job.id) ? 'applied' : ''}`}
+                    onClick={(e) => !appliedJobIds.has(job.id) && openApplyModal(job, e)}
+                    disabled={appliedJobIds.has(job.id)}
                    >
-                     <Zap size={16} /> Quick Apply
+                     {appliedJobIds.has(job.id) ? (
+                       <>
+                         <CheckCircle2 size={16} /> Applied
+                       </>
+                     ) : (
+                       <>
+                         <Zap size={16} /> Quick Apply
+                       </>
+                     )}
                    </button>
                 </div>
               </motion.div>
@@ -491,7 +519,10 @@ const JobList = () => {
         isOpen={isApplyModalOpen} 
         onClose={(success) => {
           setIsApplyModalOpen(false);
-          if (success) fetchJobs(); // Refresh if applied
+          if (success) {
+            fetchJobs();
+            fetchAppliedJobs();
+          }
         }} 
         job={selectedJob}
         userSkills={userSkills}

@@ -4,7 +4,7 @@ import { Sparkles, Github, Twitter, Linkedin } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-gray-400 py-12">
+    <footer id="about" className="bg-gray-900 text-gray-400 py-12">
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           {/* Brand */}
@@ -26,7 +26,6 @@ const Footer = () => {
             <ul className="space-y-2 text-sm">
               <li><a href="/register?type=student" className="hover:text-white transition-colors">Browse Jobs</a></li>
               <li><a href="/register?type=recruiter" className="hover:text-white transition-colors">For Recruiters</a></li>
-              <li><a href="/#pricing" className="hover:text-white transition-colors">Pricing</a></li>
             </ul>
           </div>
           

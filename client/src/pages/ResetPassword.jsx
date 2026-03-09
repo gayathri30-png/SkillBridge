@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from "framer-motion";
-import { Lock, ArrowRight, Zap, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { Lock, ArrowRight, Zap, ShieldCheck, Eye, EyeOff, AlertCircle } from "lucide-react";
 import "../AuthPages.css";
 
 const ResetPassword = () => {
@@ -88,7 +88,7 @@ const ResetPassword = () => {
           )}
           {error && (
             <div className="auth-alert error">
-               <ShieldCheck size={18} /> {error}
+               <AlertCircle size={18} /> {error}
             </div>
           )}
 

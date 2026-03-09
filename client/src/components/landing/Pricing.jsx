@@ -24,7 +24,7 @@ const Pricing = () => {
       description: 'For serious candidates looking to stand out.',
       features: [
         'Everything in Free',
-        'AI Portfolio Analyzer',
+        'Advanced Profile Analytics',
         'Unlimited Job Applications',
         'Priority Skill Verification',
         'AI Proposal Generator'

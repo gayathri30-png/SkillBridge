@@ -21,6 +21,31 @@
   max-width: 450px;
   display: flex;
   align-items: center;
+  gap: 16px;
+}
+
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-btn:hover {
+  background: rgba(59, 130, 246, 0.06);
+  color: var(--neon-blue);
+}
+
+@media (max-width: 1200px) {
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .search-bar-wrapper {

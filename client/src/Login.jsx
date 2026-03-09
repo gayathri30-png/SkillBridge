@@ -13,7 +13,7 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -149,16 +149,7 @@ function Login() {
               </div>
             </div>
 
-            <div className="form-extras">
-              <label className="remember-me">
-                <input 
-                  type="checkbox" 
-                  className="checkbox-custom"
-                  checked={rememberMe}
-                  onChange={() => setRememberMe(!rememberMe)}
-                />
-                Remember me
-              </label>
+            <div className="form-extras" style={{ justifyContent: 'flex-end' }}>
               <a href="/forgot-password" onClick={(e) => { e.preventDefault(); navigate("/forgot-password"); }} className="forgot-pass">
                 Forgot password?
               </a>
@@ -176,14 +167,7 @@ function Login() {
               )}
             </button>
 
-            <div className="auth-divider">
-              <span>or continue with</span>
-            </div>
 
-            <button type="button" className="auth-btn-social">
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/smartlock/google.svg" width="18" height="18" alt="Google" />
-              Sign in with Google
-            </button>
           </form>
 
           <p className="auth-footer">

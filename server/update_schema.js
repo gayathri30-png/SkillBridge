@@ -15,10 +15,8 @@ const updateSchema = async () => {
         const [columns] = await connection.query("SHOW COLUMNS FROM users");
         const columnNames = columns.map(c => c.Field);
 
-        if (!columnNames.includes('portfolio_url')) {
-            await connection.query("ALTER TABLE users ADD COLUMN portfolio_url TEXT");
-            console.log("✅ Added portfolio_url column");
-        }
+
+
 
         if (!columnNames.includes('github_url')) {
             await connection.query("ALTER TABLE users ADD COLUMN github_url TEXT");

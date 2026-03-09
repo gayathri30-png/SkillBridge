@@ -47,27 +47,27 @@ export const deleteUser = (req, res) => {
 export const updateProfile = (req, res) => {
   const userId = req.user.id;
   const { 
-    name, // Allow updating name too
+    name,
+    headline,
     bio, 
     phone, 
     location, 
     avatar, 
     github_url, 
     linkedin_url, 
-    portfolio_url, 
     resume_url 
   } = req.body;
 
   const query = `
     UPDATE users 
-    SET name = ?, bio = ?, phone = ?, location = ?, avatar = ?, 
-        github_url = ?, linkedin_url = ?, portfolio_url = ?, resume_url = ?
+    SET name = ?, headline = ?, bio = ?, phone = ?, location = ?, avatar = ?, 
+        github_url = ?, linkedin_url = ?, resume_url = ?
     WHERE id = ?
   `;
 
   db.query(
     query,
-    [name, bio, phone, location, avatar, github_url, linkedin_url, portfolio_url, resume_url, userId],
+    [name, headline, bio, phone, location, avatar, github_url, linkedin_url, resume_url, userId],
     (err, result) => {
       if (err) {
         console.error("Update Profile Error:", err);
@@ -76,7 +76,7 @@ export const updateProfile = (req, res) => {
       
       res.json({ 
           message: "Profile updated successfully",
-          user: { name, bio, phone, location, avatar, github_url, linkedin_url, portfolio_url, resume_url }
+          user: { name, headline, bio, phone, location, avatar, github_url, linkedin_url, resume_url }
       });
     }
   );
@@ -145,8 +145,8 @@ export const getUserById = (req, res) => {
   const { id } = req.params;
 
   const query = `
-    SELECT u.id, u.name, u.role, u.bio, u.location, u.avatar, 
-           u.github_url, u.linkedin_url, u.portfolio_url, u.resume_url, 
+    SELECT u.id, u.name, u.role, u.headline, u.bio, u.location, u.avatar, 
+           u.github_url, u.linkedin_url, u.resume_url, 
            u.is_verified, u.created_at,
     (SELECT JSON_ARRAYAGG(
       JSON_OBJECT(

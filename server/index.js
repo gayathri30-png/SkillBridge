@@ -38,7 +38,7 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
-import portfolioRoutes from "./routes/portfolioRoutes.js";
+
 import adminRoutes from "./routes/adminRoutes.js";
 
 // Serve Uploads
@@ -55,7 +55,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/chat", chatRoutes);
-app.use("/api/portfolio", portfolioRoutes);
+
 app.use("/api/admin", adminRoutes);
 
 console.log("\n✅ ALL ROUTES MOUNTED:");

@@ -15,7 +15,8 @@ import {
   predictCLV,
   analyzeEQ,
   getFunnelOptimization,
-  analyzePortfolio,
+
+  getJobsForSkillGap,
   getSkillGapPathways,
   getAISummary,
   getSavedProposals,
@@ -57,7 +58,7 @@ router.get("/eq-score/:applicationId", protect, allowRoles("recruiter", "admin")
 router.get("/funnel-viz/:jobId", protect, allowRoles("recruiter", "admin"), getFunnelOptimization);
 
 // Student Advanced AI (Phase 2 Specialized)
-router.post("/portfolio/analyze", protect, allowRoles("student"), analyzePortfolio);
+router.get("/skill-gap/jobs", protect, allowRoles("student"), getJobsForSkillGap);
 router.get("/skill-gap/pathways", protect, allowRoles("student"), getSkillGapPathways);
 router.get("/summary", protect, allowRoles("student"), getAISummary);
 router.get("/proposals", protect, allowRoles("student"), getSavedProposals);

@@ -16,7 +16,36 @@
   box-shadow: 
     10px 0 40px rgba(0, 0, 0, 0.04),
     inset -2px 0 20px rgba(255, 255, 255, 0.4);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), left 0.4s ease, opacity 0.3s ease;
+}
+
+.sidebar-close-btn {
+  display: none;
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+}
+
+@media (max-width: 1200px) {
+  .sidebar-container {
+    left: -320px; /* Hide off-screen */
+    top: 0;
+    height: 100vh;
+    border-radius: 0 32px 32px 0;
+    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.1);
+  }
+
+  .sidebar-container.open {
+    transform: translateX(320px);
+  }
+
+  .sidebar-close-btn {
+    display: block;
+  }
 }
 
 .sidebar-nav {

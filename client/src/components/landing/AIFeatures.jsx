@@ -11,8 +11,8 @@ const AIFeatures = () => {
     },
     {
       icon: <Brain size={32} />,
-      title: 'AI Portfolio Analyzer',
-      desc: 'Get automated feedback on your portfolio to improve your chances of getting hired.',
+      title: 'AI Interview Coach',
+      desc: 'Practice mock interviews with AI feedback to sharpen your answers and boost confidence.',
       color: 'from-indigo-500 to-purple-600',
     },
     {

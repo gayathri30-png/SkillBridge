@@ -12,7 +12,6 @@ const AIDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
-    portfolio: { overall_score: 0, project_count: 0 },
     skillGaps: [],
     proposals: [],
     recommendations: []
@@ -47,11 +46,11 @@ const AIDashboard = () => {
 
       {/* TOOLS GRID */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Portfolio Card */}
+        {/* Profile Analytics Card */}
         <motion.div 
           whileHover={{ y: -5 }}
           className="bg-white p-6 rounded-[32px] shadow-xl border border-slate-100 relative overflow-hidden group cursor-pointer"
-          onClick={() => navigate('/ai/portfolio')}
+          onClick={() => navigate('/profile')}
         >
           <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
             <Briefcase size={80} />
@@ -59,23 +58,23 @@ const AIDashboard = () => {
           <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl w-fit mb-6">
             <Briefcase size={24} />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">Portfolio Analyzer</h3>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">Profile Analytics</h3>
           <div className="space-y-1 mb-8">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500 font-medium">Health Score</span>
-              <span className="text-blue-600 font-black">{data.portfolio.overall_score}%</span>
+              <span className="text-slate-500 font-medium">Profile Strength</span>
+              <span className="text-blue-600 font-black">75%</span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
-                animate={{ width: `${data.portfolio.overall_score}%` }}
+                animate={{ width: '75%' }}
                 className="h-full bg-blue-600"
               />
             </div>
-            <p className="text-xs text-slate-400">{data.portfolio.project_count} Projects Scanned</p>
+            <p className="text-xs text-slate-400">Update your profile to improve</p>
           </div>
           <button className="flex items-center gap-2 text-sm font-bold text-blue-600 group-hover:gap-3 transition-all">
-            Open Analyzer <ArrowRight size={16} />
+            View Profile <ArrowRight size={16} />
           </button>
         </motion.div>
 
@@ -150,7 +149,7 @@ const AIDashboard = () => {
                   </div>
                 </div>
                 <button 
-                  onClick={() => navigate(rec.recommendation_type === 'portfolio' ? '/ai/portfolio' : '/ai/skill-gap')}
+                  onClick={() => navigate('/ai/skill-gap')}
                   className="bg-white/10 hover:bg-white/20 p-3 rounded-2xl transition-colors"
                 >
                   <ChevronRight size={20} />

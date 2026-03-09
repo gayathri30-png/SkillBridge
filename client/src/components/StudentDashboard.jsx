@@ -25,20 +25,24 @@ const StudentDashboard = ({ user }) => {
   });
   const [recommendedJobs, setRecommendedJobs] = useState([]);
   const [userSkills, setUserSkills] = useState([]);
+  const [appliedJobIds, setAppliedJobIds] = useState(new Set());
   const [recentApplications, setRecentApplications] = useState([]);
   const [messages, setMessages] = useState([]);
   const [skillGaps, setSkillGaps] = useState([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [portfolioInsights, setPortfolioInsights] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const triggerAIAnalysis = async () => {
     setIsAnalyzing(true);
     try {
       const token = localStorage.getItem('token');
-      // Pass a default jobTitle to ensure the backend detector mode works flawlessly
-      await axios.get('/api/ai/skill-gap/pathways?jobTitle=Frontend Developer', { headers: { Authorization: `Bearer ${token}` } });
-      const summaryRes = await axios.get('/api/ai/summary', { headers: { Authorization: `Bearer ${token}` } });
+      const headers = { Authorization: `Bearer ${token}` };
+      // Fetch a real job to analyze against
+      const jobsRes = await axios.get('/api/ai/skill-gap/jobs', { headers });
+      if (jobsRes.data.length > 0) {
+        await axios.get(`/api/ai/skill-gap/pathways?jobId=${jobsRes.data[0].id}`, { headers });
+      }
+      const summaryRes = await axios.get('/api/ai/summary', { headers });
       setSkillGaps(summaryRes.data.skillGaps || []);
     } catch (err) {
       console.error("AI Analysis Failed", err);
@@ -58,7 +62,7 @@ const StudentDashboard = ({ user }) => {
         const summary = summaryRes.data;
         
         setStats({
-          profileStrength: summary.portfolio.overall_score || 75,
+          profileStrength: 75,
           appsSent: summary.application_count || 0,
           matchScoreAvg: summary.match_score_avg || 0,
           skillGap: summary.skillGaps?.length > 0 ? 100 - (summary.skillGaps[0].match_percentage || 0) : 0,
@@ -66,16 +70,18 @@ const StudentDashboard = ({ user }) => {
         });
 
         setSkillGaps(summary.skillGaps || []);
-        setPortfolioInsights(summary.portfolio);
 
         // 2. Fetch Recommended Jobs (Real DB Jobs)
-        const [jobsRes, profileRes] = await Promise.all([
+        const [jobsRes, profileRes, appsRes] = await Promise.all([
           axios.get('/api/jobs', { headers }),
-          axios.get('/api/users/profile', { headers })
+          axios.get('/api/users/profile', { headers }),
+          axios.get('/api/applications/student', { headers })
         ]);
 
         const currentSkills = profileRes.data.skills || [];
         setUserSkills(currentSkills);
+        setAppliedJobIds(new Set(appsRes.data.map(app => app.job_id)));
+        setRecentApplications(appsRes.data.slice(0, 5));
         
         const jobs = jobsRes.data.slice(0, 4);
         const userSkillSet = new Set(currentSkills.map(s => s.skill_name.toLowerCase()));
@@ -100,11 +106,7 @@ const StudentDashboard = ({ user }) => {
           setStats(prev => ({ ...prev, matchScoreAvg: avg }));
         }
 
-        // 3. Fetch Recent Applications (Real DB Data)
-        const appsRes = await axios.get('/api/applications/student', { headers });
-        setRecentApplications(appsRes.data.slice(0, 5));
-
-        // 4. Fetch Recent Messages
+        // 3. Fetch Recent Messages
         const roomsRes = await axios.get('/api/chat/rooms', { headers });
         setMessages(roomsRes.data.slice(0, 3));
 
@@ -167,7 +169,7 @@ const StudentDashboard = ({ user }) => {
             <p>
               {stats.matchScoreAvg > 80 
                 ? `Intelligence Active: You're in the top 2% for ${recommendedJobs.length} real-world roles. Optimizing...` 
-                : "AI analysis complete. Refine your portfolio to unlock 15+ more high-match opportunities."}
+                : "AI analysis complete. Refine your skills to unlock 15+ more high-match opportunities."}
             </p>
           </div>
         </div>
@@ -236,13 +238,18 @@ const StudentDashboard = ({ user }) => {
           {recommendedJobs.map((job, idx) => (
             <motion.div 
               key={job.id || idx}
-              className="job-premium-card cursor-pointer"
+              className={`job-premium-card cursor-pointer ${appliedJobIds.has(job.id) ? 'applied' : ''}`}
               whileHover={{ y: -10 }}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 * idx }}
               onClick={() => navigate(`/jobs/${job.id}`)}
             >
+              {appliedJobIds.has(job.id) && (
+                <div className="dashboard-applied-badge">
+                  <CheckCircle2 size={12} /> Applied
+                </div>
+              )}
               <div className="flex justify-between items-start relative z-10 w-full">
                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black ${job.title.toLowerCase().includes('backend') ? 'text-emerald-400 bg-emerald-400/10' : job.title.toLowerCase().includes('frontend') ? 'text-blue-400 bg-blue-400/10' : 'text-purple-400 bg-purple-400/10'} text-xl shadow-lg border border-white/5 backdrop-blur-md`}>
                     <div className="holographic-icon-layer">
@@ -285,9 +292,14 @@ const StudentDashboard = ({ user }) => {
                        e.stopPropagation();
                        navigate(`/jobs/${job.id}`);
                      }}
-                     className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-[20px] font-black text-xs uppercase tracking-widest transition-all shadow-2xl shadow-blue-900/40 flex items-center justify-center gap-3 border border-blue-500/50"
+                     className={`w-full py-4 ${appliedJobIds.has(job.id) ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 text-white border-blue-500/50 shadow-blue-900/40'} rounded-[20px] font-black text-xs uppercase tracking-widest transition-all shadow-2xl flex items-center justify-center gap-3 border`}
+                     disabled={appliedJobIds.has(job.id)}
                     >
-                      Apply Now <Sparkles size={16} />
+                      {appliedJobIds.has(job.id) ? (
+                        <>Already Applied <CheckCircle2 size={16} /></>
+                      ) : (
+                        <>Apply Now <Sparkles size={16} /></>
+                      )}
                     </button>
                  </div>
               </div>
@@ -306,46 +318,55 @@ const StudentDashboard = ({ user }) => {
             </h3>
             <button onClick={() => navigate('/applications')} className="text-[10px] font-black text-slate-400 hover:text-blue-600 transition-colors uppercase tracking-widest bg-slate-50 px-4 py-2 rounded-lg">Full History</button>
           </div>
-          <div className="overflow-x-auto">
-             <table className="premium-table w-full">
-               <thead>
-                 <tr>
-                    <th className="text-left">Position</th>
-                    <th className="text-left">Status</th>
-                    <th className="text-left">AI Match</th>
-                    <th className="text-left">Applied</th>
-                 </tr>
-               </thead>
-               <tbody>
-                 {recentApplications.map((app, i) => (
-                   <tr key={app.id || i} className="group cursor-pointer" onClick={() => navigate('/applications')}>
-                      <td>
-                        <div className="font-bold text-slate-800">{app.title}</div>
-                        <div className="text-xs text-slate-400 font-semibold">{app.company_name}</div>
-                      </td>
-                      <td>
-                        <span className={`status-tag ${app.status?.toLowerCase() || 'pending'}`}>
-                          {app.status || 'Pending'}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-3">
-                           <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                           <span className="text-sm font-bold">{app.ai_match_score || 85}%</span>
-                        </div>
-                      </td>
-                      <td className="text-xs text-slate-400 font-black uppercase tracking-tighter">
-                        {new Date(app.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                      </td>
-                   </tr>
-                 ))}
-                 {recentApplications.length === 0 && (
-                   <tr>
-                     <td colSpan="4" className="text-center py-12 text-slate-400 italic font-medium">No active applications found.</td>
-                   </tr>
-                 )}
-               </tbody>
-             </table>
+          <div className="applications-list-container">
+            {recentApplications.map((app, i) => (
+              <div 
+                key={app.id || i} 
+                className="application-premium-card group"
+                onClick={() => navigate('/applications')}
+              >
+                <div className="flex items-center gap-6">
+                  <div className="app-company-logo">
+                    {app.company_name?.charAt(0) || 'C'}
+                  </div>
+                  <div>
+                    <div className="font-bold text-slate-800 text-lg leading-tight">{app.job_title || app.title}</div>
+                    <div className="text-xs text-slate-400 font-semibold mt-1 flex items-center gap-1.5">
+                      <Globe size={12} /> {app.company_name}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-center">
+                  <span className={`status-tag-premium ${app.status?.toLowerCase() || 'pending'}`}>
+                    {app.status?.toLowerCase() === 'pending' && <Clock size={14} />}
+                    {app.status?.toLowerCase() === 'interview' && <Zap size={14} />}
+                    {app.status?.toLowerCase() === 'offered' && <CheckCircle2 size={14} />}
+                    {app.status || 'Pending'}
+                  </span>
+                </div>
+
+                <div className="flex flex-col items-center">
+                  <span className="premium-card-label !mb-1">AI Match</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]"></div>
+                    <span className="text-base font-bold text-slate-800">{app.ai_match_score || 85}%</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end">
+                  <span className="premium-card-label !mb-1">Applied</span>
+                  <span className="text-sm font-black text-slate-500 uppercase tracking-tight">
+                    {new Date(app.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {recentApplications.length === 0 && (
+              <div className="py-16 text-center text-slate-400 italic font-medium bg-slate-50/50 rounded-3xl border border-dashed border-slate-200">
+                No active applications found.
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -372,7 +393,7 @@ const StudentDashboard = ({ user }) => {
                 </div>
                 <button 
                   onClick={() => navigate('/ai')}
-                  className="w-full py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-3xl font-black text-xs uppercase tracking-widest transition-all shadow-2xl shadow-blue-900/40 flex items-center justify-center gap-3"
+                  className="boost-btn-premium w-full mt-4"
                 >
                   Boost Match Score <Sparkles size={16} />
                 </button>
@@ -393,26 +414,52 @@ const StudentDashboard = ({ user }) => {
                 // Logic based on actual database data
                 const isUrgent = gap.match_percentage < 60;
                 
+                const category = gap.job_title?.toLowerCase().includes('backend') || gap.job_title?.toLowerCase().includes('full stack') ? 'code' : 
+                                 gap.job_title?.toLowerCase().includes('design') ? 'design' : 'data';
+                
                 return (
-                 <div key={i} className="priority-item glass-morphic-item flex items-center justify-between !py-6 !px-8">
-                    <div className="flex items-center gap-6">
-                       <div className="flex items-center gap-3">
-                         <span className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest ${isUrgent ? 'bg-rose-100/80 text-[#334155]' : 'bg-[#fef3c7] text-[#92400e]'}`}>
-                           {isUrgent ? 'Urgent' : 'Suggested'}
-                         </span>
-                         <div className="symbol-glow"><Lightbulb size={18} className="text-amber-400 opacity-90" /></div>
-                       </div>
-                       <h4 className="font-extrabold text-[#1e293b] text-[15px] leading-snug">
-                         {firstPart}<br/>{restPart}
-                       </h4>
-                    </div>
-                    <button 
-                      onClick={() => navigate('/ai/skill-gap')}
-                      className="px-6 py-3 glass-neon-btn text-white rounded-[20px] text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all w-36 shadow-lg"
-                    >
-                      Analyse Skill Gap
-                    </button>
-                 </div>
+                  <div key={i} className="priority-item glass-morphic-item flex flex-col gap-5">
+                     <div className="priority-meta w-full">
+                        <div className={`category-icon-box cat-${category}`}>
+                           {category === 'code' ? <Code size={20} /> : category === 'design' ? <Palette size={20} /> : <Database size={20} />}
+                        </div>
+                        <div className="flex-1">
+                           <div className="flex items-center justify-between mb-1">
+                              <span className={`px-4 py-1 rounded-2xl text-[9px] font-black uppercase tracking-widest ${isUrgent ? 'bg-rose-100/80 text-rose-700' : 'bg-blue-100 text-blue-700'}`}>
+                                {isUrgent ? 'Urgent Gap' : 'Growth Area'}
+                              </span>
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Match: {gap.match_percentage}%</span>
+                           </div>
+                           <h4 className="font-extrabold text-[#1e293b] text-base leading-tight">
+                             {gap.job_title || 'Professional Role'}
+                           </h4>
+                        </div>
+                     </div>
+
+                     <div className="w-full">
+                        <div className="h-2 w-full bg-slate-100/50 rounded-full overflow-hidden mb-6">
+                           <motion.div 
+                             className={`h-full ${isUrgent ? 'bg-rose-400' : 'bg-blue-400'}`}
+                             initial={{ width: 0 }}
+                             animate={{ width: `${gap.match_percentage}%` }}
+                             transition={{ duration: 1, delay: 0.8 }}
+                           />
+                        </div>
+                     </div>
+
+                     <div className="upskilling-course-action w-full">
+                        <div className="course-info">
+                           <h5>Advanced {gap.job_title?.split(' ')[0] || 'Skill'} Mastery</h5>
+                           <p>2.5 hours • Guided Project</p>
+                        </div>
+                        <button 
+                          onClick={() => navigate('/ai/skill-gap')}
+                          className="course-cta"
+                        >
+                          Start Now
+                        </button>
+                     </div>
+                  </div>
                 );
               }) : (
                 <div className="py-12 bg-slate-50/30 rounded-[40px] border border-dashed border-slate-200 text-center glass-morphic-item">
@@ -451,10 +498,10 @@ const StudentDashboard = ({ user }) => {
                         <span className="text-[10px] font-bold text-slate-400 uppercase">Confirmed</span>
                      </div>
                      <h4 className="font-bold text-slate-800 mb-1">Interview @ {app.company_name}</h4>
-                     <p className="text-xs text-slate-500 font-medium mb-5">{app.title}</p>
+                     <p className="text-xs text-slate-500 font-medium mb-5">{app.job_title || app.title}</p>
                       <button 
                        onClick={() => navigate('/applications')}
-                       className="w-full py-4 glass-action-btn rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all mt-4"
+                       className="w-full py-4 boost-btn-premium rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all mt-6"
                       >
                          Prepare With AI <Sparkles size={14} className="ml-2 inline symbol-glow" />
                       </button>
@@ -510,7 +557,7 @@ const StudentDashboard = ({ user }) => {
              )}
              <button 
                onClick={() => navigate('/chat')}
-               className="w-full py-4 glass-action-btn rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
+               className="boost-btn-premium w-full mt-4"
              >
                Open Inbox <ChevronsRight size={14} className="ml-2 inline symbol-glow" />
              </button>

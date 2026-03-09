@@ -11,18 +11,18 @@ import {
   Sparkles, 
   Layout,
   Code,
-  CheckCircle
+  CheckCircle,
+  X
 } from 'lucide-react';
 import './Sidebar.css';
 
-const Sidebar = ({ user }) => {
+const Sidebar = ({ user, isOpen, onClose }) => {
   const navigate = useNavigate();
 
   const studentLinks = [
     { title: 'Dashboard', path: '/dashboard', icon: <Home size={20} /> },
     { title: 'My Profile', path: '/profile', icon: <User size={20} /> },
     { title: 'My Skills', path: '/skills', icon: <Code size={20} /> },
-    { title: 'My Portfolio', path: '/portfolio', icon: <Layout size={20} /> },
     { title: 'Find Jobs', path: '/jobs', icon: <Briefcase size={20} /> },
     { title: 'My Applications', path: '/applications', icon: <FileText size={20} /> },
     { title: 'Messages', path: '/chat', icon: <MessageSquare size={20} /> },
@@ -59,7 +59,12 @@ const Sidebar = ({ user }) => {
 
 
   return (
-    <div className="sidebar-container">
+    <div className={`sidebar-container ${isOpen ? 'open' : ''}`}>
+      {/* Mobile Close Button */}
+      <button className="sidebar-close-btn" onClick={onClose}>
+        <X size={24} />
+      </button>
+
       {/* 1. Logo */}
       <div className="sidebar-logo">
         <Sparkles size={24} className="text-[#0057D9]" fill="currentColor" />

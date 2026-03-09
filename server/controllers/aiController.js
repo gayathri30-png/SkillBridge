@@ -130,8 +130,7 @@ export const analyzeApplicationInsights = async (req, res) => {
         a.proposal, a.ai_match_score,
         j.title as job_title, j.description as job_desc,
         u.id as student_id, u.name as student_name, u.bio as student_bio,
-        (SELECT GROUP_CONCAT(s.name) FROM user_skills us JOIN skills s ON us.skill_id = s.id WHERE us.user_id = u.id) as student_skills,
-        (SELECT COUNT(*) FROM portfolio_items WHERE user_id = u.id) as portfolio_count
+        (SELECT GROUP_CONCAT(s.name) FROM user_skills us JOIN skills s ON us.skill_id = s.id WHERE us.user_id = u.id) as student_skills
       FROM applications a
       JOIN jobs j ON a.job_id = j.id
       JOIN users u ON a.student_id = u.id
@@ -143,9 +142,6 @@ export const analyzeApplicationInsights = async (req, res) => {
 
     // 2. AI 10: Candidate Summary
     const summary = `Candidate ${data.student_name} is a strong fit for the ${data.job_title} role with expertise in ${data.student_skills || 'various technologies'}. Their proposal shows ${data.proposal.length > 200 ? 'depth' : 'conciseness'} and aligns with the core requirements.`;
-
-    // 3. AI 8: Portfolio Quality Analyzer
-    const portfolioScore = Math.min(100, (data.portfolio_count * 25)); // Simple heuristic for now
     
     // 4. AI 9 & 18: Communication & Sentiment
     const words = data.proposal.toLowerCase().split(/\s+/);
@@ -157,14 +153,13 @@ export const analyzeApplicationInsights = async (req, res) => {
 
     // 5. AI 12: Predictive Success Score (Weighted Heuristic)
     const successProbability = Math.min(100, Math.round(
-        (parseFloat(data.ai_match_score) * 0.5) + (portfolioScore * 0.3) + (positiveMatch * 10)
+        (parseFloat(data.ai_match_score) * 0.7) + (positiveMatch * 10)
     ));
 
     res.json({
       applicationId,
       insights: {
         summary,
-        portfolioScore,
         commStyle,
         sentiment,
         successProbability,
@@ -498,7 +493,7 @@ export const verifySkillsAI = async (req, res) => {
       skill: s.name,
       verified: Math.random() > 0.3,
       confidence: Math.round(70 + Math.random() * 30),
-      reason: "Validated via project portfolio analysis."
+      reason: "Validated via project analysis."
     }));
 
     res.json({
@@ -628,78 +623,34 @@ export const generateJobPost = async (req, res) => {
 // MODULE 12: PHASE 2 - SPECIALIZED AI
 // --------------------------------
 
-// 1. Portfolio Health Analyzer (Updated)
-export const analyzePortfolio = async (req, res) => {
-  const studentId = req.user.id;
-
+// Get real recruiter-posted jobs for the Skill Gap Detector
+export const getJobsForSkillGap = async (req, res) => {
   try {
-    const [projects] = await db.promise().query(
-      `SELECT id, title, description FROM portfolio_items WHERE user_id = ? AND type = 'project'`,
-      [studentId]
-    );
+    const [jobs] = await db.promise().query(`
+      SELECT j.id, j.title, j.company_name, j.location,
+        (SELECT JSON_ARRAYAGG(s.name)
+         FROM job_skills js JOIN skills s ON s.id = js.skill_id
+         WHERE js.job_id = j.id) AS skills_required
+      FROM jobs j
+      WHERE j.status = 'active'
+      ORDER BY j.created_at DESC
+      LIMIT 20
+    `);
 
-    if (projects.length === 0) {
-      return res.json({ 
-        score: 0, 
-        analysis: "No projects found. AI needs at least one project to analyze your portfolio." 
-      });
-    }
+    // Parse skills and filter out jobs with no skills
+    const enriched = jobs
+      .map(j => ({
+        ...j,
+        skills_required: typeof j.skills_required === 'string'
+          ? JSON.parse(j.skills_required)
+          : (j.skills_required || [])
+      }))
+      .filter(j => j.skills_required && j.skills_required.length > 0);
 
-    // AI Heuristic Logic
-    const projectResults = projects.map(p => {
-      const descLen = p.description.length;
-      let pScore = Math.min(100, (descLen / 300) * 100);
-      let feedback = [];
-      if (descLen < 100) feedback.push("❌ Too short");
-      else if (descLen < 300) feedback.push("⚠️ Add more details");
-      else feedback.push("✅ Good description");
-      
-      return { id: p.id, title: p.title, score: Math.round(pScore), feedback };
-    });
-
-    const overallScore = Math.round(projectResults.reduce((acc, p) => acc + p.score, 0) / projects.length);
-    
-    let analysis = "";
-    let suggestions = [];
-
-    if (overallScore > 85) {
-      analysis = "Exceptional portfolio! Your descriptions are detailed and you have a solid quantity of work.";
-      suggestions = ["Add live demo links to all projects", "Consider a technical blog to complement your code"];
-    } else if (overallScore > 60) {
-      analysis = "Good foundation. Your projects show technical competence but could use more descriptive depth.";
-      suggestions = ["Expand on the 'Challenges Overcome' in your project descriptions", "Add a few more specialized projects"];
-    } else {
-      analysis = "Portfolio needs attention. Limited project count or brief descriptions make it hard for recruiters to gauge your skill.";
-      suggestions = ["Add at least 3 distinct projects", "Write at least 2 paragraphs describing your role in each project"];
-    }
-
-    const result = {
-      overall_score: overallScore,
-      project_count: projects.length,
-      project_scores: projectResults,
-      suggestions: suggestions,
-      analysis: analysis
-    };
-
-    // Store in specialized table
-    await db.promise().query(
-      `INSERT INTO portfolio_analysis (user_id, overall_score, project_count, project_scores, suggestions) VALUES (?, ?, ?, ?, ?)`,
-      [studentId, overallScore, projects.length, JSON.stringify(projectResults), JSON.stringify(suggestions)]
-    );
-
-    // Also add to recommendations if score is low
-    if (overallScore < 70) {
-      await db.promise().query(
-        `INSERT INTO ai_recommendations (user_id, recommendation_type, recommendation_text, priority) VALUES (?, 'portfolio', 'Improve your portfolio: Add more details to your projects to reach 80% score.', 'high')`,
-        [studentId]
-      );
-    }
-
-    res.json(result);
-
+    res.json(enriched);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Portfolio analysis failed" });
+    console.error('Failed to fetch jobs for skill gap:', error);
+    res.status(500).json({ error: 'Failed to fetch jobs' });
   }
 };
 
@@ -721,9 +672,27 @@ export const getSkillGapPathways = async (req, res) => {
       jobSkills = skills;
       const [[job]] = await db.promise().query(`SELECT title FROM jobs WHERE id = ?`, [jobId]);
       currentJobTitle = job.title;
+    } else if (jobTitle) {
+      // Detector mode: find a real job matching the title and use its real skills
+      console.log("Detector mode: searching for real job with title:", currentJobTitle);
+      const [matchingJobs] = await db.promise().query(
+        `SELECT id, title FROM jobs WHERE title = ? AND status = 'active' LIMIT 1`,
+        [jobTitle]
+      );
+
+      if (matchingJobs.length > 0) {
+        const realJob = matchingJobs[0];
+        currentJobTitle = realJob.title;
+        const [skills] = await db.promise().query(
+          `SELECT s.name FROM skills s JOIN job_skills js ON s.id = js.skill_id WHERE js.job_id = ?`,
+          [realJob.id]
+        );
+        jobSkills = skills;
+      } else {
+        return res.status(404).json({ error: `No active job found with title "${jobTitle}". Please select from available jobs.` });
+      }
     } else {
-      console.log("Using detector mode for jobTitle:", currentJobTitle);
-      jobSkills = [{ name: "React" }, { name: "TypeScript" }, { name: "Tailwind CSS" }, { name: "Node.js" }];
+      return res.status(400).json({ error: 'Please provide a jobId or jobTitle to analyze.' });
     }
 
     console.log("Fetching student skills...");
@@ -736,7 +705,7 @@ export const getSkillGapPathways = async (req, res) => {
     const matched = jobSkills.filter(js => studentSkills.some(ss => ss.name.toLowerCase() === js.name.toLowerCase()));
     const missing = jobSkills.filter(js => !studentSkills.some(ss => ss.name.toLowerCase() === js.name.toLowerCase())).map(s => s.name);
 
-    const matchPercentage = Math.round((matched.length / jobSkills.length) * 100);
+    const matchPercentage = jobSkills.length > 0 ? Math.round((matched.length / jobSkills.length) * 100) : 0;
 
     console.log("Generating pathways...");
     let pathways = [];
@@ -842,7 +811,7 @@ export const generateAdvancedProposal = async (req, res) => {
       WHERE j.id = ?
     `, [jobId]);
     
-    const [projects] = await db.promise().query(`SELECT title, description, technologies FROM portfolio_items WHERE user_id = ? LIMIT 3`, [studentId]);
+    const projects = [];
 
     if (!job || !student) {
       return res.status(404).json({ error: "Job or Student not found" });
@@ -866,13 +835,11 @@ export const generateAdvancedProposal = async (req, res) => {
       
       Applicant Name: ${student.name}
       Applicant Bio: ${student.bio || "A dedicated professional."}
-      Applicant's Portfolio Highlights:
-      ${projectHighlights}
 
       Requirements:
       1. Tone: The tone must be strictly ${tone}. (e.g., if Friendly, use enthusiastic language; if Professional, keep it formal).
       2. Length: The length must be ${length}. (Short = 1-2 paragraphs, Medium = 3 paragraphs, Long = 4-5 paragraphs).
-      3. Focus: Weave the applicant's portfolio highlights naturally into the proposal to prove they can do the job described.
+      3. Focus: Weave the applicant's project highlights naturally into the proposal to prove they can do the job described.
       4. Sign off with the applicant's name: ${student.name}.
       5. Output ONLY the letter text, absolutely no other conversation.
     `;
@@ -918,9 +885,6 @@ export const getAISummary = async (req, res) => {
   const studentId = req.user.id;
 
   try {
-    // Portfolio Analysis
-    const [[portfolio]] = await db.promise().query(`SELECT * FROM portfolio_analysis WHERE user_id = ? ORDER BY created_at DESC LIMIT 1`, [studentId]);
-    
     // Skill Gap Analysis
     const [skillGaps] = await db.promise().query(`SELECT * FROM skill_gap_analysis WHERE user_id = ? ORDER BY created_at DESC LIMIT 3`, [studentId]);
     
@@ -948,7 +912,6 @@ export const getAISummary = async (req, res) => {
     );
 
     res.json({
-      portfolio: portfolio || { overall_score: 75, project_count: 0 },
       skillGaps,
       proposals,
       recommendations,

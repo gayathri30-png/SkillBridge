@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import ApplicantEvaluation from "./profile/ApplicantEvaluation";
 import CandidateComparison from "./CandidateComparison";
 import InterviewScheduler from "./InterviewScheduler";
 import FeedbackGenerator from "./FeedbackGenerator";
@@ -22,7 +21,6 @@ const RecruiterApplicants = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [jobDetails, setJobDetails] = useState(null);
-  const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [selectedForCompare, setSelectedForCompare] = useState([]);
   const [showComparison, setShowComparison] = useState(false);
   const [comparisonData, setComparisonData] = useState(null);
@@ -491,7 +489,7 @@ const RecruiterApplicants = () => {
                             </select>
                             
                             <div className="card-btns">
-                                <button className="btn btn-outline btn-sm py-1.5" onClick={() => setSelectedApplicant(app)}>View Profile</button>
+                                <button className="btn btn-outline btn-sm py-1.5" onClick={() => navigate(`/evaluation/${app.application_id}`, { state: { application: app } })}>View Profile</button>
                                 <button className="btn btn-primary btn-sm py-1.5" title="Message Applicant" onClick={async () => { try { const token = localStorage.getItem('token'); const res = await axios.post('/api/chat/rooms', { application_id: app.application_id }, { headers: { Authorization: `Bearer ${token}` } }); navigate(`/chat/${res.data.room_id}`); } catch(e) { alert('Could not open chat'); } }}><MessageSquare size={14} /></button>
                             </div>
                         </div>
@@ -530,14 +528,6 @@ const RecruiterApplicants = () => {
                 </button>
             )}
       </div>
-
-      {selectedApplicant && (
-          <ApplicantEvaluation 
-            application={selectedApplicant}
-            onClose={() => setSelectedApplicant(null)}
-            onRefresh={fetchApplicants}
-          />
-      )}
 
       {feedbackApplicant && (
           <FeedbackGenerator 

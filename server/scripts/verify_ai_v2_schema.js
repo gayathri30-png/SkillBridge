@@ -19,7 +19,7 @@ async function verify() {
   try {
     console.log('--- VERIFYING MODULE 12 PHASE 2 SPECIALIZED TABLES ---');
 
-    const tables = ['portfolio_analysis', 'skill_gap_analysis', 'ai_proposals', 'ai_recommendations'];
+    const tables = ['skill_gap_analysis', 'ai_proposals', 'ai_recommendations'];
     for (const table of tables) {
       const [rows] = await connection.query(`SHOW TABLES LIKE '${table}'`);
       if (rows.length > 0) {

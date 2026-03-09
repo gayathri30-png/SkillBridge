@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Bell } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 import './Header.css';
 
-const Header = () => {
+const Header = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
   const role = user?.role || 'student';
@@ -47,8 +47,10 @@ const Header = () => {
           const res = await axios.get("/api/notifications", {
               headers: { Authorization: `Bearer ${token}` }
           });
-          setNotifications(res.data);
-          setUnreadCount(res.data.filter(n => !n.is_read).length);
+          const fetchedNotifications = res.data;
+          console.log("Fetched notifications:", fetchedNotifications);
+          setNotifications(fetchedNotifications);
+          setUnreadCount(fetchedNotifications.filter(n => !n.is_read || n.is_read.data?.[0] === 0).length);
       } catch (error) {
           console.error("Error fetching notifications", error);
       }
@@ -91,6 +93,9 @@ const Header = () => {
   return (
     <header className="main-header">
       <div className="header-left">
+        <button className="mobile-menu-btn" onClick={onMenuClick}>
+          <Menu size={24} />
+        </button>
         <div className="search-bar-wrapper">
           <span className="search-icon">🔍</span>
           <input type="text" placeholder="Search internships..." className="header-search-input" />
@@ -120,23 +125,26 @@ const Header = () => {
                   </div>
                   <div className="max-h-96 overflow-y-auto">
                       {notifications.length === 0 ? (
-                          <div className="p-4 text-center text-slate-500 text-sm">No notifications</div>
+                          <div className="p-4 text-center text-slate-500 text-sm">No notifications to show right now.</div>
                       ) : (
-                          notifications.map(notif => (
-                              <div 
-                                key={notif.id} 
-                                className={`p-3 border-b border-slate-50 hover:bg-slate-50 transition-colors ${!notif.is_read ? 'bg-indigo-50/50' : ''}`}
-                                onClick={() => { handleMarkAsRead(notif.id); setShowNotifDropdown(false); }}
-                              >
-                                  <div className="flex justify-between items-start">
-                                    <p className="text-sm text-slate-800">{notif.message}</p>
-                                    {!notif.is_read && <span className="h-2 w-2 bg-indigo-500 rounded-full mt-1.5 flex-shrink-0"></span>}
-                                  </div>
-                                  <span className="text-xs text-slate-400 mt-1 block">
-                                      {new Date(notif.created_at).toLocaleDateString()}
-                                  </span>
-                              </div>
-                          ))
+                          notifications.map(notif => {
+                              const isUnread = !notif.is_read || notif.is_read?.data?.[0] === 0;
+                              return (
+                                <div 
+                                  key={notif.id} 
+                                  className={`p-3 border-b border-slate-50 hover:bg-slate-50 transition-colors ${isUnread ? 'bg-indigo-50/50' : ''}`}
+                                  onClick={() => { handleMarkAsRead(notif.id); setShowNotifDropdown(false); }}
+                                >
+                                    <div className="flex justify-between items-start">
+                                      <p className="text-sm text-slate-800">{notif.message}</p>
+                                      {isUnread && <span className="h-2 w-2 bg-indigo-500 rounded-full mt-1.5 flex-shrink-0"></span>}
+                                    </div>
+                                    <span className="text-xs text-slate-400 mt-1 block">
+                                        {new Date(notif.created_at).toLocaleDateString()}
+                                    </span>
+                                </div>
+                              );
+                          })
                       )}
                   </div>
                   <button 

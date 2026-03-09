@@ -8,7 +8,7 @@ const HowItWorks = () => {
     {
       icon: <UserPlus size={24} />,
       title: 'Create Profile',
-      desc: 'Add your skills, projects, and portfolio. No degree required – your talent speaks for itself.',
+      desc: 'Add your skills and projects. No degree required – your talent speaks for itself.',
     },
     {
       icon: <Search size={24} />,

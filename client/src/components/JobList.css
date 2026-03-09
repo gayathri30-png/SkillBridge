@@ -398,11 +398,16 @@
   background: white;
 }
 
-/* Job Grid */
 .jobs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
   gap: 24px;
+}
+
+.jobs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .job-card-premium {
@@ -414,7 +419,118 @@
   box-shadow: 0 10px 30px rgba(0,0,0,0.02);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to fix badge clipping */
+}
+
+/* List View Specific Styles */
+.job-card-premium.list-view {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 24px;
+}
+
+.job-card-premium.list-view .card-top {
+  margin-bottom: 0;
+  gap: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Logo and Score close together in list mdoe */
+  width: auto;
+}
+
+.job-card-premium.list-view .card-top .company-logo-placeholder {
+  width: 48px;
+  height: 48px;
+}
+
+.job-card-premium.list-view .card-info {
+  flex: 1.5;
+  min-width: 0;
+}
+
+.job-card-premium.list-view .job-meta-premium {
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.job-card-premium.list-view .meta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.job-card-premium.list-view .skills-preview {
+  margin-bottom: 0;
+  display: flex;
+  flex: 2;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border-left: 1px solid rgba(0,0,0,0.05);
+  border-right: 1px solid rgba(0,0,0,0.05);
+}
+
+.job-card-premium.list-view .card-actions-premium {
+  flex-shrink: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.job-card-premium.list-view .apply-btn-premium {
+  padding: 10px 20px;
+}
+
+.job-card-premium.list-view .save-btn {
+  width: 42px;
+  height: 42px;
+}
+
+.job-card-premium.list-view .top-match-badge {
+  top: -10px;
+  right: 20px;
+}
+
+.applied-badge {
+  position: absolute;
+  top: -10px;
+  right: 140px; /* Offset from top match badge if both exist */
+  background: #10b981;
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 6px 14px;
+  border-radius: 99px;
+  border: 2px solid white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* If only applied badge exists, move it back to the right */
+.job-card-premium:not(.top-match) .applied-badge {
+  right: 20px;
+}
+
+.job-card-premium.applied {
+  background: rgba(240, 253, 244, 0.5);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.apply-btn-premium.applied {
+  background: #f0fdf4 !important;
+  color: #10b981 !important;
+  border: 1px solid #10b981 !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .job-card-premium::before {
@@ -423,25 +539,31 @@
   top: 0; left: 0; width: 100%; height: 100%;
   background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.05), transparent 70%);
   pointer-events: none;
+  border-radius: 28px; /* Ensure gradient follows rounded corners */
 }
 
 .job-card-premium:hover {
-  transform: translateY(-12px) scale(1.02);
+  transform: translateY(-8px) scale(1.01);
   box-shadow: 0 30px 60px rgba(0,0,0,0.08);
   border-color: rgba(99, 102, 241, 0.4);
 }
 
 .top-match-badge {
   position: absolute;
-  top: 20px;
+  top: -10px; /* Moved up to avoid clipping into card content */
   right: 20px;
-  background: rgba(251, 191, 36, 0.1);
-  color: #b45309;
+  background: #fbbf24;
+  color: #1e293b;
   font-size: 10px;
   font-weight: 900;
-  padding: 4px 12px;
+  padding: 6px 14px;
   border-radius: 99px;
-  border: 1px solid rgba(251, 191, 36, 0.2);
+  border: 2px solid white;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .card-top {
@@ -595,4 +717,21 @@
   .explorer-layout { grid-template-columns: 1fr; }
   .ai-summary-banner { flex-direction: column; gap: 20px; text-align: center; }
   .ai-summary-content { flex-direction: column; }
+  
+  .job-card-premium.list-view {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+  }
+  
+  .job-card-premium.list-view .skills-preview {
+    border: none;
+    padding: 0;
+    justify-content: flex-start;
+  }
+  
+  .job-card-premium.list-view .card-actions-premium {
+    flex-direction: row;
+    width: 100%;
+  }
 }

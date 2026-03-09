@@ -126,7 +126,7 @@ const InterviewScheduler = ({ application, onClose }) => {
               <div className="preview-body">
                 <p>Hi {application.student_name},</p>
                 <p className="mt-4">
-                  We were truly impressed by your portfolio and AI match analysis. We'd love to schedule a 
+                  We were truly impressed by your skills and AI match analysis. We'd love to schedule a 
                   technical deep-dive session on <strong>Feb {selectedDay}</strong> at 
                   <strong> {selectedSlot ? timeSlots.find(s => s.id === selectedSlot).time : '...'}</strong>.
                 </p>

@@ -18,7 +18,7 @@ router.get("/", getAllSkills);
 // Protected (student must be logged in)
 router.get("/my-skills", protect, getMySkills);
 router.post("/user", protect, addUserSkill);
-router.delete("/user/:skillId", protect, removeUserSkill);
+router.delete("/user/:id", protect, removeUserSkill);
 
 // Master Skill Management (Existing)
 router.post("/", protect, allowRoles("admin"), addSkill);

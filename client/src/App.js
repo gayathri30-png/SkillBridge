@@ -17,7 +17,7 @@ import PublicProfile from "./pages/PublicProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Notifications from "./pages/Notifications";
-import Portfolio from "./pages/Portfolio";
+
 
 // Student Pages
 import JobList from "./components/JobList";
@@ -31,7 +31,7 @@ import OfferLetter from "./pages/OfferLetter";
 import OfferAccepted from "./pages/OfferAccepted";
 import OnboardingChecklist from "./pages/OnboardingChecklist";
 import AIDashboard from './pages/AIDashboard';
-import AIPortfolioAnalyzer from './pages/AIPortfolioAnalyzer';
+
 import AISkillGapDetector from './pages/AISkillGapDetector';
 import AIProposalGenerator from './pages/AIProposalGenerator';
 
@@ -39,6 +39,7 @@ import AIProposalGenerator from './pages/AIProposalGenerator';
 import PostJob from "./components/PostJob";
 import RecruiterJobs from "./components/RecruiterJobs";
 import RecruiterApplicants from "./components/RecruiterApplicants";
+import ApplicantEvaluation from "./components/profile/ApplicantEvaluation";
 import RecruiterAIDashboard from "./pages/RecruiterAIDashboard";
 import RecruiterMarketIntelligence from "./pages/RecruiterMarketIntelligence";
 
@@ -171,16 +172,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/ai/portfolio"
-            element={
-              <ProtectedRoute allowedRoles={["student"]}>
-                <Layout>
-                  <AIPortfolioAnalyzer />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/ai/skill-gap"
             element={
@@ -191,16 +183,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/portfolio"
-            element={
-              <ProtectedRoute allowedRoles={["student"]}>
-                <Layout>
-                  <Portfolio />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+
           <Route
             path="/ai/proposals"
             element={
@@ -437,6 +420,17 @@ function App() {
             }
           />
           
+          <Route
+            path="/evaluation/:applicationId"
+            element={
+              <ProtectedRoute allowedRoles={["recruiter", "admin"]}>
+                <Layout>
+                  <ApplicantEvaluation />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/market-intelligence"
             element={

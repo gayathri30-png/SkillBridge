@@ -10,7 +10,7 @@ import {
   addUserSkill,
   removeUserSkill
 } from "../controllers/userController.js";
-import { getPortfolioItems, addPortfolioItem, deletePortfolioItem } from "../controllers/portfolioController.js";
+
 import { getStudentReviews, submitReview } from "../controllers/reviewController.js";
 import { protect } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/role.js";

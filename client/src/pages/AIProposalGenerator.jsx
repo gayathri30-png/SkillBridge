@@ -140,7 +140,7 @@ const AIProposalGenerator = () => {
                    <PenTool size={18} className="text-purple-500" /> AI PROPOSAL GENERATOR
                 </div>
                 <h1 className="text-3xl font-black text-slate-900 mb-2">Write Winning Applications</h1>
-                <p className="text-slate-500">Tailor your pitch using AI that understands your portfolio highlights.</p>
+                <p className="text-slate-500">Tailor your pitch using AI that understands your skills and experience.</p>
               </div>
               <button 
                   onClick={handleDiscard} 

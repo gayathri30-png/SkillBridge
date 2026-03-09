@@ -12,7 +12,6 @@ import './Profile.css';
 const PublicProfile = () => {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
-  const [portfolio, setPortfolio] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('about');
@@ -23,13 +22,11 @@ const PublicProfile = () => {
 
   const fetchPublicData = async () => {
     try {
-      const [profRes, portRes, revRes] = await Promise.all([
+      const [profRes, revRes] = await Promise.all([
         axios.get(`/api/users/${id}`),
-        axios.get(`/api/users/${id}/portfolio`),
         axios.get(`/api/users/${id}/reviews`)
       ]);
       setProfile(profRes.data);
-      setPortfolio(portRes.data);
       setReviews(revRes.data);
       setLoading(false);
     } catch (error) {
@@ -41,12 +38,15 @@ const PublicProfile = () => {
   const tabs = [
     { id: 'about', label: 'About', icon: <User size={18} /> },
     { id: 'skills', label: 'Skills', icon: <Zap size={18} /> },
-    { id: 'portfolio', label: 'Projects', icon: <Briefcase size={18} /> },
     { id: 'reviews', label: 'Reviews', icon: <MessageSquare size={18} /> },
   ];
 
   if (loading) return <div className="p-8 text-center">Loading student profile...</div>;
   if (!profile) return <div className="p-8 text-center">Profile not found.</div>;
+
+  const averageRating = reviews.length > 0
+    ? (reviews.reduce((acc, rev) => acc + rev.rating, 0) / reviews.length).toFixed(1)
+    : "0.0";
 
   return (
     <div className="profile-container-v2">
@@ -63,10 +63,18 @@ const PublicProfile = () => {
             </div>
             <div className="profile-identity">
               <h1 className="name-h1">{profile.name} {profile.is_verified && <ShieldCheck size={20} className="verified-icon" />}</h1>
-              <p className="title-p">{profile.role?.toUpperCase()}</p>
+              <p className="title-p">{profile.headline || profile.role?.toUpperCase()}</p>
               <div className="meta-row">
                 <span className="meta-item"><MapPin size={14} /> {profile.location || 'Unknown'}</span>
                 <span className="meta-item"><Calendar size={14} /> Joined {new Date(profile.created_at).toLocaleDateString()}</span>
+                {reviews.length > 0 && (
+                  <span className="meta-item rating-stars">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={14} fill={i < Math.round(averageRating) ? "#FFD700" : "#E2E8F0"} color={i < Math.round(averageRating) ? "#FFD700" : "#E2E8F0"} />
+                    ))}
+                    <span className="rating-num">{averageRating}</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -108,7 +116,7 @@ const PublicProfile = () => {
                     <div className="social-grid-v2">
                       {profile.github_url && <a href={profile.github_url} className="social-card-v2"><Github /> GitHub</a>}
                       {profile.linkedin_url && <a href={profile.linkedin_url} className="social-card-v2"><Linkedin /> LinkedIn</a>}
-                      {profile.portfolio_url && <a href={profile.portfolio_url} className="social-card-v2"><Globe /> Portfolio</a>}
+
                     </div>
                   </section>
                 </div>
@@ -132,26 +140,7 @@ const PublicProfile = () => {
                 </div>
               )}
 
-              {activeTab === 'portfolio' && (
-                <div className="portfolio-tab-v2">
-                   <div className="projects-grid-v2">
-                      {portfolio.filter(p => p.type === 'project').map(proj => (
-                        <div key={proj.id} className="project-card-v2">
-                           <div className="project-img-placeholder">
-                              {proj.image_url ? <img src={proj.image_url} alt={proj.title} /> : <FileText size={40} />}
-                           </div>
-                           <div className="project-info-v2">
-                              <h4>{proj.title}</h4>
-                              <p>{proj.description}</p>
-                              <a href={proj.link_url} className="text-blue-600 font-bold flex items-center gap-2">
-                                 View Project <ChevronRight size={16} />
-                              </a>
-                           </div>
-                        </div>
-                      ))}
-                   </div>
-                </div>
-              )}
+
 
               {activeTab === 'reviews' && (
                 <div className="reviews-list-v2">

@@ -321,7 +321,7 @@ const JobApplyModal = ({ isOpen, onClose, job, userSkills }) => {
 
               <div style={{ background: '#fff7ed', borderRadius: '16px', padding: '16px', marginBottom: '32px', border: '1px solid #ffedd5' }}>
                   <p style={{ margin: 0, fontSize: '12px', color: '#9a3412', lineHeight: '1.5' }}>
-                    <strong>Note:</strong> By submitting, you allow {job?.company} to view your full profile and portfolio items.
+                    <strong>Note:</strong> By submitting, you allow {job?.company} to view your full profile and skills.
                   </p>
               </div>
 

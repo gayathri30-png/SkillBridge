@@ -193,7 +193,7 @@ const RecruiterDashboard = () => {
                   <h3><Brain size={18} className="text-primary" /> AI SUMMARY</h3>
                   <p className="text-sm text-slate-600 leading-relaxed font-meduim bg-white/50 p-4 rounded-xl border border-slate-200 shadow-sm">
                     {data.stats.totalApplicants > 0 
-                      ? `Based on recent analytics, your active jobs have attracted ${data.stats.totalApplicants} total candidates. ${data.stats.highMatch} candidates scored above 85% in system matching algorithms. Proceed to your job listings to individually review candidate qualifications and portfolios.` 
+                      ? `Based on recent analytics, your active jobs have attracted ${data.stats.totalApplicants} total candidates. ${data.stats.highMatch} candidates scored above 85% in system matching algorithms. Proceed to your job listings to individually review candidate qualifications and profiles.` 
                       : "You currently have no applicants across your active jobs. Consider refining your job descriptions or utilizing AI tools to optimize your posting for better reach."}
                   </p>
                   <button className="trends-cta mt-4" onClick={() => navigate('/my-jobs')}>Manage Active Jobs</button>

@@ -6,11 +6,16 @@ import {
   ChevronRight, Download, Printer, Copy, Calendar,
   Activity, ShieldCheck, Mail
 } from 'lucide-react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import './ApplicantEvaluation.css';
 import HireConfirmationModal from './HireConfirmationModal';
 import HireSuccess from './HireSuccess';
 
-const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
+const ApplicantEvaluation = () => {
+  const { state } = useLocation();
+  const application = state?.application;
+  const navigate = useNavigate();
+  
   const [insights, setInsights] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('summary');
@@ -32,8 +37,14 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
   const [showHireSuccess, setShowHireSuccess] = useState(false);
 
   useEffect(() => {
+    if (application) {
+      fetchInsights();
+    }
+  }, [application?.application_id]);
+
+  const onRefresh = () => {
     fetchInsights();
-  }, [application.application_id]);
+  };
 
   const fetchInsights = async () => {
     try {
@@ -46,7 +57,7 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
         ...res.data.insights,
         summary: res.data.insights.summary || "Exceptional candidate with strong React fundamentals and architectural thinking.",
         successProbability: res.data.insights.successProbability || 88,
-        portfolioScore: res.data.insights.portfolioScore || 74,
+        commStyle: res.data.insights.commStyle || 'Structured & Technical',
         keyStrengths: res.data.insights.keyStrengths || ["React Hooks", "TypeScript", "Performance Tuning"],
         keyRisks: res.data.insights.keyRisks || ["AWS S3/EC2", "Docker"],
         commStyle: res.data.insights.commStyle || "Structural / Detailed",
@@ -186,20 +197,26 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
     }
   };
 
+  if (!application) return (
+    <div className="flex flex-col items-center justify-center p-12 h-[calc(100vh-80px)]">
+      <h2 className="text-xl font-bold text-slate-800 mb-4">No Applicant Selected</h2>
+      <button className="btn btn-primary" onClick={() => navigate('/my-jobs')}>Go Back</button>
+    </div>
+  );
+
   if (loading) return (
-    <div className="modal-overlay-v2">
-        <div className="modal-content-v2 evaluation-loading">
-            <div className="ai-loader">
-                <Sparkles className="animate-pulse text-blue-600" size={40} />
-                <p>AI is analyzing candidate patterns...</p>
+    <div className="evaluation-modal h-full w-full flex items-center justify-center bg-slate-50">
+        <div className="evaluation-loading text-center p-8 bg-white rounded-2xl shadow-sm border border-slate-100">
+            <div className="ai-loader mx-auto mb-4">
+                <Sparkles className="animate-pulse text-primary mx-auto" size={40} />
             </div>
+            <p className="font-bold text-slate-700">AI is analyzing candidate patterns...</p>
         </div>
     </div>
   );
 
   return (
-    <div className="modal-overlay-v2">
-      <div className="modal-content-v2 evaluation-modal">
+    <div className="evaluation-modal bg-white">
         <div className="evaluation-header">
             <div className="header-left">
                 <div className="ai-badge"><Brain size={14} /> AI Evaluation Engine</div>
@@ -212,7 +229,9 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
                     <span className="date-meta">Applied {new Date(application.created_at).toLocaleDateString()}</span>
                 </div>
             </div>
-            <button className="close-btn-v2" onClick={onClose}><X size={20} /></button>
+            <button className="btn btn-outline btn-sm font-bold flex items-center gap-2" onClick={() => navigate(-1)}>
+                <X size={16} /> Close Evaluation
+            </button>
         </div>
 
         <div className="evaluation-layout">
@@ -317,7 +336,7 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
                                 </div>
                                 <div className="verdict-pill hire-candidate">Highly Recommended</div>
                             </div>
-                            <p className="summary-text">{insights.summary || "This candidate demonstrates exceptional technical depth in React and modern frontend ecosystems. Their portfolio showcases complex architectural decisions and a high standard of code quality. Based on behavioral token analysis, they are a proactive communicator likely to excel in remote environments."}</p>
+                            <p className="summary-text">{insights.summary || "This candidate demonstrates exceptional technical depth in React and modern frontend ecosystems. Their profile showcases complex architectural decisions and a high standard of code quality. Based on behavioral token analysis, they are a proactive communicator likely to excel in remote environments."}</p>
                             <div className="success-metrics">
                                 <div className="metric">
                                     <div className="flex justify-between mb-2">
@@ -339,7 +358,7 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
                                 </div>
                                 <div className="metric">
                                     <div className="flex justify-between mb-2">
-                                        <label>Portfolio Complexity</label>
+                                        <label>Technical Depth</label>
                                         <span className="font-bold text-amber-500">74%</span>
                                     </div>
                                     <div className="metric-bar-bg">
@@ -412,7 +431,7 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
                                     <h3>Communication Style</h3>
                                     <span className="style-badge">Structural / Detailed</span>
                                 </div>
-                                <p className="description-text">AI analysis of the proposal and portfolio descriptions indicates a <strong>highly structured</strong> communication style. The candidate prioritizes technical clarity and documentation-first thinking.</p>
+                                <p className="description-text">AI analysis of the proposal and project descriptions indicates a <strong>highly structured</strong> communication style. The candidate prioritizes technical clarity and documentation-first thinking.</p>
                                 <div className="mt-4 flex gap-2">
                                     <span className="mini-tag blue">Articulate</span>
                                     <span className="mini-tag blue">Professional</span>
@@ -603,7 +622,7 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
                                 <div className="sourcing-grid">
                                     {[
                                         { name: 'Sarah Chen', loc: 'San Francisco (Remote)', match: 96, reason: 'Identical tech stack, 8+ years experience.' },
-                                        { name: 'Michael Ross', loc: 'New York', match: 91, reason: 'Strong React portfolio, similar project history.' },
+                                        { name: 'Michael Ross', loc: 'New York', match: 91, reason: 'Strong React experience, similar project history.' },
                                         { name: 'Elena Gilbert', loc: 'Remote', match: 89, reason: 'Exceptional TypeScript skills and architecture.' }
                                     ].map((c, i) => (
                                         <div key={i} className="sourcing-card hover:border-primary transition-all cursor-pointer">
@@ -783,7 +802,7 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
                                 <h3>Closing Strategy</h3>
                                 <p className="text-xs text-slate-500 mb-6 font-medium">Predicted winning hook.</p>
                                 <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-900 font-bold text-center text-sm">
-                                    "Your work on portfolio items is exactly what our Team needs. We value your unique approach."
+                                    "Your work on past projects is exactly what our Team needs. We value your unique approach."
                                 </div>
                             </section>
                         </div>
@@ -932,7 +951,7 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
                 <AlertTriangle size={14} /> AI scores are heuristic estimates based on available profile data.
             </div>
             <div className="footer-actions">
-                <button className="btn btn-outline" onClick={onClose}>Mark Review Done</button>
+                <button className="btn btn-outline" onClick={() => navigate(-1)}>Mark Review Done</button>
                 <button className="btn btn-primary" onClick={() => window.print()}><Download size={18} /> Export PDF Report</button>
             </div>
         </div>
@@ -954,12 +973,11 @@ const ApplicantEvaluation = ({ application, onClose, onRefresh }) => {
                 application={application}
                 onClose={() => {
                     setShowHireSuccess(false);
-                    onClose();
+                    navigate(-1);
                 }}
             />
         )}
       </div>
-    </div>
   );
 };
 

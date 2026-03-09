@@ -21,7 +21,11 @@ const Notifications = () => {
   const fetchNotifications = async () => {
     try {
       const res = await axios.get('/api/notifications');
-      setNotifications(res.data);
+      const normalizedData = res.data.map(n => ({
+        ...n,
+        is_read: n.is_read?.data ? n.is_read.data[0] === 1 : Boolean(n.is_read)
+      }));
+      setNotifications(normalizedData);
     } catch (err) {
       console.error("Failed to fetch notifications");
     } finally {
@@ -32,7 +36,7 @@ const Notifications = () => {
   const markRead = async (id) => {
     try {
       await axios.put(`/api/notifications/${id}/read`);
-      setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: 1 } : n));
+      setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
     } catch (err) {
       console.error("Failed to mark as read");
     }
@@ -41,7 +45,7 @@ const Notifications = () => {
   const markAllRead = async () => {
     try {
       await axios.put('/api/notifications/read-all');
-      setNotifications(notifications.map(n => ({ ...n, is_read: 1 })));
+      setNotifications(notifications.map(n => ({ ...n, is_read: true })));
     } catch (err) {
       console.error("Failed to mark all as read");
     }

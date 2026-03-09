@@ -1,7 +1,7 @@
 .profile-container-v2 {
   background-color: #f8fafc;
   min-height: 100vh;
-  margin: -32px -32px 0;
+  margin: 0;
   padding-bottom: 60px;
 }
 
@@ -38,6 +38,7 @@
   max-width: 1100px;
   margin: -80px auto 0;
   padding: 0 24px;
+  width: 100%;
 }
 
 /* Intro Card */
@@ -486,7 +487,24 @@ section h3 {
 @media (max-width: 900px) {
   .about-tab-grid { grid-template-columns: 1fr; }
   .profile-intro-card { flex-direction: column; align-items: flex-start; gap: 24px; }
-  .profile-actions-header { width: 100%; justify-content: space-between; }
+  .profile-actions-header { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+  .profile-identity .name-h1 { font-size: 1.5rem; }
+  .avatar-overlap-group { flex-direction: column; align-items: flex-start; gap: 16px; }
+}
+
+@media (max-width: 600px) {
+  .profile-banner-gradient { height: 160px; }
+  .profile-main-content { margin-top: -60px; padding: 0 16px; }
+  .profile-intro-card { padding: 20px; }
+  .meta-row { flex-direction: column; gap: 8px; }
+  .profile-tabs-nav { 
+    width: 100%; 
+    overflow-x: auto; 
+    padding: 4px; 
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-btn-v2 { padding: 8px 12px; font-size: 0.8rem; flex-shrink: 0; }
 }
 
 /* Error alert for modals */

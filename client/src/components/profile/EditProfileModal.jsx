@@ -9,12 +9,12 @@ import './AddProjectModal.css'; // Reusing modal base styles
 const EditProfileModal = ({ userData, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
     name: userData.name || '',
+    headline: userData.headline || '',
     bio: userData.bio || '',
     phone: userData.phone || '',
     location: userData.location || '',
     github_url: userData.github_url || '',
     linkedin_url: userData.linkedin_url || '',
-    portfolio_url: userData.portfolio_url || '',
     resume_url: userData.resume_url || ''
   });
   
@@ -90,6 +90,17 @@ const EditProfileModal = ({ userData, onClose, onSuccess }) => {
               name="name"
               required 
               value={formData.name}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="input-group-v2">
+            <label><User size={14} /> Professional Headline</label>
+            <input 
+              type="text" 
+              name="headline"
+              placeholder="e.g. Aspiring Frontend Developer | 4th Year Student"
+              value={formData.headline}
               onChange={handleInputChange}
             />
           </div>
