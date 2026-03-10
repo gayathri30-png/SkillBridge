@@ -157,6 +157,10 @@ export const getAllJobs = (req, res) => {
     const searchVal = `%${req.query.search}%`;
     queryParams.push(searchVal, searchVal);
   }
+  if (req.query.skill) {
+    query += " AND j.id IN (SELECT js2.job_id FROM job_skills js2 JOIN skills s2 ON js2.skill_id = s2.id WHERE LOWER(s2.name) = LOWER(?))";
+    queryParams.push(req.query.skill);
+  }
 
   query += " GROUP BY j.id ORDER BY j.created_at DESC";
 

@@ -23,29 +23,15 @@ const RecruiterAIDashboard = () => {
   });
 
   useEffect(() => {
-    // In a real scenario, this would fetch from /api/ai/recruiter/summary
-    // Using aggregate data from existing /api/jobs/dashboard to power the AI workspace for now
+    // Uses the dedicated summary endpoint for the Recruiter AI Hub
     const fetchSummary = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get('/api/jobs/dashboard', {
+        const res = await axios.get('/api/ai/recruiter/summary', {
            headers: { Authorization: `Bearer ${token}` }
         });
         
-        // Transform the aggregate job dashboard data into the AI workspace format
-        setData({
-          smartMatches: res.data.stats?.highMatch || 0,
-          generatedPosts: res.data.stats?.activeJobs || 0, // Using active jobs as a proxy for now
-          competitiveness: 88, // Mock metric
-          recentActivity: [
-             { action: 'Candidate Matching Analysis', target: 'Frontend Developer', match: 92, date: new Date() },
-             { action: 'Job Post Optimization', target: 'Senior AI Engineer', match: null, date: new Date(Date.now() - 86400000) }
-          ],
-          recommendations: [
-             { type: 'Optimization', text: 'Consider lowering the experience requirement on your Frontend Developer role to increase the talent pool by 40%.', priority: 'medium' },
-             { type: 'Talent Match', text: `You have ${res.data.stats?.highMatch || 0} candidates waiting for review with a >90% AI technical match.`, priority: 'high' }
-          ]
-        });
+        setData(res.data);
       } catch (err) {
         console.error('Failed to fetch Recruiter AI summary', err);
       } finally {
@@ -188,12 +174,12 @@ const RecruiterAIDashboard = () => {
                     <AlertCircle size={20} />
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm uppercase tracking-widest text-slate-400">{rec.type} Alert</h4>
-                    <p className="text-slate-200 mt-1 font-medium">{rec.text}</p>
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-slate-400">{rec.recommendation_type} Alert</h4>
+                    <p className="text-slate-200 mt-1 font-medium">{rec.recommendation_text}</p>
                   </div>
                 </div>
                 <button 
-                  onClick={() => navigate(rec.type === 'Talent Match' ? '/my-jobs' : '/post-job')}
+                  onClick={() => navigate(rec.recommendation_type === 'Action' ? '/my-jobs' : '/post-job')}
                   className="bg-white/10 hover:bg-white/20 p-3 rounded-2xl transition-colors"
                 >
                   <ChevronRight size={20} />
@@ -213,19 +199,19 @@ const RecruiterAIDashboard = () => {
             <Clock className="text-slate-400" size={24} /> AI Processing Log
           </h2>
           <div className="bg-white rounded-[32px] border border-slate-100 p-6 space-y-6 shadow-sm">
-            {data.recentActivity.map((activity, i) => (
-              <div key={i} className="flex gap-4">
+            {data.recentActivity && data.recentActivity.map((activity, i) => (
+              <div key={activity.id || i} className="flex gap-4">
                 <div className="w-10 h-10 bg-slate-50 text-slate-600 rounded-full flex items-center justify-center shrink-0 border border-slate-200">
-                  {activity.match ? <Users size={18} /> : <FileText size={18} />}
+                  {activity.iconType === 'Target' ? <Target size={18} /> : <Zap size={18} />}
                 </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">{activity.action}</h4>
-                  <p className="text-xs text-slate-500">{activity.target} {activity.match ? `• ${activity.match}% Match Found` : ''}</p>
+                  <p className="text-xs text-slate-500">{activity.title}</p>
                   <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">{new Date(activity.date).toLocaleDateString()}</p>
                 </div>
               </div>
             ))}
-            {data.recentActivity.length === 0 && <p className="text-slate-400 text-sm italic">Engine standing by...</p>}
+            {(!data.recentActivity || data.recentActivity.length === 0) && <p className="text-slate-400 text-sm italic">Engine standing by...</p>}
           </div>
         </div>
 

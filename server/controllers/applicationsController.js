@@ -40,20 +40,12 @@ export const applyToJob = (req, res) => {
             });
           }
 
-          // 2. Calculate AI Match Score
+          // 2. Calculate AI Match Score (binary skill match — aligned with Skill Gap Detector)
           db.query(
             `
             SELECT 
-              COALESCE(
-                SUM(
-                  CASE us.proficiency
-                    WHEN 'Beginner' THEN 1
-                    WHEN 'Intermediate' THEN 2
-                    WHEN 'Advanced' THEN 3
-                  END
-                ), 0
-              ) AS obtained,
-              COUNT(js.skill_id) * 3 AS total
+              COUNT(us.skill_id) AS obtained,
+              COUNT(js.skill_id) AS total
             FROM job_skills js
             LEFT JOIN user_skills us
               ON js.skill_id = us.skill_id

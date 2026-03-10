@@ -12,7 +12,6 @@ import './Profile.css';
 const PublicProfile = () => {
   const { id } = useParams();
   const [profile, setProfile] = useState(null);
-  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('about');
 
@@ -22,12 +21,8 @@ const PublicProfile = () => {
 
   const fetchPublicData = async () => {
     try {
-      const [profRes, revRes] = await Promise.all([
-        axios.get(`/api/users/${id}`),
-        axios.get(`/api/users/${id}/reviews`)
-      ]);
+      const profRes = await axios.get(`/api/users/${id}`);
       setProfile(profRes.data);
-      setReviews(revRes.data);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching public profile:', error);
@@ -38,15 +33,12 @@ const PublicProfile = () => {
   const tabs = [
     { id: 'about', label: 'About', icon: <User size={18} /> },
     { id: 'skills', label: 'Skills', icon: <Zap size={18} /> },
-    { id: 'reviews', label: 'Reviews', icon: <MessageSquare size={18} /> },
   ];
 
   if (loading) return <div className="p-8 text-center">Loading student profile...</div>;
   if (!profile) return <div className="p-8 text-center">Profile not found.</div>;
 
-  const averageRating = reviews.length > 0
-    ? (reviews.reduce((acc, rev) => acc + rev.rating, 0) / reviews.length).toFixed(1)
-    : "0.0";
+
 
   return (
     <div className="profile-container-v2">
@@ -66,15 +58,7 @@ const PublicProfile = () => {
               <p className="title-p">{profile.headline || profile.role?.toUpperCase()}</p>
               <div className="meta-row">
                 <span className="meta-item"><MapPin size={14} /> {profile.location || 'Unknown'}</span>
-                <span className="meta-item"><Calendar size={14} /> Joined {new Date(profile.created_at).toLocaleDateString()}</span>
-                {reviews.length > 0 && (
-                  <span className="meta-item rating-stars">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={14} fill={i < Math.round(averageRating) ? "#FFD700" : "#E2E8F0"} color={i < Math.round(averageRating) ? "#FFD700" : "#E2E8F0"} />
-                    ))}
-                    <span className="rating-num">{averageRating}</span>
-                  </span>
-                )}
+                  <span className="meta-item"><Calendar size={14} /> Joined {new Date(profile.created_at).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
@@ -142,26 +126,7 @@ const PublicProfile = () => {
 
 
 
-              {activeTab === 'reviews' && (
-                <div className="reviews-list-v2">
-                   {reviews.length > 0 ? reviews.map(rev => (
-                     <div key={rev.id} className="review-card-v2">
-                        <div className="review-header-v2">
-                           <img src={rev.recruiter_avatar || `https://ui-avatars.com/api/?name=${rev.recruiter_name}`} alt="" />
-                           <div className="rev-meta">
-                              <h4>{rev.recruiter_name}</h4>
-                              <div className="stars-mini">
-                                 {[...Array(5)].map((_, i) => (
-                                    <Star key={i} size={12} fill={i < rev.rating ? "#FFD700" : "none"} color="#FFD700" />
-                                 ))}
-                              </div>
-                           </div>
-                        </div>
-                        <p className="rev-comment">"{rev.comment}"</p>
-                     </div>
-                   )) : <p>No recruiter reviews yet.</p>}
-                </div>
-              )}
+
             </motion.div>
           </AnimatePresence>
         </div>

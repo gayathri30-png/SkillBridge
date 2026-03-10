@@ -18,7 +18,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState('about');
   const [showSkillModal, setShowSkillModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [reviews, setReviews] = useState([]);
+
   const [saving, setSaving] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -50,10 +50,7 @@ const Profile = () => {
         avatar: res.data.avatar || ''
       });
 
-      // Fetch additional data
-      const revRes = await axios.get(`/api/admin/reviews/${res.data.id}`);
-      setReviews(revRes.data);
-      
+
       // Fetch Recommendations
       fetchRecommendedJobs(res.data.skills || []);
 
@@ -108,14 +105,12 @@ const Profile = () => {
   const tabs = [
     { id: 'about', label: 'About', icon: <User size={18} /> },
     { id: 'skills', label: 'Skills', icon: <Zap size={18} /> },
-    { id: 'reviews', label: 'Reviews', icon: <MessageSquare size={18} /> },
+
   ];
 
   if (loading) return <div className="p-8 text-center">Loading premium profile...</div>;
 
-  const averageRating = reviews.length > 0
-    ? (reviews.reduce((acc, rev) => acc + rev.rating, 0) / reviews.length).toFixed(1)
-    : "0.0";
+
 
   return (
     <div className="profile-container-v2">
@@ -146,19 +141,22 @@ const Profile = () => {
               <p className="title-p">{formData.headline || 'Aspiring Professional'}</p>
               <div className="meta-row">
                 <span className="meta-item"><MapPin size={14} /> {formData.location || 'Remote'}</span>
-                <span className="meta-item rating-stars">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={14} fill={i < Math.round(averageRating) ? "#FFD700" : "#E2E8F0"} color={i < Math.round(averageRating) ? "#FFD700" : "#E2E8F0"} />
-                  ))}
-                  <span className="rating-num">{averageRating > 0 ? averageRating : "No reviews yet"}</span>
-                </span>
               </div>
             </div>
           </div>
           <div className="profile-actions-header">
              <button 
                 className="secondary-btn-v2" 
-                onClick={() => formData.resume_url ? window.open(formData.resume_url, '_blank') : alert('No resume uploaded yet')}
+                onClick={() => {
+                  if (formData.resume_url) {
+                    const url = formData.resume_url.startsWith('http') 
+                      ? formData.resume_url 
+                      : `http://localhost:5001${formData.resume_url}`;
+                    window.open(url, '_blank');
+                  } else {
+                    alert('No resume uploaded yet');
+                  }
+                }}
              >
                 <Download size={18} /> CV
              </button>
@@ -269,35 +267,7 @@ const Profile = () => {
               )}
 
 
-              {activeTab === 'reviews' && (
-                <div className="reviews-tab-v2">
-                   <h3>Recruiter Testimonials</h3>
-                   <div className="reviews-list-v2">
-                      {reviews.length > 0 ? reviews.map(rev => (
-                        <div key={rev.id} className="review-card-v2">
-                           <div className="review-header-v2">
-                              <img src={rev.recruiter_avatar || `https://ui-avatars.com/api/?name=${rev.recruiter_name}`} alt="" />
-                              <div className="rev-meta">
-                                 <h4>{rev.recruiter_name}</h4>
-                                 <div className="stars-mini">
-                                    {[...Array(5)].map((_, i) => (
-                                       <Star key={i} size={12} fill={i < rev.rating ? "#FFD700" : "none"} color="#FFD700" />
-                                    ))}
-                                 </div>
-                              </div>
-                              <span className="rev-date">{new Date(rev.created_at).toLocaleDateString()}</span>
-                           </div>
-                           <p className="rev-comment">"{rev.comment}"</p>
-                        </div>
-                      )) : (
-                        <div className="empty-state-v2">
-                           <MessageSquare size={48} />
-                           <p>No reviews yet. Keep applying to get noticed!</p>
-                        </div>
-                      )}
-                   </div>
-                </div>
-              )}
+
             </motion.div>
           </AnimatePresence>
         </div>

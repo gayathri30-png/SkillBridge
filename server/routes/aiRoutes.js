@@ -19,11 +19,13 @@ import {
   getJobsForSkillGap,
   getSkillGapPathways,
   getAISummary,
+  getAdvancedUpskilling,
   getSavedProposals,
   generateAdvancedProposal,
   updateSavedProposal,
   deleteSavedProposal,
-  generateJobPost
+  generateJobPost,
+  getRecruiterAISummary
 } from "../controllers/aiController.js";
 import { protect } from "../middleware/auth.js";
 import { allowRoles } from "../middleware/role.js";
@@ -57,10 +59,14 @@ router.get("/clv-predict/:studentId", protect, allowRoles("recruiter", "admin"),
 router.get("/eq-score/:applicationId", protect, allowRoles("recruiter", "admin"), analyzeEQ);
 router.get("/funnel-viz/:jobId", protect, allowRoles("recruiter", "admin"), getFunnelOptimization);
 
+// Recruiter AI Dashboard
+router.get("/recruiter/summary", protect, allowRoles("recruiter", "admin"), getRecruiterAISummary);
+
 // Student Advanced AI (Phase 2 Specialized)
 router.get("/skill-gap/jobs", protect, allowRoles("student"), getJobsForSkillGap);
 router.get("/skill-gap/pathways", protect, allowRoles("student"), getSkillGapPathways);
 router.get("/summary", protect, allowRoles("student"), getAISummary);
+router.get("/advanced-upskilling", protect, allowRoles("student"), getAdvancedUpskilling);
 router.get("/proposals", protect, allowRoles("student"), getSavedProposals);
 router.put("/proposals/:id", protect, allowRoles("student"), updateSavedProposal);
 router.delete("/proposals/:id", protect, allowRoles("student"), deleteSavedProposal);

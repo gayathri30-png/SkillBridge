@@ -11,7 +11,7 @@ export const getOrCreateRoom = async (req, res) => {
 
   try {
     // Fetch application with job and user info
-    const [apps] = await db.query(
+    const [apps] = await db.promise().query(
       `SELECT a.id, a.student_id, a.job_id,
               j.title as job_title, j.posted_by as recruiter_id,
               us.name as student_name, ur.name as recruiter_name
@@ -29,7 +29,7 @@ export const getOrCreateRoom = async (req, res) => {
     const roomId = `app_${application_id}`;
 
     // Check if room exists
-    const [existing] = await db.query(
+    const [existing] = await db.promise().query(
       "SELECT * FROM chat_rooms WHERE room_id = ?", [roomId]
     );
 
@@ -38,13 +38,13 @@ export const getOrCreateRoom = async (req, res) => {
     }
 
     // Create room
-    await db.query(
+    await db.promise().query(
       `INSERT INTO chat_rooms (room_id, application_id, student_id, recruiter_id, job_title, student_name, recruiter_name)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [roomId, application_id, app.student_id, app.recruiter_id, app.job_title, app.student_name, app.recruiter_name]
     );
 
-    const [newRoom] = await db.query("SELECT * FROM chat_rooms WHERE room_id = ?", [roomId]);
+    const [newRoom] = await db.promise().query("SELECT * FROM chat_rooms WHERE room_id = ?", [roomId]);
     res.status(201).json(newRoom[0]);
   } catch (err) {
     console.error("getOrCreateRoom error:", err);
@@ -61,14 +61,14 @@ export const getUserRooms = async (req, res) => {
 
   try {
     const column = role === "recruiter" ? "recruiter_id" : "student_id";
-    const [rooms] = await db.query(
+    const [rooms] = await db.promise().query(
       `SELECT * FROM chat_rooms WHERE ${column} = ? ORDER BY COALESCE(last_message_at, created_at) DESC`,
       [userId]
     );
 
     // Get unread count for each room
     for (const room of rooms) {
-      const [unread] = await db.query(
+      const [unread] = await db.promise().query(
         "SELECT COUNT(*) as count FROM messages WHERE room_id = ? AND receiver_id = ? AND is_read = 0",
         [room.room_id, userId]
       );
@@ -90,7 +90,7 @@ export const getRoomMessages = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const [messages] = await db.query(
+    const [messages] = await db.promise().query(
       `SELECT m.*, u.name as sender_name
        FROM messages m
        JOIN users u ON m.sender_id = u.id
@@ -100,7 +100,7 @@ export const getRoomMessages = async (req, res) => {
     );
 
     // Mark messages as read
-    await db.query(
+    await db.promise().query(
       "UPDATE messages SET is_read = 1 WHERE room_id = ? AND receiver_id = ?",
       [roomId, userId]
     );
@@ -117,7 +117,7 @@ export const getRoomMessages = async (req, res) => {
 // ─────────────────────────────────────────────
 export const updateRoomLastMessage = async (roomId, message) => {
   try {
-    await db.query(
+    await db.promise().query(
       "UPDATE chat_rooms SET last_message = ?, last_message_at = NOW() WHERE room_id = ?",
       [message, roomId]
     );

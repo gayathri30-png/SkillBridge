@@ -75,6 +75,17 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+// -------------------------------------
+// 🤖 DYNAMIC AI HUB ROUTING
+// Evaluates user role when the route actually mounts, not when App mounts.
+// -------------------------------------
+const RoleBasedAIDashboard = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  if (user?.role === 'recruiter') return <RecruiterAIDashboard />;
+  if (user?.role === 'admin') return <AIWorkspace />;
+  return <AIDashboard />;
+};
+
 function App() {
   const [loading, setLoading] = useState(true);
 
@@ -161,13 +172,7 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={["student", "recruiter", "admin"]}>
                 <Layout>
-                  {JSON.parse(localStorage.getItem('user'))?.role === 'recruiter' ? (
-                     <RecruiterAIDashboard />
-                  ) : JSON.parse(localStorage.getItem('user'))?.role === 'admin' ? (
-                     <AIWorkspace />
-                  ) : (
-                     <AIDashboard />
-                  )}
+                  <RoleBasedAIDashboard />
                 </Layout>
               </ProtectedRoute>
             }
@@ -505,15 +510,6 @@ function App() {
             }
           />
 
-          {/* AI Workspace - Specialized Layout (No Main Sidebar) */}
-          <Route
-            path="/ai"
-            element={
-              <ProtectedRoute allowedRoles={["admin", "recruiter"]}>
-                  <AIWorkspace />
-              </ProtectedRoute>
-            }
-          />
 
           {/* ---------------- DEFAULT & FALLBACK ---------------- */}
           {/* Catch all */}

@@ -29,6 +29,7 @@ const StudentDashboard = ({ user }) => {
   const [recentApplications, setRecentApplications] = useState([]);
   const [messages, setMessages] = useState([]);
   const [skillGaps, setSkillGaps] = useState([]);
+  const [advancedUpskilling, setAdvancedUpskilling] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -107,8 +108,20 @@ const StudentDashboard = ({ user }) => {
         }
 
         // 3. Fetch Recent Messages
-        const roomsRes = await axios.get('/api/chat/rooms', { headers });
-        setMessages(roomsRes.data.slice(0, 3));
+        try {
+          const roomsRes = await axios.get('/api/chat/rooms', { headers });
+          setMessages(roomsRes.data.slice(0, 3));
+        } catch (msgErr) {
+          console.error("Failed to fetch messages:", msgErr);
+        }
+
+        // 4. Fetch Advanced Upskilling Data
+        try {
+          const upskillingRes = await axios.get('/api/ai/advanced-upskilling', { headers });
+          setAdvancedUpskilling(upskillingRes.data);
+        } catch (upErr) {
+          console.error("Failed to fetch upskilling data:", upErr);
+        }
 
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
@@ -184,7 +197,9 @@ const StudentDashboard = ({ user }) => {
         </div>
       </motion.header>
 
-      {/* --- 2. STATS GRID --- */}
+
+
+      {/* --- 3. STATS GRID --- */}
        <section className="stats-grid mb-12">
         <StatCard 
           icon={<div className="holographic-icon-layer"><TrendingUp size={24} /></div>} 
@@ -401,168 +416,234 @@ const StudentDashboard = ({ user }) => {
            </div>
         </motion.div>
 
-        {/* Skill Gap focus (REAL DATA) */}
-        <motion.div className="module-card" variants={itemVars}>
-           <h3 className="flex items-center gap-3">
-             <div className="holographic-icon-layer"><Target size={24} className="text-rose-500" /></div> Priority Upskilling
-           </h3>
-           <div className="space-y-4">
-              {skillGaps.length > 0 ? skillGaps.slice(0, 2).map((gap, i) => {
-                const words = gap.job_title ? gap.job_title.split(' ') : ['New', 'Role'];
-                const firstPart = words[0];
-                const restPart = words.slice(1).join(' ');
-                // Logic based on actual database data
-                const isUrgent = gap.match_percentage < 60;
-                
-                const category = gap.job_title?.toLowerCase().includes('backend') || gap.job_title?.toLowerCase().includes('full stack') ? 'code' : 
-                                 gap.job_title?.toLowerCase().includes('design') ? 'design' : 'data';
-                
-                return (
-                  <div key={i} className="priority-item glass-morphic-item flex flex-col gap-5">
-                     <div className="priority-meta w-full">
-                        <div className={`category-icon-box cat-${category}`}>
-                           {category === 'code' ? <Code size={20} /> : category === 'design' ? <Palette size={20} /> : <Database size={20} />}
+        {/* --- 5. ADVANCED UPSKILLING CENTER --- */}
+        {advancedUpskilling && advancedUpskilling.priority_skills.length > 0 && (
+          <motion.section 
+            className="mt-8 mb-4 w-full col-span-full"
+            initial="hidden" animate="show" variants={containerVars}
+          >
+            <div className="flex flex-col xl:flex-row gap-8">
+              {/* LEFT COLUMN: TOP PRIORITY SKILLS */}
+              <div className="w-full xl:w-1/2 flex flex-col gap-6">
+                <div className="bg-white rounded-3xl p-8 border border-slate-200/50 shadow-[0_8px_30px_rgba(0,0,0,0.04)] h-full">
+                  <h3 className="text-sm font-black text-rose-500 uppercase tracking-widest flex items-center gap-2 mb-6">
+                    🔥 YOUR TOP PRIORITY SKILLS
+                  </h3>
+                  
+                  <div className="flex flex-col gap-5">
+                    {advancedUpskilling.priority_skills.map((skill) => (
+                      <motion.div key={skill.id} className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 hover:bg-white transition-all shadow-sm hover:shadow-md group" variants={itemVars}>
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-slate-200/60 rounded-xl flex items-center justify-center font-black text-slate-700 text-lg group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
+                              #{skill.id}
+                            </div>
+                            <h4 className="text-xl font-bold text-slate-800">{skill.skill}</h4>
+                          </div>
+                          <div className="px-3 py-1.5 rounded-full bg-emerald-100/50 text-emerald-700 text-xs font-black tracking-widest flex items-center gap-1">
+                            <TrendingUp size={14} /> +{skill.impact}% Impact
+                          </div>
                         </div>
-                        <div className="flex-1">
-                           <div className="flex items-center justify-between mb-1">
-                              <span className={`px-4 py-1 rounded-2xl text-[9px] font-black uppercase tracking-widest ${isUrgent ? 'bg-rose-100/80 text-rose-700' : 'bg-blue-100 text-blue-700'}`}>
-                                {isUrgent ? 'Urgent Gap' : 'Growth Area'}
-                              </span>
-                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Match: {gap.match_percentage}%</span>
-                           </div>
-                           <h4 className="font-extrabold text-[#1e293b] text-base leading-tight">
-                             {gap.job_title || 'Professional Role'}
-                           </h4>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs font-bold text-slate-500">
+                            <span>Market Demand</span>
+                            <span className="text-slate-700">{skill.demand}% of jobs require this</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-gradient-to-r from-blue-500 to-indigo-500" 
+                              initial={{ width: 0 }} 
+                              animate={{ width: `${skill.demand}%` }} 
+                              transition={{ duration: 1.5, ease: "easeOut" }}
+                            />
+                          </div>
                         </div>
-                     </div>
-
-                     <div className="w-full">
-                        <div className="h-2 w-full bg-slate-100/50 rounded-full overflow-hidden mb-6">
-                           <motion.div 
-                             className={`h-full ${isUrgent ? 'bg-rose-400' : 'bg-blue-400'}`}
-                             initial={{ width: 0 }}
-                             animate={{ width: `${gap.match_percentage}%` }}
-                             transition={{ duration: 1, delay: 0.8 }}
-                           />
+                        
+                        <div className="mt-4 text-xs font-semibold text-slate-500 bg-white p-3 rounded-xl border border-slate-100">
+                          <span className="text-rose-500 font-bold">Missing from:</span> {skill.categories || 'Software Engineering'}
                         </div>
-                     </div>
-
-                     <div className="upskilling-course-action w-full">
-                        <div className="course-info">
-                           <h5>Advanced {gap.job_title?.split(' ')[0] || 'Skill'} Mastery</h5>
-                           <p>2.5 hours • Guided Project</p>
-                        </div>
-                        <button 
-                          onClick={() => navigate('/ai/skill-gap')}
-                          className="course-cta"
-                        >
-                          Start Now
-                        </button>
-                     </div>
+                      </motion.div>
+                    ))}
                   </div>
-                );
-              }) : (
-                <div className="py-12 bg-slate-50/30 rounded-[40px] border border-dashed border-slate-200 text-center glass-morphic-item">
-                   <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
-                     <RotateCcw size={28} className={`text-blue-500 symbol-glow ${isAnalyzing ? 'animate-spin' : ''}`} />
-                   </div>
-                   <p className="text-[11px] text-[#1e293b] font-black uppercase tracking-widest mb-4">Profile Analysis Pending</p>
-                   <button 
-                     onClick={triggerAIAnalysis}
-                     className="glass-action-btn px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest"
-                     disabled={isAnalyzing}
-                   >
-                     {isAnalyzing ? "Running AI..." : "Analyze Profile Now"}
-                   </button>
                 </div>
-              )}
-          </div>
-        </motion.div>
-
-        {/* Interviews - REAL STATUS CHECK */}
-        <motion.div className="module-card" variants={itemVars}>
-            <div className="flex justify-between items-center mb-8">
-               <h3 className="!mb-0 flex items-center gap-3">
-                 <div className="holographic-icon-layer"><Calendar size={24} className="text-purple-500" /></div> Upcoming
-               </h3>
-               <div className="w-10 h-10 glass-icon-box rounded-xl flex items-center justify-center text-slate-400 cursor-pointer hover:text-slate-900 transition-all">
-                 <Plus size={20} />
-               </div>
-            </div>
-           <div className="space-y-5 w-full">
-              {recentApplications.filter(a => ['shortlist', 'interview', 'offered'].includes(a.status?.toLowerCase())).length > 0 ? (
-                recentApplications.filter(a => ['shortlist', 'interview', 'offered'].includes(a.status?.toLowerCase())).slice(0, 2).map((app, i) => (
-                  <div key={app.id || i} className="p-6 border-l-4 border-indigo-500 bg-indigo-50/30 rounded-r-3xl backdrop-blur-sm">
-                     <div className="flex justify-between items-start mb-3">
-                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{app.status === 'interview' ? 'Final Round' : 'Screening Round'}</span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Confirmed</span>
-                     </div>
-                     <h4 className="font-bold text-slate-800 mb-1">Interview @ {app.company_name}</h4>
-                     <p className="text-xs text-slate-500 font-medium mb-5">{app.job_title || app.title}</p>
-                      <button 
-                       onClick={() => navigate('/applications')}
-                       className="w-full py-4 boost-btn-premium rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all mt-6"
-                      >
-                         Prepare With AI <Sparkles size={14} className="ml-2 inline symbol-glow" />
-                      </button>
-                  </div>
-                ))
-              ) : (
-                 <div className="py-16 text-center glass-morphic-item rounded-[40px]">
-                    <div className="relative mb-6">
-                      <Clock size={48} className="mx-auto text-slate-100/50" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-12 h-12 rounded-full bg-blue-500/5 blur-xl animate-pulse"></div>
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest">No Scheduled Interviews</p>
-                 </div>
-              )}
-           </div>
-        </motion.div>
-
-        {/* Messages */}
-         <motion.div className="module-card" variants={itemVars}>
-           <h3 className="flex items-center gap-3">
-             <div className="holographic-icon-layer"><MessageSquare size={24} className="text-emerald-500" /></div> Networking
-           </h3>
-          <div className="space-y-4">
-            {messages.map((room, i) => (
-              <div 
-                key={room.id} 
-                className="flex items-center gap-5 p-4 rounded-3xl hover:bg-slate-50 transition-all cursor-pointer group border border-transparent hover:border-slate-100"
-                onClick={() => navigate(`/chat`)}
-              >
-                 <div className="w-12 h-12 bg-gradient-to-tr from-blue-50 to-indigo-50 rounded-2xl flex items-center justify-center font-bold text-blue-600 border border-blue-100 shadow-sm">
-                    {room.recruiter_name?.charAt(0) || 'R'}
-                 </div>
-                 <div className="flex-1 overflow-hidden">
-                    <div className="flex justify-between items-center mb-1">
-                       <h4 className="font-bold text-sm tracking-tight text-slate-800">{room.recruiter_name || "Recruiter"}</h4>
-                       <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">
-                         {room.last_message_at ? new Date(room.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'ACTIVE'}
-                       </span>
-                    </div>
-                    <p className="text-xs text-slate-400 font-medium line-clamp-1 group-hover:text-slate-600 transition-colors italic">
-                      {room.last_message || "Profile connection established."}
-                    </p>
-                 </div>
               </div>
-            ))}
-             {messages.length === 0 && (
-               <div className="py-16 text-center glass-morphic-item rounded-[40px] mb-6">
-                 <MessageSquare size={48} className="mx-auto text-slate-100/50 mb-6" />
-                 <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest">No active career chats</p>
+
+              {/* RIGHT COLUMN: MARKET DEMAND & UNLOCK JOBS */}
+              <div className="w-full xl:w-1/2 flex flex-col gap-6">
+                
+                {/* MARKET DEMAND SECTION */}
+                <div className="bg-slate-900 rounded-3xl p-8 shadow-[0_15px_40px_rgba(0,0,0,0.1)] relative overflow-hidden text-white">
+                  <div className="absolute -top-32 -right-32 w-64 h-64 bg-blue-500/20 blur-[100px] pointer-events-none" />
+                  <h3 className="text-sm font-black text-blue-400 uppercase tracking-widest flex items-center gap-2 mb-2 relative z-10">
+                    📈 SKILL MARKET DEMAND
+                  </h3>
+                  <p className="text-slate-400 text-xs font-semibold mb-6 uppercase tracking-wider relative z-10">What Employers Want</p>
+                  
+                  <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2 mb-4 relative z-10">
+                    🔥 TRENDING SKILLS THIS MONTH
+                  </h4>
+                  
+                  <div className="flex flex-col gap-3 relative z-10">
+                    {advancedUpskilling.market_demand.trending.map((trend, idx) => (
+                      <div key={idx} className="flex items-center gap-4">
+                        <div className="w-24 font-bold text-sm text-slate-200 truncate">{trend.name}</div>
+                        <div className="w-16 text-emerald-400 text-xs font-black flex items-center">
+                          ▲ +{trend.increase}%
+                        </div>
+                        <div className="flex-1 right-0 h-1.5 bg-white/10 rounded-full overflow-hidden flex items-center">
+                           <div style={{ width: `${trend.demand_percentage}%` }} className={`h-full ${trend.is_gap ? 'bg-amber-400' : 'bg-blue-500'}`} />
+                        </div>
+                        <div className="w-10 text-right text-xs font-bold text-slate-300">{trend.demand_percentage}%</div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="mt-6 pt-5 border-t border-white/10 relative z-10 space-y-3">
+                    <div className="text-xs leading-relaxed">
+                      <span className="text-emerald-400 font-bold">Your Skills:</span> <span className="text-slate-300 font-medium">{advancedUpskilling.market_demand.user_skills.slice(0, 5).join(', ')}...</span>
+                    </div>
+                    <div className="text-xs leading-relaxed">
+                      <span className="text-amber-400 font-bold">Gap Skills:</span> <span className="text-slate-300 font-medium">{advancedUpskilling.market_demand.gap_skills.join(', ') || 'None identified'}</span>
+                    </div>
+                    <button onClick={() => navigate('/ai/skill-gap')} className="w-full mt-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-black tracking-widest uppercase transition-colors flex items-center justify-center gap-2 text-white">
+                      📊 View Full Report
+                    </button>
+                  </div>
+                </div>
+                
+                {/* JOBS YOU'LL UNLOCK */}
+                <div className="bg-blue-50/50 rounded-3xl p-8 border border-blue-100 overflow-hidden relative">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-200/40 rounded-full blur-[60px]" />
+                  <h3 className="text-sm font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 mb-6 relative z-10">
+                    🔔 JOBS YOU'LL UNLOCK AFTER LEARNING
+                  </h3>
+                  
+                  <div className="flex flex-col gap-6 relative z-10">
+                    {advancedUpskilling.priority_skills.slice(0, 2).map(skill => (
+                      <div key={skill.id} className="bg-white rounded-2xl p-5 border border-blue-100 shadow-sm">
+                        <div className="font-black text-slate-800 text-sm mb-3 uppercase tracking-wider pb-2 border-b border-slate-100">
+                          Learn {skill.skill}
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          {skill.unlockable_jobs.length > 0 ? skill.unlockable_jobs.map((ujob, i) => (
+                            <div key={i} className="flex items-center justify-between group cursor-pointer" onClick={() => navigate(`/jobs/${ujob.id}`)}>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-700 text-sm group-hover:text-blue-600 transition-colors">{ujob.title} @ <span className="text-slate-500 font-medium">{ujob.company}</span></span>
+                                <span className="text-emerald-600 text-xs font-black tracking-wider uppercase mt-0.5">{ujob.salary || 'Market Rate'}</span>
+                              </div>
+                              <div className="text-xs font-black text-blue-500 bg-blue-50 px-2.5 py-1 rounded-lg">
+                                {ujob.match}% Match
+                              </div>
+                            </div>
+                          )) : (
+                             <div className="text-slate-400 text-xs italic">No immediate listings found.</div>
+                          )}
+                          
+                          {skill.total_unlocks > 0 && (
+                            <button onClick={() => navigate(`/jobs?skill=${encodeURIComponent(skill.skill)}`)} className="text-xs font-black text-slate-400 hover:text-blue-600 uppercase tracking-widest text-left mt-1 flex items-center gap-1 transition-colors">
+                              <Plus size={12} /> {skill.total_unlocks > 3 ? skill.total_unlocks - 3 : 'View'} more jobs
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+              </div>
+            </div>
+          </motion.section>
+        )}
+
+        {/* --- 6. UPCOMING & NETWORKING (Balanced Grid) --- */}
+        <div className="col-span-full grid grid-cols-1 lg:grid-cols-2 gap-8">
+           {/* Interviews - REAL STATUS CHECK */}
+           <motion.div className="module-card" variants={itemVars}>
+               <div className="flex justify-between items-center mb-8">
+                  <h3 className="!mb-0 flex items-center gap-3">
+                    <div className="holographic-icon-layer"><Calendar size={24} className="text-purple-500" /></div> Upcoming
+                  </h3>
+                  <div className="w-10 h-10 glass-icon-box rounded-xl flex items-center justify-center text-slate-400 cursor-pointer hover:text-slate-900 transition-all">
+                    <Plus size={20} />
+                  </div>
                </div>
-             )}
-             <button 
-               onClick={() => navigate('/chat')}
-               className="boost-btn-premium w-full mt-4"
-             >
-               Open Inbox <ChevronsRight size={14} className="ml-2 inline symbol-glow" />
-             </button>
-          </div>
-        </motion.div>
+              <div className="space-y-5 w-full">
+                 {recentApplications.filter(a => ['shortlist', 'interview', 'offered'].includes(a.status?.toLowerCase())).length > 0 ? (
+                   recentApplications.filter(a => ['shortlist', 'interview', 'offered'].includes(a.status?.toLowerCase())).slice(0, 2).map((app, i) => (
+                     <div key={app.id || i} className="p-6 border-l-4 border-indigo-500 bg-indigo-50/30 rounded-r-3xl backdrop-blur-sm">
+                        <div className="flex justify-between items-start mb-3">
+                           <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{app.status === 'interview' ? 'Final Round' : 'Screening Round'}</span>
+                           <span className="text-[10px] font-bold text-slate-400 uppercase">Confirmed</span>
+                        </div>
+                        <h4 className="font-bold text-slate-800 mb-1">Interview @ {app.company_name}</h4>
+                        <p className="text-xs text-slate-500 font-medium mb-5">{app.job_title || app.title}</p>
+                         <button 
+                          onClick={() => navigate('/applications')}
+                          className="w-full py-4 boost-btn-premium rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all mt-6"
+                         >
+                            Prepare With AI <Sparkles size={14} className="ml-2 inline symbol-glow" />
+                         </button>
+                     </div>
+                   ))
+                 ) : (
+                    <div className="py-16 text-center glass-morphic-item rounded-[40px]">
+                       <div className="relative mb-6">
+                         <Clock size={48} className="mx-auto text-slate-100/50" />
+                         <div className="absolute inset-0 flex items-center justify-center">
+                           <div className="w-12 h-12 rounded-full bg-blue-500/5 blur-xl animate-pulse"></div>
+                         </div>
+                       </div>
+                       <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest">No Scheduled Interviews</p>
+                    </div>
+                 )}
+              </div>
+           </motion.div>
+
+           {/* Messages */}
+            <motion.div className="module-card" variants={itemVars}>
+              <h3 className="flex items-center gap-3">
+                <div className="holographic-icon-layer"><MessageSquare size={24} className="text-emerald-500" /></div> Networking
+              </h3>
+             <div className="space-y-4">
+               {messages.map((room, i) => (
+                 <div 
+                   key={room.id} 
+                   className="flex items-center gap-5 p-4 rounded-3xl hover:bg-slate-50 transition-all cursor-pointer group border border-transparent hover:border-slate-100"
+                   onClick={() => navigate(`/chat`)}
+                 >
+                    <div className="w-12 h-12 bg-gradient-to-tr from-blue-50 to-indigo-50 rounded-2xl flex items-center justify-center font-bold text-blue-600 border border-blue-100 shadow-sm">
+                       {room.recruiter_name?.charAt(0) || 'R'}
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                       <div className="flex justify-between items-center mb-1">
+                          <h4 className="font-bold text-sm tracking-tight text-slate-800">{room.recruiter_name || "Recruiter"}</h4>
+                          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-tighter">
+                            {room.last_message_at ? new Date(room.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'ACTIVE'}
+                          </span>
+                       </div>
+                       <p className="text-xs text-slate-400 font-medium line-clamp-1 group-hover:text-slate-600 transition-colors italic">
+                         {room.last_message || "Profile connection established."}
+                       </p>
+                    </div>
+                 </div>
+               ))}
+                {messages.length === 0 && (
+                  <div className="py-16 text-center glass-morphic-item rounded-[40px] mb-6">
+                    <MessageSquare size={48} className="mx-auto text-slate-100/50 mb-6" />
+                    <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest">No active career chats</p>
+                  </div>
+                )}
+                <button 
+                  onClick={() => navigate('/chat')}
+                  className="boost-btn-premium w-full mt-4"
+                >
+                  Open Inbox <ChevronsRight size={14} className="ml-2 inline symbol-glow" />
+                </button>
+             </div>
+           </motion.div>
+        </div>
+
       </div>
     </motion.div>
   );

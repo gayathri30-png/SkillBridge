@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { 
   Sparkles, Briefcase, Target, PenTool, 
   ChevronRight, ArrowRight, Zap, Clock,
-  AlertCircle, CheckCircle, TrendingUp
+  AlertCircle, CheckCircle, TrendingUp, FileText
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -14,13 +14,27 @@ const AIDashboard = () => {
   const [data, setData] = useState({
     skillGaps: [],
     proposals: [],
-    recommendations: []
+    recommendations: [],
+    profileStrength: 0,
+    recentActivity: [],
+    recommendations: [],
+    proposalStats: {
+      totalGenerated: 0,
+      totalSent: 0,
+      totalAccepted: 0,
+      totalRejected: 0,
+      totalPending: 0,
+      acceptanceRate: 0
+    }
   });
 
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const res = await axios.get('/api/ai/summary');
+        const token = localStorage.getItem("token");
+        const res = await axios.get('/api/ai/summary', {
+           headers: { Authorization: `Bearer ${token}` }
+        });
         setData(res.data);
       } catch (err) {
         console.error('Failed to fetch AI summary');
@@ -62,12 +76,12 @@ const AIDashboard = () => {
           <div className="space-y-1 mb-8">
             <div className="flex justify-between text-sm">
               <span className="text-slate-500 font-medium">Profile Strength</span>
-              <span className="text-blue-600 font-black">75%</span>
+              <span className="text-blue-600 font-black">{data.profileStrength || 0}%</span>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
               <motion.div 
                 initial={{ width: 0 }}
-                animate={{ width: '75%' }}
+                animate={{ width: `${data.profileStrength || 0}%` }}
                 className="h-full bg-blue-600"
               />
             </div>
@@ -118,10 +132,14 @@ const AIDashboard = () => {
           <h3 className="text-xl font-bold text-slate-900 mb-2">Proposal Generator</h3>
           <div className="space-y-1 mb-8">
             <div className="flex justify-between text-sm">
-              <span className="text-slate-500 font-medium">Saved Proposals</span>
-              <span className="text-purple-600 font-black">{data.proposals.length}</span>
+              <span className="text-slate-500 font-medium">Generated Proposals</span>
+              <span className="text-purple-600 font-black">{data.proposalStats?.totalGenerated || 0}</span>
             </div>
-            <p className="text-xs text-slate-400">Last generated: {data.proposals[0] ? new Date(data.proposals[0].created_at).toLocaleDateString() : 'N/A'}</p>
+            <div className="flex justify-between text-sm mt-1">
+              <span className="text-slate-500 font-medium">Acceptance Rate</span>
+              <span className="text-emerald-500 font-black">{data.proposalStats?.acceptanceRate || 0}%</span>
+            </div>
+            <p className="text-xs text-slate-400 mt-2">Active Pending: {data.proposalStats?.totalPending || 0}</p>
           </div>
           <button className="flex items-center gap-2 text-sm font-bold text-purple-600 group-hover:gap-3 transition-all">
             Create Proposal <ArrowRight size={16} />
@@ -169,19 +187,25 @@ const AIDashboard = () => {
             <Clock className="text-slate-400" size={24} /> Recent Activity
           </h2>
           <div className="bg-white rounded-[32px] border border-slate-100 p-6 space-y-6 shadow-sm">
-            {data.skillGaps.slice(0, 3).map((gap, i) => (
-              <div key={i} className="flex gap-4">
-                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center shrink-0">
-                  <Target size={18} />
+            {data.recentActivity && data.recentActivity.map((activity, i) => (
+              <div key={activity.id || i} className="flex gap-4">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                  activity.iconType === 'Target' ? 'bg-emerald-50 text-emerald-600' :
+                  activity.iconType === 'Briefcase' ? 'bg-blue-50 text-blue-600' :
+                  'bg-purple-50 text-purple-600'
+                }`}>
+                  {activity.iconType === 'Target' ? <Target size={18} /> :
+                   activity.iconType === 'Briefcase' ? <Briefcase size={18} /> :
+                   <FileText size={18} />}
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">Skill gap checked</h4>
-                  <p className="text-xs text-slate-500">{gap.job_title} • {gap.match_percentage}% match</p>
-                  <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">{new Date(gap.created_at).toLocaleDateString()}</p>
+                  <h4 className="text-sm font-bold text-slate-900">{activity.action}</h4>
+                  <p className="text-xs text-slate-500">{activity.title}</p>
+                  <p className="text-[10px] text-slate-400 mt-1 uppercase font-bold">{new Date(activity.date).toLocaleDateString()}</p>
                 </div>
               </div>
             ))}
-            {data.skillGaps.length === 0 && <p className="text-slate-400 text-sm italic">No recent activity detected.</p>}
+            {(!data.recentActivity || data.recentActivity.length === 0) && <p className="text-slate-400 text-sm italic">No recent activity detected.</p>}
           </div>
         </div>
       </div>

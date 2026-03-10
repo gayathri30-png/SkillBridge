@@ -3,7 +3,7 @@ import db from '../config/db.js';
 async function verifyDatabase() {
   console.log("🔍 Starting Comprehensive Database Audit...");
   
-  const tables = ['users', 'skills', 'user_skills', 'reviews', 'applications', 'jobs'];
+  const tables = ['users', 'skills', 'user_skills', 'applications', 'jobs'];
   
   for (const table of tables) {
     try {

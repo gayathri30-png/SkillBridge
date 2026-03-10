@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Filter, SlidersHorizontal, Sparkles, 
@@ -44,6 +44,14 @@ const JobList = () => {
   const [filterTopMatches, setFilterTopMatches] = useState(false);
   
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const skillFromUrl = searchParams.get('skill');
+
+  useEffect(() => {
+    if (skillFromUrl) {
+      setSearchTerm(skillFromUrl);
+    }
+  }, [skillFromUrl]);
 
   useEffect(() => {
     fetchUserSkills();
@@ -132,6 +140,7 @@ const JobList = () => {
       const token = localStorage.getItem('token');
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
+      if (skillFromUrl) params.append('skill', skillFromUrl);
       if (filters.location) params.append('location', filters.location);
       if (filters.job_type.length > 0) params.append('type', filters.job_type[0]); 
       if (filters.experience_level.length > 0) params.append('experience', filters.experience_level[0]);

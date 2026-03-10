@@ -557,10 +557,10 @@ export const getFunnelOptimization = async (req, res) => {
     );
     
     res.json({
-        bottlenecks: counts.find(c => c.status === 'pending')?.count > 10 ? "Review Stage Congestion" : "None",
+        bottlenecks: counts.find(c => c.status === 'pending')?.count > 10 ? "Screening Congestion" : "None",
         velocity: "Fast (Avg 2.4 days to shortlist)",
         conversion_rate: "12% (Application to Shortlist)",
-        ai_suggestion: "Automate technical screening for 'React' skills to reduce manual review time."
+        ai_suggestion: "Automate technical screening for 'React' skills to reduce manual screening time."
     });
   } catch (error) {
     res.status(500).json({ error: "Funnel analysis failed" });
@@ -627,12 +627,13 @@ export const generateJobPost = async (req, res) => {
 export const getJobsForSkillGap = async (req, res) => {
   try {
     const [jobs] = await db.promise().query(`
-      SELECT j.id, j.title, j.company_name, j.location,
+      SELECT j.id, j.title, COALESCE(u.company_name, u.name) AS company_name, j.location,
         (SELECT JSON_ARRAYAGG(s.name)
          FROM job_skills js JOIN skills s ON s.id = js.skill_id
          WHERE js.job_id = j.id) AS skills_required
       FROM jobs j
-      WHERE j.status = 'active'
+      JOIN users u ON j.posted_by = u.id
+      WHERE j.status = 'open'
       ORDER BY j.created_at DESC
       LIMIT 20
     `);
@@ -676,7 +677,7 @@ export const getSkillGapPathways = async (req, res) => {
       // Detector mode: find a real job matching the title and use its real skills
       console.log("Detector mode: searching for real job with title:", currentJobTitle);
       const [matchingJobs] = await db.promise().query(
-        `SELECT id, title FROM jobs WHERE title = ? AND status = 'active' LIMIT 1`,
+        `SELECT id, title FROM jobs WHERE title = ? AND status = 'open' LIMIT 1`,
         [jobTitle]
       );
 
@@ -742,16 +743,24 @@ export const getSkillGapPathways = async (req, res) => {
 
     // Fallback if Gemini failed, gave invalid JSON, or API key is missing
     if (pathways.length === 0 && missing.length > 0) {
-        pathways = missing.map(skill => ({
-          skill,
-          difficulty: ["Easy", "Medium", "Complex"][Math.floor(Math.random() * 3)],
-          impact: Math.floor(Math.random() * 15) + 5,
-          resources: [
-            { name: `${skill} Documentation`, url: "#" },
-            { name: `FreeCodeCamp ${skill} Guide`, url: "#" }
-          ],
-          estimated_time: "2-4 weeks"
-        }));
+        pathways = missing.map((skill, index) => {
+          // Deterministic logic based on skill name length and index
+          const diffIndex = (skill.length + index) % 3;
+          const difficulties = ["Easy", "Medium", "Complex"];
+          const impact = 5 + ((skill.length * 7 + index * 3) % 15);
+          const timeframes = ["1-2 weeks", "2-4 weeks", "1-2 months"];
+
+          return {
+            skill,
+            difficulty: difficulties[diffIndex],
+            impact: impact,
+            resources: [
+              { name: `${skill} Official Docs`, url: `https://www.google.com/search?q=${encodeURIComponent(skill)}+documentation` },
+              { name: `${skill} Tutorials`, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(skill)}+tutorial` }
+            ],
+            estimated_time: timeframes[diffIndex]
+          };
+        });
     }
 
     const result = {
@@ -885,14 +894,59 @@ export const getAISummary = async (req, res) => {
   const studentId = req.user.id;
 
   try {
+    const [[user]] = await db.promise().query(`SELECT * FROM users WHERE id = ?`, [studentId]);
+    const [userSkills2] = await db.promise().query(`SELECT * FROM user_skills WHERE user_id = ?`, [studentId]);
+
+    // 1. Profile Strength Calculation
+    let profileStrength = 20; // Base score
+    if (user && user.bio && user.bio.trim() !== "") profileStrength += 20;
+    if (user && user.avatar_url && user.avatar_url.trim() !== "") profileStrength += 15;
+    if (user && user.location && user.location.trim() !== "") profileStrength += 15;
+    if (userSkills2.length > 0) profileStrength += 15;
+    if (userSkills2.length > 3) profileStrength += 15;
+    profileStrength = Math.min(100, Math.round(profileStrength));
+
     // Skill Gap Analysis
     const [skillGaps] = await db.promise().query(`SELECT * FROM skill_gap_analysis WHERE user_id = ? ORDER BY created_at DESC LIMIT 3`, [studentId]);
     
     // AI Proposals
     const [proposals] = await db.promise().query(`SELECT * FROM ai_proposals WHERE user_id = ? ORDER BY created_at DESC LIMIT 3`, [studentId]);
     
-    // Recommendations
-    const [recommendations] = await db.promise().query(`SELECT * FROM ai_recommendations WHERE user_id = ? AND is_completed = FALSE ORDER BY created_at DESC LIMIT 5`, [studentId]);
+    // Recommendations (Fetch more so we can deduplicate and still return ~5)
+    const [rawRecommendations] = await db.promise().query(`SELECT * FROM ai_recommendations WHERE user_id = ? AND is_completed = FALSE ORDER BY created_at DESC LIMIT 20`, [studentId]);
+    
+    // Deduplicate recommendations
+    const uniqueRecsMap = new Map();
+    for (const rec of rawRecommendations) {
+       if (!uniqueRecsMap.has(rec.recommendation_text)) {
+           uniqueRecsMap.set(rec.recommendation_text, rec);
+       }
+    }
+    const recommendations = Array.from(uniqueRecsMap.values()).slice(0, 5);
+
+    // 2. Aggregate Recent Activity
+    const [recentApps] = await db.promise().query(
+      `SELECT a.id, j.title, a.created_at FROM applications a JOIN jobs j ON a.job_id = j.id WHERE a.student_id = ? ORDER BY a.created_at DESC LIMIT 10`,
+      [studentId]
+    );
+
+    let rawActivityStream = [
+      ...recentApps.map(a => ({ id: `app_${a.id}`, action: 'Applied to Job', title: a.title, date: a.created_at, iconType: 'Briefcase' })),
+      ...proposals.map(p => ({ id: `prop_${p.id}`, action: 'Generated AI Proposal', title: p.job_title, date: p.created_at, iconType: 'FileText' })),
+      ...skillGaps.map(s => ({ id: `gap_${s.id}`, action: `Skill Gap Analyzed (${s.match_percentage || 0}%)`, title: s.job_title, date: s.created_at, iconType: 'Target' }))
+    ];
+    
+    rawActivityStream.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Deduplicate activity stream by action and title
+    const uniqueActivityMap = new Map();
+    for (const act of rawActivityStream) {
+       const key = `${act.action}-${act.title}`;
+       if (!uniqueActivityMap.has(key)) {
+           uniqueActivityMap.set(key, act);
+       }
+    }
+    const recentActivity = Array.from(uniqueActivityMap.values()).slice(0, 5);
 
     // REAL-TIME STATS: Applications & Interviews
     const [[{ application_count }]] = await db.promise().query(
@@ -911,19 +965,180 @@ export const getAISummary = async (req, res) => {
       [studentId]
     );
 
+    // Proposal Stats Aggregation
+    const [[{ total_generated }]] = await db.promise().query(
+      `SELECT COUNT(*) as total_generated FROM ai_proposals WHERE user_id = ?`,
+      [studentId]
+    );
+
+    const [[proposalStatusCounts]] = await db.promise().query(`
+      SELECT 
+        COUNT(*) as total_sent,
+        SUM(CASE WHEN status IN ('offered', 'accepted') THEN 1 ELSE 0 END) as total_accepted,
+        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as total_rejected,
+        SUM(CASE WHEN status IN ('pending', 'under_review', 'shortlist', 'interview') THEN 1 ELSE 0 END) as total_pending
+      FROM applications WHERE student_id = ?
+    `, [studentId]);
+
+    const sent = proposalStatusCounts?.total_sent || 0;
+    const accepted = proposalStatusCounts?.total_accepted || 0;
+    const rejected = proposalStatusCounts?.total_rejected || 0;
+    const pending = proposalStatusCounts?.total_pending || 0;
+    
+    const acceptanceRate = sent > 0 ? Math.round((accepted / sent) * 100) : 0;
+
+    const proposalStats = {
+      totalGenerated: total_generated || 0,
+      totalSent: sent,
+      totalAccepted: accepted,
+      totalRejected: rejected,
+      totalPending: pending,
+      acceptanceRate
+    };
+
     res.json({
+      profileStrength,
+      recentActivity,
       skillGaps,
       proposals,
       recommendations,
       application_count: application_count || 0,
       interview_count: interview_count || 0,
-      match_score_avg: Math.round(match_avg || 0)
+      match_score_avg: Math.round(match_avg || 0),
+      proposalStats
     });
   } catch (error) {
     console.error("AI Summary Error:", error);
     res.status(500).json({ error: "Failed to fetch AI summary" });
   }
 };
+
+// Advanced Priority Upskilling Dashboard Logic
+export const getAdvancedUpskilling = async (req, res) => {
+  const studentId = req.user.id;
+  try {
+    const promiseQuery = db.promise().query.bind(db.promise());
+
+    // 1. Get user's current skills
+    const [userSkillsData] = await promiseQuery(`
+      SELECT s.name 
+      FROM user_skills us 
+      JOIN skills s ON us.skill_id = s.id 
+      WHERE us.user_id = ?
+    `, [studentId]);
+    const userSkills = userSkillsData.map(s => s.name.toLowerCase());
+
+    // 2. Get active jobs and their demanded skills
+    const [activeJobs] = await promiseQuery(`
+      SELECT j.id, j.title, j.budget as salary, u.company_name, u.name as recruiter_name,
+             GROUP_CONCAT(DISTINCT s.name) as job_skills
+      FROM jobs j 
+      JOIN users u ON j.posted_by = u.id
+      JOIN job_skills js ON j.id = js.job_id
+      JOIN skills s ON js.skill_id = s.id
+      WHERE j.status = 'open'
+      GROUP BY j.id
+    `);
+
+    let skillDemand = {}; // Counts how many jobs require a skill
+    let skillJobCategories = {}; // Which job titles need this skill
+    let missingSkillOpportunities = {}; // Map missing skills to jobs that require them
+
+    activeJobs.forEach(job => {
+      const company = job.company_name || job.recruiter_name || 'Tech Company';
+      if (!job.job_skills) return;
+
+      const reqSkills = job.job_skills.split(',');
+      let matchCount = 0;
+      let missingFromJob = [];
+
+      reqSkills.forEach(reqSkill => {
+        const rName = reqSkill.trim();
+        const rNameLow = rName.toLowerCase();
+        
+        // Count market demand
+        if (!skillDemand[rName]) {
+          skillDemand[rName] = { count: 0, name: rName };
+          skillJobCategories[rName] = new Set();
+        }
+        skillDemand[rName].count++;
+        // Add first word of job title as a category approximation (e.g. "Frontend")
+        skillJobCategories[rName].add(job.title.split(' ')[0]);
+
+        // Check if user has it
+        if (userSkills.includes(rNameLow)) {
+          matchCount++;
+        } else {
+          missingFromJob.push(rName);
+        }
+      });
+
+      const matchScore = Math.round((matchCount / reqSkills.length) * 100);
+      
+      // If the user is missing skills for this job, record it
+      missingFromJob.forEach(missingSkill => {
+        if (!missingSkillOpportunities[missingSkill]) {
+          missingSkillOpportunities[missingSkill] = [];
+        }
+        missingSkillOpportunities[missingSkill].push({
+          title: job.title,
+          company: company,
+          salary: job.salary,
+          match: matchScore,
+          id: job.id
+        });
+      });
+    });
+
+    // 3. Calculate Market Demand (Top Trending Skills)
+    const totalJobs = activeJobs.length || 1;
+    const trendingSkills = Object.values(skillDemand)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5)
+      .map((s, idx) => {
+        const isGap = !userSkills.includes(s.name.toLowerCase());
+        const demandPct = Math.min(100, Math.round((s.count / totalJobs) * 100) + 10);
+        return {
+          name: s.name,
+          demand_percentage: demandPct,
+          increase: Math.max(5, demandPct - (idx * 8)), // Deterministic: higher-ranked skills show stronger trend
+          is_gap: isGap
+        };
+      });
+
+    // 4. Calculate User's Priority Skills (Missing skills with highest demand)
+    const prioritySkillsRaw = Object.entries(missingSkillOpportunities)
+      .sort((a, b) => b[1].length - a[1].length)
+      .slice(0, 3);
+      
+    const prioritySkills = prioritySkillsRaw.map(([skillName, jobs], index) => {
+      const demandCount = skillDemand[skillName] ? skillDemand[skillName].count : 0;
+      return {
+        id: index + 1,
+        skill: skillName,
+        impact: Math.round((jobs.length / totalJobs) * 100) || 0,
+        demand: Math.min(100, Math.round((demandCount / totalJobs) * 100) + 15),
+        categories: Array.from(skillJobCategories[skillName] || []).slice(0, 3).join(', '),
+        unlockable_jobs: jobs.sort((a, b) => b.match - a.match).slice(0, 3), // Top 3 jobs they almost qualify for
+        total_unlocks: jobs.length
+      };
+    });
+
+    res.json({
+      priority_skills: prioritySkills,
+      market_demand: {
+        trending: trendingSkills,
+        user_skills: userSkillsData.map(s => s.name),
+        gap_skills: trendingSkills.filter(s => s.is_gap).map(s => s.name)
+      }
+    });
+
+  } catch (error) {
+    console.error("Advanced Upskilling Error:", error);
+    res.status(500).json({ error: "Failed to fetch advanced upskilling data" });
+  }
+};
+
 
 // 5. Get All Proposals
 export const getSavedProposals = async (req, res) => {
@@ -963,3 +1178,104 @@ export const deleteSavedProposal = async (req, res) => {
     res.status(500).json({ error: "Failed to delete saved proposal" });
   }
 };
+
+// 8. Get Recruiter AI Summary
+export const getRecruiterAISummary = async (req, res) => {
+  const recruiterId = req.user.id;
+  try {
+    const promiseQuery = db.promise().query.bind(db.promise());
+
+    // 1. Get active jobs posted by this recruiter
+    const [activeJobs] = await promiseQuery(`
+      SELECT id, title, created_at FROM jobs WHERE posted_by = ? AND status = 'open'
+    `, [recruiterId]);
+
+    const jobIds = activeJobs.map(j => j.id);
+
+    // 2. Get applications for these jobs to calculate matches
+    let smartMatches = 0;
+    let recentApps = [];
+    if (jobIds.length > 0) {
+      const qs = jobIds.map(() => '?').join(',');
+      const [apps] = await promiseQuery(`
+        SELECT a.id, a.ai_match_score, a.created_at, j.title as job_title 
+        FROM applications a 
+        JOIN jobs j ON a.job_id = j.id
+        WHERE a.job_id IN (${qs})
+        ORDER BY a.created_at DESC
+      `, jobIds);
+
+      smartMatches = apps.filter(a => a.ai_match_score >= 85).length;
+      recentApps = apps.slice(0, 5);
+    }
+
+    const generatedPosts = activeJobs.length;
+    
+    // Competitiveness score: formulated based on high matches / active jobs
+    let competitiveness = 0;
+    if (activeJobs.length > 0) {
+      competitiveness = Math.min(100, Math.round((smartMatches / activeJobs.length) * 20 + 50)); 
+    }
+
+    let activityStream = [
+      ...recentApps.map(a => ({ 
+        id: `app_${a.id}`, 
+        action: 'Candidate Matching Analysis', 
+        title: `New applicant for ${a.job_title} (${a.ai_match_score || 0}% match)`, 
+        date: a.created_at, 
+        iconType: 'Target' 
+      })),
+      ...activeJobs.map(j => ({ 
+        id: `job_${j.id}`, 
+        action: 'Job Post Optimization', 
+        title: `AI analyzed newly posted job: ${j.title}`, 
+        date: j.created_at, 
+        iconType: 'Zap' 
+      }))
+    ];
+    activityStream.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const recentActivity = activityStream.slice(0, 4);
+
+    let recommendations = [];
+    if (smartMatches > 0) {
+      recommendations.push({
+        priority: 'high',
+        recommendation_type: 'Action',
+        recommendation_text: `You have ${smartMatches} highly matched candidates waiting for review.`
+      });
+    }
+    if (activeJobs.length === 0) {
+      recommendations.push({
+        priority: 'medium',
+        recommendation_type: 'Tip',
+        recommendation_text: 'Generate a new AI-optimized job post to attract top talent.'
+      });
+    } else if (smartMatches === 0 && recentApps.length > 0) {
+      recommendations.push({
+         priority: 'medium',
+         recommendation_type: 'Optimization',
+         recommendation_text: 'Consider using our AI tool to rewrite your job descriptions to improve candidate match quality.'
+      });
+    }
+    
+    if (recommendations.length === 0) {
+       recommendations.push({
+         priority: 'low',
+         recommendation_type: 'Insight',
+         recommendation_text: 'Your current pipeline looks healthy. No immediate actions required.'
+       });
+    }
+
+    res.json({
+      smartMatches,
+      generatedPosts,
+      competitiveness,
+      recentActivity,
+      recommendations
+    });
+  } catch (error) {
+    console.error("Recruiter AI Summary Error:", error);
+    res.status(500).json({ error: "Failed to fetch recruiter AI summary" });
+  }
+};
+
