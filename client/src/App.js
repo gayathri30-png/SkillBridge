@@ -30,7 +30,6 @@ import ChatRoom from "./pages/ChatRoom";
 import OfferLetter from "./pages/OfferLetter";
 import OfferAccepted from "./pages/OfferAccepted";
 import OnboardingChecklist from "./pages/OnboardingChecklist";
-import AIDashboard from './pages/AIDashboard';
 
 import AISkillGapDetector from './pages/AISkillGapDetector';
 import AIProposalGenerator from './pages/AIProposalGenerator';
@@ -40,7 +39,6 @@ import PostJob from "./components/PostJob";
 import RecruiterJobs from "./components/RecruiterJobs";
 import RecruiterApplicants from "./components/RecruiterApplicants";
 import ApplicantEvaluation from "./components/profile/ApplicantEvaluation";
-import RecruiterAIDashboard from "./pages/RecruiterAIDashboard";
 import RecruiterMarketIntelligence from "./pages/RecruiterMarketIntelligence";
 
 // Admin Pages
@@ -50,9 +48,7 @@ import AdminJobs from "./components/AdminJobs";
 import AdminApplications from "./components/AdminApplications";
 import AdminVerify from "./components/AdminVerify";
 import AdminReports from "./components/AdminReports";
-import AIWorkspace from "./pages/AIWorkspace";
 import AdminNotifications from "./components/AdminNotifications";
-import AdminSkills from "./components/AdminSkills";
 import AdminSettings from "./components/AdminSettings";
 
 // -------------------------------------
@@ -73,17 +69,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   return children;
-};
-
-// -------------------------------------
-// 🤖 DYNAMIC AI HUB ROUTING
-// Evaluates user role when the route actually mounts, not when App mounts.
-// -------------------------------------
-const RoleBasedAIDashboard = () => {
-  const user = JSON.parse(localStorage.getItem('user'));
-  if (user?.role === 'recruiter') return <RecruiterAIDashboard />;
-  if (user?.role === 'admin') return <AIWorkspace />;
-  return <AIDashboard />;
 };
 
 function App() {
@@ -166,17 +151,6 @@ function App() {
             }
           />
 
-          {/* Module 12: AI Hub Routes */}
-          <Route
-            path="/ai"
-            element={
-              <ProtectedRoute allowedRoles={["student", "recruiter", "admin"]}>
-                <Layout>
-                  <RoleBasedAIDashboard />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
 
           <Route
             path="/ai/skill-gap"
@@ -304,16 +278,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/admin/skills"
-          element={
-            <ProtectedRoute>
-              <Layout>
-                <AdminSkills />
-              </Layout>
-            </ProtectedRoute>
-          }
-        />
+
         <Route
           path="/admin/settings"
           element={

@@ -1,0 +1,53 @@
+# The AI Evaluation Engine: Deep Dive
+
+## Is the AI Evaluation Engine the entire SkillBridge Hiring System?
+**No, but it is the "brain" of it.** 
+The SkillBridge recruiter hiring system is the overall ATS (Applicant Tracking System) where recruiters post jobs, manage applicants in a list, filter them, and change their statuses (Pending, Shortlisted, Hired). 
+
+The **AI Evaluation Engine** is the powerful, feature-rich modal (popup window) that appears when a recruiter clicks **"View Profile"** on a specific candidate. It acts as an advanced, automated assistant that deeply analyzes that single candidate and provides the recruiter with actionable intelligence to make a hiring decision.
+
+---
+
+## Full Page Design & Layout Architecture
+
+The AI Evaluation Engine uses a modern, dashboard-style modal layout designed to handle complex data without overwhelming the recruiter. Here is the structural breakdown of the UI design:
+
+### 1. The Header (Top Bar)
+- **AI Badge:** A small "AI Evaluation Engine" indicator with a pulsing brain icon to show it is active.
+- **Candidate Context:** Displays the candidate's name prominently (e.g., "Evaluation for Gayathri").
+- **Quick Meta-Data:** Shows the top-level **Suitability percentage** (e.g., 88%) in a vibrant purple pill, alongside the application date.
+- **Close Action:** A simple 'X' to return to the main applicant list.
+
+### 2. The Navigation Sidebar (Left Column)
+The engine is split into 11 distinct tabs, categorized by function, allowing the recruiter to click through different dimensions of the candidate's analysis smoothly:
+1. **Executive Summary** (Target icon)
+2. **Behavioral Analysis** (Zap icon)
+3. **Interview Prep** (Message bubble icon)
+4. **Skill Gap Visualizer** (Award badge icon)
+5. **Smart Sourcing** (Sparkles icon)
+6. **AI Scheduler** (Brain icon)
+7. **Market Intel** (Trending chart icon)
+8. **Smart Workflow** (Lightning icon)
+9. **AI Recruiter Coach** (Message icon)
+10. **Skills Verification** (Check circle icon)
+11. **Expert AI Suite** (Premium sparkles icon)
+
+### 3. The Main Content Canvas (Right Panel)
+This is the large viewing area that changes based on the selected sidebar tab. It uses a "card-based" design system, where distinct insights are grouped into elegant, shadowed containers.
+
+#### Example Canvas Views:
+*   **The Summary View (Default Canvas):** Features a large card titled "AI Candidate Verdict" that instantly tells the recruiter if the candidate is "Highly Recommended". It uses visual progress bars to display percentage scores for Technical Proficiency, Cultural Alignment, and Portfolio Complexity. Below it, side-by-side cards list "Key Strengths" (green checkmarks) and "Potential Risks" (yellow warning triangles). At the bottom is the critical **Hire Action Block**, allowing the recruiter to officially accept or reject the candidate directly from the AI's recommendation.
+*   **The Skills View:** Displays a structured data table comparing the candidate's skills against the job requirements, using colorful status badges ("✅ Match", "❌ Missing") and providing an AI-generated text insight below the table on how fast the candidate could upskill.
+*   **The Advanced Suite View (Expert Tier):** Uses circular SVG progress charts to display "Bias Check" scores, highlighting algorithmic fairness, and dedicated blocks for calculating "Projected Value (1yr)" in dollars.
+
+### 4. The Footer (Bottom Bar)
+- **Disclaimer:** A subtle warning: "AI scores are heuristic estimates based on available profile data."
+- **Export Actions:** Buttons to "Mark Review Done" or "Export PDF Report", allowing the recruiter to download the AI's findings to share with external stakeholders or hiring managers.
+
+---
+
+## Summary of the Engine's Flow
+1. **Discovery:** The recruiter opens the ATS list and uses the AI Smart Filters to find top candidates.
+2. **Deep Dive:** The recruiter clicks an applicant, opening the **AI Evaluation Engine**.
+3. **Analysis:** The engine displays the Executive Summary. The recruiter reads the verdict and checks for Behavioral Red Flags or Skill Gaps using the sidebar navigation.
+4. **Action:** The recruiter generates Interview Prep questions from the engine, schedules the interview using the AI Scheduler, and finally uses the "Hire Candidate" block within the engine to finalize the decision.

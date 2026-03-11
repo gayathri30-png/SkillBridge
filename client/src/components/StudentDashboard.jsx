@@ -417,7 +417,7 @@ const StudentDashboard = ({ user }) => {
         </motion.div>
 
         {/* --- 5. ADVANCED UPSKILLING CENTER --- */}
-        {advancedUpskilling && advancedUpskilling.priority_skills.length > 0 && (
+        {false && advancedUpskilling && advancedUpskilling.priority_skills.length > 0 && (
           <motion.section 
             className="mt-8 mb-4 w-full col-span-full"
             initial="hidden" animate="show" variants={containerVars}

@@ -76,8 +76,8 @@ const RecruiterDashboard = () => {
   const displayStats = [
     { label: 'JOBS ACTIVE', value: data.stats.activeJobs, trend: '+2', icon: Briefcase, color: 'blue' },
     { label: 'TOTAL APPLICANTS', value: data.stats.totalApplicants, trend: '+18', icon: Users, color: 'purple' },
-    { label: 'HIGH MATCH (>85%)', value: data.stats.highMatch, trend: '+8', icon: Target, color: 'amber' },
-    { label: 'AVG RESPONSE TIME', value: data.stats.avgResponseTime, trend: '-0.3', icon: Clock, color: 'emerald' },
+    { label: 'PENDING REVIEWS', value: data.stats.pendingReviews || 0, trend: '+4', icon: Clock, color: 'emerald' },
+    { label: 'SHORTLISTED', value: data.stats.shortlisted || 0, trend: '+1', icon: Target, color: 'amber' },
   ];
 
   if (!user) return null;
@@ -110,34 +110,8 @@ const RecruiterDashboard = () => {
               >
                 "You have <strong>{data.stats.totalApplicants} applicants</strong> to review. <strong>{data.stats.highMatch}</strong> are high-match candidates."
               </motion.p>
-              <div className="welcome-meta">
-                <Calendar size={14} /> <span>Today: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric'})}</span>
-                <Clock size={14} /> <span>Last login: Just now</span>
-              </div>
             </div>
             <div className="welcome-actions">
-               <div className="dropdown-container" 
-                   onMouseEnter={() => setShowQuickActions(true)} 
-                   onMouseLeave={() => setShowQuickActions(false)}
-               >
-                 <button className="action-btn-secondary" onClick={(e) => { e.stopPropagation(); setShowQuickActions(!showQuickActions); }}>
-                   Quick Actions <ChevronDown size={14} className={`transition-transform duration-200 ${showQuickActions ? 'rotate-180' : ''}`} />
-                 </button>
-                 <AnimatePresence>
-                   {showQuickActions && (
-                     <motion.div 
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="quick-actions-dropdown"
-                      >
-                        <button onClick={(e) => { e.stopPropagation(); navigate('/post-job'); }}><Plus size={14} /> Post New Job</button>
-                        <button onClick={(e) => { e.stopPropagation(); navigate('/my-jobs'); }}><Briefcase size={14} /> My Jobs</button>
-                        <button onClick={(e) => { e.stopPropagation(); navigate('/chat'); }}><MessageSquare size={14} /> Messages</button>
-                      </motion.div>
-                   )}
-                 </AnimatePresence>
-               </div>
                <button className="action-btn-primary" onClick={() => navigate('/post-job')}>Post New Job</button>
             </div>
           </section>
@@ -167,40 +141,6 @@ const RecruiterDashboard = () => {
             ))}
           </section>
 
-          {/* 4. AI Insights Dashboard */}
-          <motion.section 
-            className="ai-insights-panel"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            <div className="panel-header">
-               <h2><Brain size={18} className="text-primary" /> AI STRATEGIC INSIGHTS</h2>
-               <button className="text-link" onClick={() => navigate('/ai')}>View Full Intelligence Report →</button>
-            </div>
-            <div className="insights-grid">
-               <div className="insight-card-main priority">
-                  <h3>🎯 TOP PRIORITY ACTIONS</h3>
-                  <div className="priority-list">
-                    <div className="priority-item">
-                       <Zap size={16} className="text-amber-500" />
-                       <span><strong>{data.stats.highMatch} high-match citizens</strong> waiting for review</span>
-                       <button className="item-btn" onClick={() => navigate('/my-jobs')}>Review Now</button>
-                    </div>
-                  </div>
-               </div>
-               <div className="insight-card-main trends">
-                  <h3><Brain size={18} className="text-primary" /> AI SUMMARY</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed font-meduim bg-white/50 p-4 rounded-xl border border-slate-200 shadow-sm">
-                    {data.stats.totalApplicants > 0 
-                      ? `Based on recent analytics, your active jobs have attracted ${data.stats.totalApplicants} total candidates. ${data.stats.highMatch} candidates scored above 85% in system matching algorithms. Proceed to your job listings to individually review candidate qualifications and profiles.` 
-                      : "You currently have no applicants across your active jobs. Consider refining your job descriptions or utilizing AI tools to optimize your posting for better reach."}
-                  </p>
-                  <button className="trends-cta mt-4" onClick={() => navigate('/my-jobs')}>Manage Active Jobs</button>
-               </div>
-            </div>
-          </motion.section>
-
           {/* 5. Quick Actions Bar */}
           <motion.section 
             className="quick-access-bar"
@@ -210,72 +150,16 @@ const RecruiterDashboard = () => {
           >
              <button className="q-btn" onClick={() => navigate('/post-job')}><Plus size={16} /> Post New Job</button>
              <button className="q-btn" onClick={() => navigate('/my-jobs')}><Briefcase size={16} /> Manage Job Postings</button>
-             <button className="q-btn premium" onClick={() => navigate('/ai')}><Sparkles size={16} /> AI Automation Rules</button>
           </motion.section>
-
-          {/* 6. AI Recommended Candidates */}
-          <section className="recommendations-section">
-            <div className="section-header">
-               <h2>🔥 TOP MATCH RECOMMENDATIONS</h2>
-               <button className="text-link" onClick={() => navigate('/my-jobs')}>View All {data.stats.highMatch} High-Match Candidates →</button>
-            </div>
-            <div className="candidates-list-vertical">
-               {data.topCandidates.length === 0 ? (
-                 <div className="empty-state-card text-center py-12 bg-white/50 backdrop-blur rounded-3xl border border-white/60">
-                    <Users size={40} className="mx-auto text-slate-300 mb-4" />
-                    <h3 className="text-lg font-bold text-slate-700">No Applications Yet</h3>
-                    <p className="text-slate-500">When candidates apply to your jobs, AI will automatically rank them here.</p>
-                    <button className="mt-6 action-btn-secondary mx-auto" onClick={() => navigate('/post-job')}>Post a Job Now</button>
-                 </div>
-               ) : data.topCandidates.map((c, i) => (
-                 <motion.div 
-                    key={i} 
-                    className="candidate-card-hifi"
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                  >
-                    <div className="c-card-content">
-                       <div className="c-left">
-                          <div className="c-avatar-large">{c.name.split(' ').map(n=>n[0]).join('')}</div>
-                          <div className="c-info min-w-0">
-                             <h4 className="truncate">{c.name}</h4>
-                             <div className="text-[0.8rem] font-semibold text-slate-500 flex flex-wrap items-center gap-2">
-                               <span className="whitespace-nowrap">Applied for:</span>
-                               <span className="bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-lg border border-indigo-100 font-bold whitespace-nowrap truncate max-w-[150px]">{c.appliedJob}</span>
-                             </div>
-                          </div>
-                       </div>
-                       
-                       <div className="c-right">
-                          <div className="c-score-badge">
-                             <div className="stars">{'★'.repeat(Math.floor(c.rating))}{c.rating % 1 !== 0 ? '☆' : ''}</div>
-                             <span className="score-text">{c.match}% Match</span>
-                          </div>
-                          <div className="ai-comment">
-                             <Brain size={16} />
-                             <p>{c.ai}</p>
-                          </div>
-                          <div className="c-actions">
-                             <button className="c-btn msg" onClick={() => navigate('/chat')} title="Message Candidate"><MessageSquare size={16} /></button>
-                             <button className="c-btn view flex-1 text-center" onClick={() => navigate(`/profile/${c.id}`)}>View Profile</button>
-                          </div>
-                       </div>
-                    </div>
-                 </motion.div>
-               ))}
-            </div>
-          </section>
 
           {/* 7. Recent Job Postings */}
           <section className="recent-jobs-section">
              <div className="section-header">
-                <h2>📋 RECENT JOB POSTINGS & APPLICANTS</h2>
+                <h2>📋 RECENT JOB POSTINGS</h2>
                 <button className="text-link" onClick={() => navigate('/my-jobs')}>View All {data.stats.activeJobs} Active Jobs →</button>
              </div>
              <div className="jobs-grid-dashboard">
-                {data.recentJobs.length === 0 ? (
+                {!data.recentJobs || data.recentJobs.length === 0 ? (
                   <div className="empty-state-card text-center py-12 bg-white/50 backdrop-blur rounded-3xl border border-white/60 col-span-2">
                     <Briefcase size={40} className="mx-auto text-slate-300 mb-4" />
                     <h3 className="text-lg font-bold text-slate-700">No Active Jobs</h3>
@@ -295,48 +179,69 @@ const RecruiterDashboard = () => {
                                <span className="px-2 py-0.5 text-[0.65rem] font-bold bg-slate-200 text-slate-600 rounded-full tracking-wider">CLOSED</span>
                              )}
                            </div>
-                           <p className="text-xs text-slate-500">Posted {j.posted} • <strong>{j.applicants} applicants</strong></p>
-                        </div>
-                        <div style={{position: 'relative'}}>
-                          <button className="icon-btn" onClick={() => setActiveDropdown(activeDropdown === j.id ? null : j.id)}>
-                             <MoreVertical size={16} />
-                          </button>
-                          {activeDropdown === j.id && (
-                             <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-10 overflow-hidden" style={{ zIndex: 10 }}>
-                                <button 
-                                  className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 font-semibold transition-colors" 
-                                  onClick={() => handleDeleteJob(j.id)}
-                                  disabled={isDeleting}
-                                >
-                                   <Trash2 size={14} /> {isDeleting ? 'Deleting...' : 'Delete Job'}
-                                </button>
-                             </div>
-                          )}
+                           <p className="text-xs text-slate-500">Posted {new Date(j.posted).toLocaleDateString()} • <strong>{j.applicants} applicants</strong></p>
                         </div>
                      </div>
-                     <div className="job-ai-brief">
-                        <Search size={14} className="text-primary" />
-                        <span>AI Summary: "{j.ai}"</span>
+                     <div className="job-applicants-preview mt-4">
+                        <p className="text-2xl font-black text-slate-800">{j.applicants}</p>
+                        <p className="text-xs font-medium text-slate-500">APPLICANTS</p>
                      </div>
-                     <div className="job-applicants-preview">
-                        <div className="avatar-stack">
-                           {j.profiles.map((p, pi) => (
-                             <div key={pi} className="stack-avatar">{p}</div>
-                           ))}
-                           {j.applicants > 3 && (
-                             <div className="stack-more">+{j.applicants - 3}</div>
-                           )}
-                        </div>
-                        <button className="view-apps-btn" onClick={() => navigate(`/jobs/${j.id}/applicants`)}>View All Applicants →</button>
-                     </div>
-                     <div className="job-card-footer">
+                     <div className="job-card-footer mt-4">
                         <button className="footer-btn" onClick={() => navigate(`/jobs/${j.id}`)}>View Job</button>
-                        <button className="footer-btn" onClick={() => navigate(`/jobs/${j.id}/applicants`)}>View Applicants</button>
-                        <button className="footer-btn">Analytics</button>
+                        <button className="footer-btn" onClick={() => navigate(`/jobs/${j.id}/applicants`)}>View Pipeline</button>
                      </div>
                   </motion.div>
                 ))}
              </div>
+          </section>
+
+          {/* 8. Recent Applications */}
+          <section className="recommendations-section mt-8">
+            <div className="section-header">
+               <h2>👥 RECENT APPLICATIONS</h2>
+            </div>
+            <div className="candidates-list-vertical">
+               {!data.recentApplications || data.recentApplications.length === 0 ? (
+                 <div className="empty-state-card text-center py-12 bg-white/50 backdrop-blur rounded-3xl border border-white/60">
+                    <Users size={40} className="mx-auto text-slate-300 mb-4" />
+                    <h3 className="text-lg font-bold text-slate-700">No Applications Yet</h3>
+                 </div>
+               ) : data.recentApplications.map((c, i) => (
+                 <motion.div 
+                    key={i} 
+                    className="candidate-card-hifi"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                  >
+                    <div className="c-card-content">
+                       <div className="c-left">
+                          <div className="c-avatar-large">{c.candidateName.split(' ').map(n=>n[0]).join('').substring(0,2)}</div>
+                          <div className="c-info min-w-0">
+                             <h4 className="truncate">{c.candidateName}</h4>
+                             <div className="text-[0.8rem] font-semibold text-slate-500 flex flex-wrap items-center gap-2 mt-1">
+                               <span className="whitespace-nowrap">Applied for:</span>
+                               <span className="bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-lg border border-indigo-100 font-bold whitespace-nowrap truncate max-w-[150px]">{c.jobTitle}</span>
+                             </div>
+                             <span className="text-[10px] text-slate-400 font-medium mt-1 block">
+                                {new Date(c.appliedAt).toLocaleDateString()}
+                             </span>
+                          </div>
+                       </div>
+                       
+                       <div className="c-right">
+                          <div className="c-score-badge">
+                             <span className="score-text">Match: {c.matchScore}%</span>
+                          </div>
+                          <div className="c-actions mt-3">
+                             <button className="c-btn view flex-1 text-center" onClick={() => navigate(`/evaluation/${c.id}`)}>Review Candidate</button>
+                          </div>
+                       </div>
+                    </div>
+                 </motion.div>
+               ))}
+            </div>
           </section>
         </motion.div>
       </main>

@@ -22,6 +22,17 @@ export const getSystemReports = (req, res) => {
             UNION
             (SELECT 'application' as type, status as detail, created_at FROM applications)
             ORDER BY created_at DESC LIMIT 10
+        `,
+        detailedJobs: `
+            SELECT 
+                j.title, j.status, 
+                DATE(j.created_at) as created_date,
+                COUNT(a.id) as applicants,
+                SUM(CASE WHEN a.status = 'accepted' THEN 1 ELSE 0 END) as hired
+            FROM jobs j
+            LEFT JOIN applications a ON j.id = a.job_id
+            GROUP BY j.id
+            ORDER BY j.created_at DESC
         `
     };
 

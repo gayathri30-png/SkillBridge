@@ -250,7 +250,7 @@ const RecruiterApplicants = () => {
       )}
 
       {/* AI INSIGHTS DASHBOARD */}
-      <div className={`ai-insights-dashboard ${!showAIInsights ? 'collapsed' : ''}`}>
+      {false && <div className={`ai-insights-dashboard ${!showAIInsights ? 'collapsed' : ''}`}>
         <div className="ai-dashboard-header" onClick={() => setShowAIInsights(!showAIInsights)}>
             <h2><Brain size={20} /> AI INSIGHTS DASHBOARD</h2>
             <div className="flex items-center gap-4">
@@ -304,7 +304,7 @@ const RecruiterApplicants = () => {
                 </div>
             </div>
         )}
-      </div>
+      </div>}
 
       {/* FILTERS & ACTIONS BAR */}
       <div className="filters-actions-bar">
@@ -462,17 +462,6 @@ const RecruiterApplicants = () => {
                                 <span key={i} className="user-tag">{t}</span>
                             ))}
                         </div>
-
-                        <div className={`ai-insight-line ${app.ai_match_score < 70 ? 'skill-gap-note' : ''}`}>
-                            <Brain size={14} className="text-primary flex-shrink-0" />
-                            {app.ai_match_score > 85 ? (
-                                <span><strong>AI Insights:</strong> Perfect technical fit. Candidate possesses the core stack: {jobDetails?.skills_required?.slice(0, 3).join(', ')}.</span>
-                            ) : app.ai_match_score > 60 ? (
-                                <span><strong>AI Insights:</strong> Solid candidate. Minor gaps in {jobDetails?.skills_required?.filter(s => !app.student_skills?.toLowerCase().includes(s.toLowerCase())).slice(0, 2).join(', ') || 'specialized areas'}.</span>
-                            ) : (
-                                <span><strong>🎯 Skill Gap:</strong> Significant divergence. Lacks {jobDetails?.skills_required?.filter(s => !app.student_skills?.toLowerCase().includes(s.toLowerCase())).slice(0, 3).join(', ') || 'required skills'}.</span>
-                            )}
-                        </div>
                     </div>
 
                     <div className="applicant-actions">
@@ -550,7 +539,7 @@ const RecruiterApplicants = () => {
           />
       )}
 
-      {showAnalytics && (
+      {false && showAnalytics && (
           <RecruitmentAnalytics 
             applicants={applicants}
             jobDetails={jobDetails}

@@ -12,7 +12,8 @@ import {
   Layout,
   Code,
   CheckCircle,
-  X
+  X,
+  Plus
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -26,15 +27,14 @@ const Sidebar = ({ user, isOpen, onClose }) => {
     { title: 'Find Jobs', path: '/jobs', icon: <Briefcase size={20} /> },
     { title: 'My Applications', path: '/applications', icon: <FileText size={20} /> },
     { title: 'Messages', path: '/chat', icon: <MessageSquare size={20} /> },
-    { title: 'AI Hub', path: '/ai', icon: <Sparkles size={20} /> },
+    { title: 'Skill Gap', path: '/ai/skill-gap', icon: <Sparkles size={20} /> },
   ];
 
   const recruiterLinks = [
     { title: 'Dashboard', path: '/dashboard', icon: <Home size={20} /> },
-    { title: 'Post Job', path: '/post-job', icon: <Briefcase size={20} /> },
-    { title: 'My Jobs', path: '/my-jobs', icon: <FileText size={20} /> },
+    { title: 'Pipeline', path: '/my-jobs', icon: <Briefcase size={20} /> },
+    { title: 'Post Job', path: '/post-job', icon: <Plus size={20} /> },
     { title: 'Messages', path: '/chat', icon: <MessageSquare size={20} /> },
-    { title: 'AI Hub', path: '/ai', icon: <Sparkles size={20} /> },
   ];
 
   const adminLinks = [
@@ -44,7 +44,6 @@ const Sidebar = ({ user, isOpen, onClose }) => {
     { title: 'Jobs', path: '/admin/jobs', icon: <Briefcase size={20} /> },
     { title: 'Applications', path: '/admin/applications', icon: <FileText size={20} /> },
     { title: 'Reports', path: '/admin/reports', icon: <Layout size={20} /> },
-    { title: 'AI Workspace', path: '/ai', icon: <Sparkles size={20} /> },
   ];
 
   let navLinks = studentLinks;

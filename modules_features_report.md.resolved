@@ -1,0 +1,102 @@
+# Skillbridge Project - Modules and Features Report
+
+Based on a comprehensive analysis of the project structure, routing, controllers, and models, here is the structured list of modules, features, data sources, and technical stack for the **Skillbridge** project.
+
+---
+
+## 1. Major Modules & 2. Sub-Features per Module
+
+### 🔐 Authentication & Security
+- **Registration**: Sign up as a Student or Recruiter.
+- **Login**: Token-based authentication using JWT.
+- **Password Management**: Forgot password flow, reset password via email token.
+- **Role-Based Access Control (RBAC)**: Route guards protecting Student, Recruiter, and Admin areas.
+
+### 👤 User Management (Profiles & Skills)
+- **Profile Editing**: Personal details, bio, location, education, experience, and contact info.
+- **Skill Management**: Adding/removing skills from standard skill taxonomy with proficiency levels.
+- **CV / Resume Management**: Uploading and handling files using Multer.
+- **Public Profiles**: Viewing read-only applicant or recruiter profiles.
+- **Onboarding Checklist**: Step-by-step profile completion guide for new users.
+
+### 💼 Job Management (Recruiters)
+- **Job Posting**: Creating jobs with rich descriptions, required skills, budget, location, and experience level.
+- **Job Details Management**: Editing or closing existing job listings.
+- **Applicant Tracking**: Viewing candidates applied to specific jobs with their profiles and CVs.
+- **Applicant Evaluation**: Reviewing applications, updating status (e.g., Shortlisted, Accepted, Rejected).
+- **Offer Management**: Sending and tracking offer letters.
+
+### 🎓 Job Browsing & Application (Students)
+- **Job Discovery (Job Board)**: Browsing open roles with filtering (by type, location, experience) and search.
+- **Skill-Based Matching**: Automatic highlight of jobs matching the student's skills.
+- **Save Jobs**: Bookmarking jobs (Heart icon) to a "Saved Jobs" list.
+- **Job Application**: Submitting proposals and applying for specific jobs.
+- **Application Tracking**: Tracking the status of submitted applications.
+
+### 🤖 AI Hub & Features
+*Skillbridge implements a rich suite of AI and data-driven heuristic features.*
+- **Skill Gap Detector**: Analyzes student skills vs. job requirements to show matching percentage and missing skills.
+- **Upskilling Pathways Recommended**: Generates practical steps, timeframes, and resources to learn missing skills.
+- **AI Proposal Generator**: Assists students in drafting personalized job applications based on their profile and the job description.
+- **Application Insights & Suitability Scoring**: Analyzes proposals to determine predictive success, sentiment, and key strengths.
+- **Recruiter Market Intelligence**: Provides salary benchmarks and demand context for specific skills in newly posted jobs.
+- **AI Interview Materials**: Generates tailored interview questions and feedback templates based on candidate proposals.
+- **Candidate Comparison**: Compares multiple applicants side-by-side highlighting top skills.
+- **Smart Candidate Sourcing**: Finds similar candidates in the pool with overlapping skill sets.
+- **Recruiter Coach**: Provides actionable advice/tips on whether to hire based on match thresholds.
+- **Smart Job Post Generator**: Generates professional job descriptions based on title and core skills.
+
+### 📊 Dashboards & Analytics
+- **Student Dashboard**: Overview of application stats, recent activity, and matched jobs.
+- **Recruiter AI Dashboard**: Overview of active jobs, applicant counts, high-match candidates, top candidates list, and AI-driven summary insights.
+- **Admin Dashboard**: Platform-wide metrics, user activity, total jobs, system reports.
+
+### 💬 Messaging & Real-Time Interaction
+- **Real-Time Chat**: WebSockets-powered chat rooms between students and recruiters.
+- **Inbox / Chat List**: List of active conversations.
+- **Notifications Engine**: In-app notifications for job matches based on newly posted jobs and received messages.
+
+### ⚙️ Admin Panel
+- **User Management**: Viewing, verifying, and managing all students and recruiters.
+- **Job Approval/Management**: Monitoring all platform jobs.
+- **Application Oversight**: Viewing all applications platform-wide.
+- **System Skills Taxonomy**: Administering the global list of skills available on the platform.
+- **Global Settings & Reports**: Monitoring platform health, metrics, and generating reports.
+
+---
+
+## 3. Data Sources
+
+The project uses a mix of real database persistence and heuristic-based simulated AI, relying on a MySQL backend:
+
+- **Real Database Data (MySQL)**: 
+  - All core entities are strictly database-driven. This includes **Users**, **Jobs**, **Applications**, **Saved Jobs**, **Skills**, **User Skills**, **Job Skills**, **Chat Messages**, and **Notifications**.
+  - All standard dashboard statistics (e.g., applicant counts, active jobs) run genuine SQL aggregation queries.
+- **Hybrid AI & Mock Data**:
+  - *Gemini AI API*: The actual `@google/genai` library is used dynamically for complex text generation (e.g., Smart Job Post Generator, Upskilling Pathways).
+  - *Simulated AI (Heuristics)*: Many AI features (like Suitability Score, Match %, predictive success, Recruiter AI Coach tips, Bias Detection) are calculated in the backend via mathematical heuristics, string matching, keyword analysis, and fallback templates rather than external complex ML models. For example, match score is `matched_skills / job_skills * 100`.
+
+---
+
+## 4. Technical Stack
+
+Based on [package.json](file:///d:/SkillBridge/package.json) dependencies and direct architecture inspection:
+
+### Frontend
+- **Framework**: React 19 (Bootstrapped likely via Create React App / `react-scripts`)
+- **Routing**: React Router DOM v7
+- **Styling**: Tailwind CSS v3, enhanced with `clsx` and `tailwind-merge`.
+- **UI Components & Icons**: `lucide-react`, `@radix-ui/react-icons`.
+- **State Management**: Zustand
+- **Data Visualization**: Recharts
+- **Animations**: Framer Motion
+- **Networking/Communication**: Axios (for HTTP requests), Socket.io-client (for WebSockets).
+
+### Backend
+- **Runtime**: Node.js
+- **Web Framework**: Express.js
+- **Database**: MySQL (using the `mysql2` driver with connection pooling). *Note: `mongoose` is in dependencies, but MySQL is the active core database driver in [config/db.js](file:///d:/SkillBridge/server/config/db.js).*
+- **Authentication**: `jsonwebtoken` (JWT) for secure tokens, `bcryptjs` for password hashing, `google-auth-library`.
+- **Real-Time Communication**: `socket.io` (WebSockets) attached to the Express HTTP Server.
+- **File Uploads**: Multer (Local storage for CVs and profile pictures).
+- **AI Integration**: `@google/genai` (Google's Gemini model API).

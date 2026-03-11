@@ -448,48 +448,48 @@ export const getRecruiterDashboardStats = async (req, res) => {
   try {
     const promiseQuery = db.promise().query.bind(db.promise());
     
-    // 1. Stats
+    // 1. Core Stats
     const [[stats]] = await promiseQuery(`
       SELECT 
         COUNT(DISTINCT j.id) as active_jobs,
         COUNT(a.id) as total_applicants,
-        SUM(CASE WHEN a.ai_match_score >= 85 THEN 1 ELSE 0 END) as high_match_applicants
+        SUM(CASE WHEN a.status = 'pending' THEN 1 ELSE 0 END) as pending_reviews,
+        SUM(CASE WHEN a.status IN ('accepted', 'hired') THEN 1 ELSE 0 END) as shortlisted,
+        AVG(CASE WHEN a.ai_match_score IS NOT NULL THEN a.ai_match_score ELSE 0 END) as avg_match_score
       FROM jobs j
       LEFT JOIN applications a ON j.id = a.job_id
       WHERE j.posted_by = ? AND j.status = 'open'
     `, [recruiterId]);
 
-    // 2. Top Candidates
-    const [topCandidates] = await promiseQuery(`
-      SELECT 
-        u.id, u.name, u.location,
-        a.ai_match_score as match_score, 'AI Analysis Complete' as ai,
-        j.title as applied_job,
-        GROUP_CONCAT(DISTINCT s.name) as skills
-      FROM applications a
-      JOIN jobs j ON a.job_id = j.id
-      JOIN users u ON a.student_id = u.id
-      LEFT JOIN user_skills us ON u.id = us.user_id
-      LEFT JOIN skills s ON us.skill_id = s.id
-      WHERE j.posted_by = ?
-      GROUP BY a.id, u.id, u.name, u.location, a.ai_match_score, j.title
-      ORDER BY a.ai_match_score DESC
-      LIMIT 5
-    `, [recruiterId]);
-
-    // 3. Recent Jobs
+    // 2. Recent Jobs
     const [recentJobs] = await promiseQuery(`
       SELECT 
         j.id, j.title, j.status,
-        DATE_FORMAT(j.created_at, '%b %d') as posted,
-        COUNT(a.id) as applicants,
-        GROUP_CONCAT(u.name SEPARATOR ',') as applicant_names
+        j.created_at as posted,
+        COUNT(a.id) as applicants
       FROM jobs j
       LEFT JOIN applications a ON j.id = a.job_id
-      LEFT JOIN users u ON a.student_id = u.id
       WHERE j.posted_by = ?
       GROUP BY j.id, j.title, j.status, j.created_at
       ORDER BY j.created_at DESC
+      LIMIT 4
+    `, [recruiterId]);
+
+    // 3. Recent Applications
+    const [recentApplications] = await promiseQuery(`
+      SELECT 
+        a.id as application_id,
+        u.name as candidate_name,
+        j.id as job_id,
+        j.title as job_title,
+        a.ai_match_score as match_score,
+        a.created_at as applied_at,
+        a.status
+      FROM applications a
+      JOIN jobs j ON a.job_id = j.id
+      JOIN users u ON a.student_id = u.id
+      WHERE j.posted_by = ?
+      ORDER BY a.created_at DESC
       LIMIT 10
     `, [recruiterId]);
 
@@ -497,49 +497,30 @@ export const getRecruiterDashboardStats = async (req, res) => {
       stats: {
         activeJobs: stats.active_jobs || 0,
         totalApplicants: stats.total_applicants || 0,
-        highMatch: stats.high_match_applicants || 0,
-        avgResponseTime: "24 hrs"
+        pendingReviews: stats.pending_reviews || 0,
+        shortlisted: stats.shortlisted || 0,
+        avgMatchScore: Math.round(stats.avg_match_score || 0)
       },
-      topCandidates: topCandidates.map(c => ({
-        id: c.id,
-        name: c.name,
-        role: c.role || 'Applicant',
-        exp: c.experience || 'Entry Level',
-        location: c.location || 'Remote',
-        appliedJob: c.applied_job || 'General',
-        match: c.match_score || 0,
-        ai: c.ai || "AI matching in progress",
-        skills: c.skills ? c.skills.split(',') : [],
-        tags: c.skills ? c.skills.split(',').slice(0, 3) : [],
-        rating: 4.8
+      recentJobs: recentJobs.map(j => ({
+        id: j.id,
+        title: j.title,
+        status: j.status,
+        posted: j.posted,
+        applicants: j.applicants
       })),
-      recentJobs: recentJobs.map((j, index) => {
-        const names = j.applicant_names ? j.applicant_names.split(',') : [];
-        const profiles = names.slice(0, 3).map(n => n.split(' ').map(part => part[0]).join('').substring(0,2).toUpperCase());
-        
-        // Generate a dynamic-looking AI summary since DB doesn't have an ai_summary column
-        const aiSummaries = [
-          "High alignment with required technical stack.",
-          "Candidates show strong cultural fit potential.",
-          "Smart Matching Active: 3 strong matches found.",
-          "Skills gap detected in recent applicant pool.",
-          "Ideal candidates are trending towards senior roles."
-        ];
-        const dynamicSummary = aiSummaries[index % aiSummaries.length];
-
-        return {
-          id: j.id,
-          title: j.title,
-          status: j.status,
-          posted: j.posted,
-          applicants: j.applicants,
-          ai: j.applicants > 0 ? dynamicSummary : "Awaiting applications for AI analysis.",
-          profiles
-        };
-      })
+      recentApplications: recentApplications.map(app => ({
+        id: app.application_id,
+        candidateName: app.candidate_name,
+        jobId: app.job_id,
+        jobTitle: app.job_title,
+        matchScore: app.match_score || 0,
+        appliedAt: app.applied_at,
+        status: app.status
+      }))
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Failed to fetch dashboard stats", message: error.message });
   }
 };
+

@@ -261,7 +261,7 @@ const ApplicantEvaluation = () => {
                 >
                     <Award size={18} /> Skill Gap Visualizer
                 </button>
-                <button 
+                {false && <button 
                     className={`nav-item ${activeTab === 'sourcing' ? 'active' : ''}`}
                     onClick={() => {
                         setActiveTab('sourcing');
@@ -269,8 +269,8 @@ const ApplicantEvaluation = () => {
                     }}
                 >
                     <Sparkles size={18} /> Smart Sourcing
-                </button>
-                <button 
+                </button>}
+                {false && <button 
                     className={`nav-item ${activeTab === 'scheduling' ? 'active' : ''}`}
                     onClick={() => {
                         setActiveTab('scheduling');
@@ -278,7 +278,7 @@ const ApplicantEvaluation = () => {
                     }}
                 >
                     <Brain size={18} /> AI Scheduler
-                </button>
+                </button>}
                 <button 
                     className={`nav-item ${activeTab === 'market' ? 'active' : ''}`}
                     onClick={() => {
@@ -294,7 +294,7 @@ const ApplicantEvaluation = () => {
                 >
                     <Zap size={18} /> Smart Workflow
                 </button>
-                <button 
+                {false && <button 
                     className={`nav-item ${activeTab === 'coach' ? 'active' : ''}`}
                     onClick={() => {
                         setActiveTab('coach');
@@ -302,8 +302,8 @@ const ApplicantEvaluation = () => {
                     }}
                 >
                     <MessageSquare size={18} /> AI Recruiter Coach
-                </button>
-                <button 
+                </button>}
+                {false && <button 
                     className={`nav-item ${activeTab === 'verification' ? 'active' : ''}`}
                     onClick={() => {
                         setActiveTab('verification');
@@ -311,9 +311,9 @@ const ApplicantEvaluation = () => {
                     }}
                 >
                     <CheckCircle2 size={18} /> Skills Verification
-                </button>
-                <div className="sidebar-sep"></div>
-                <button 
+                </button>}
+                {/* <div className="sidebar-sep"></div> */}
+                {false && <button 
                     className={`nav-item premium ${activeTab === 'advanced' ? 'active' : ''}`}
                     onClick={() => {
                         setActiveTab('advanced');
@@ -321,7 +321,7 @@ const ApplicantEvaluation = () => {
                     }}
                 >
                     <Sparkles size={18} /> Expert AI Suite
-                </button>
+                </button>}
             </aside>
 
             {/* Main Display Area */}
@@ -602,7 +602,7 @@ const ApplicantEvaluation = () => {
                     </div>
                 )}
 
-                {activeTab === 'sourcing' && (
+                {false && activeTab === 'sourcing' && (
                     <div className="fade-in">
                         <section className="insight-card sourcing-card-main">
                             <div className="flex justify-between items-center mb-8">
@@ -646,7 +646,7 @@ const ApplicantEvaluation = () => {
                     </div>
                 )}
 
-                {activeTab === 'scheduling' && schedulingAdvice && (
+                {false && activeTab === 'scheduling' && schedulingAdvice && (
                     <div className="fade-in space-y-6">
                         <section className="insight-card advice-card">
                             <div className="flex justify-between items-center mb-8">
@@ -763,7 +763,7 @@ const ApplicantEvaluation = () => {
                     </div>
                 )}
 
-                {activeTab === 'coach' && coachAdvice && (
+                {false && activeTab === 'coach' && coachAdvice && (
                     <div className="fade-in space-y-6">
                         <section className="insight-card coach-card bg-indigo-50 border-indigo-100">
                             <div className="flex justify-between items-center mb-8">
@@ -809,7 +809,7 @@ const ApplicantEvaluation = () => {
                     </div>
                 )}
 
-                {activeTab === 'verification' && skillVerification && (
+                {false && activeTab === 'verification' && skillVerification && (
                     <div className="fade-in space-y-6">
                          <div className="trust-meter-card">
                             <div className="trust-info">
@@ -846,7 +846,7 @@ const ApplicantEvaluation = () => {
                     </div>
                 )}
 
-                {activeTab === 'advanced' && biasData && (
+                {false && activeTab === 'advanced' && biasData && (
                     <div className="fade-in space-y-6">
                         <div className="grid grid-cols-2 gap-6">
                             <section className="insight-card">
