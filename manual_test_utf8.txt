@@ -1,0 +1,21 @@
+﻿Logging in as Gayathri...
+node : Γ¥î FAILED: 401
+At line:1 char:1
++ node manual_test_1.js 
+> ../manual_test_output.
+txt 2>&1; Get-Content . 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo      
+        : NotSpecified  
+  : (Γ¥î FAILED: 401:   
+ String) [], RemoteE    
+xception
+    + FullyQualifiedErr 
+   orId : NativeComman  
+  dError
+ 
+Error Data: { error: 
+'Invalid credentials' }

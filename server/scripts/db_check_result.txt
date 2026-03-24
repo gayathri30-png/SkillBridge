@@ -1,0 +1,125 @@
+APPS:
+[
+  {
+    "id": 14,
+    "student_id": 41,
+    "job_id": 12,
+    "status": "hired",
+    "title": "Senior AI Engineer Internship"
+  },
+  {
+    "id": 13,
+    "student_id": 1000,
+    "job_id": 12,
+    "status": "hired",
+    "title": "Senior AI Engineer Internship"
+  },
+  {
+    "id": 12,
+    "student_id": 1000,
+    "job_id": 7,
+    "status": "pending",
+    "title": "UI/UX Designer"
+  },
+  {
+    "id": 11,
+    "student_id": 1000,
+    "job_id": 13,
+    "status": "hired",
+    "title": "Frontend Developer"
+  },
+  {
+    "id": 10,
+    "student_id": 1000,
+    "job_id": 8,
+    "status": "pending",
+    "title": "Frontend Developer"
+  }
+]
+
+ROOMS:
+[
+  {
+    "id": 1,
+    "room_id": "app_11",
+    "student_id": 1000,
+    "recruiter_id": 54,
+    "job_title": "Frontend Developer"
+  }
+]
+
+NOTIFS:
+[
+  {
+    "id": 35,
+    "user_id": 46,
+    "type": "job_match",
+    "message": "New job match: Software Engineer Intern matches your skills!",
+    "is_read": 0
+  },
+  {
+    "id": 34,
+    "user_id": 1000,
+    "type": "job_match",
+    "message": "New job match: Software Engineer Intern matches your skills!",
+    "is_read": 0
+  },
+  {
+    "id": 33,
+    "user_id": 42,
+    "type": "job_match",
+    "message": "New job match: Software Engineer Intern matches your skills!",
+    "is_read": 0
+  },
+  {
+    "id": 32,
+    "user_id": 41,
+    "type": "job_match",
+    "message": "New job match: Software Engineer Intern matches your skills!",
+    "is_read": 0
+  },
+  {
+    "id": 31,
+    "user_id": 54,
+    "type": "offer_accepted",
+    "message": "Offer for Senior AI Engineer Internship was accepted!",
+    "is_read": 0
+  },
+  {
+    "id": 30,
+    "user_id": 41,
+    "type": "status_update",
+    "message": "Your application for Senior AI Engineer Internship was hired",
+    "is_read": 1
+  },
+  {
+    "id": 29,
+    "user_id": 54,
+    "type": "application",
+    "message": "New application for Senior AI Engineer Internship",
+    "is_read": 0
+  },
+  {
+    "id": 28,
+    "user_id": 54,
+    "type": "offer_accepted",
+    "message": "Offer for Senior AI Engineer Internship was accepted!",
+    "is_read": 0
+  },
+  {
+    "id": 27,
+    "user_id": 1000,
+    "type": "status_update",
+    "message": "Your application for Senior AI Engineer Internship was hired",
+    "is_read": 1
+  },
+  {
+    "id": 26,
+    "user_id": 54,
+    "type": "application",
+    "message": "New application for Senior AI Engineer Internship",
+    "is_read": 0
+  }
+]
+
+MSG_COLS: ["id","room_id","sender_id","receiver_id","message","created_at","is_read"]

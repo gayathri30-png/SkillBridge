@@ -1,0 +1,66 @@
+﻿node : node:internal/mod
+ules/package_json_reader
+:316
+At line:1 char:1
++ node 
+test_endpoint_real.js > 
+test_output.txt 2>&1; 
+Get-Content test_o ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo      
+        : NotSpecified  
+  : (node:internal/m.   
+ ..json_reader:316:S    
+tring) [], RemoteEx    
+ception
+    + FullyQualifiedErr 
+   orId : NativeComman  
+  dError
+ 
+  throw new ERR_MODULE_N
+OT_FOUND(packageName, 
+fileURLToPath(base), 
+null);
+        ^
+
+Error 
+[ERR_MODULE_NOT_FOUND]: 
+Cannot find package 
+'axios' imported from D:
+\SkillBridge\test_endpoi
+nt_real.js
+    at Object.getPackage
+JSONURL (node:internal/m
+odules/package_json_read
+er:316:9)
+    at packageResolve (n
+ode:internal/modules/esm
+/resolve:768:81)
+    at moduleResolve (no
+de:internal/modules/esm/
+resolve:858:18)
+    at defaultResolve (n
+ode:internal/modules/esm
+/resolve:990:11)
+    at 
+#cachedDefaultResolve (n
+ode:internal/modules/esm
+/loader:737:20)
+    at 
+ModuleLoader.resolve (no
+de:internal/modules/esm/
+loader:714:38)
+    at ModuleLoader.getM
+oduleJobForImport (node:
+internal/modules/esm/loa
+der:293:38)
+    at #link (node:inter
+nal/modules/esm/module_j
+ob:208:49) {
+  code: 
+'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v24.11.1

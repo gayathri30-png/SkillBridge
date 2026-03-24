@@ -1,0 +1,22 @@
+﻿Logging in...
+node : Γ¥î Test Script 
+Error: Request failed 
+with status code 401
+At line:1 char:1
++ node 
+test_endpoint_real.js > 
+../test_output_2.txt 
+2>&1; Get-Content . ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~
+    + CategoryInfo      
+        : NotSpecified  
+  : (Γ¥î Test Script.   
+ ..status code 401:S    
+tring) [], RemoteEx    
+ception
+    + FullyQualifiedErr 
+   orId : NativeComman  
+  dError
+ 

@@ -1,0 +1,78 @@
+﻿≡ƒöì DB Config - Loading environment variables:
+DB_HOST: localhost
+DB_USER: root
+DB_NAME: skillbridge
+Γ£à MySQL Pool Connected Successfully!
+Γ£à Test query result: 2
+INTERVIEW_RECORDS:
+[
+  {
+    "id": 1,
+    "application_id": 11,
+    "student_id": 1000
+  },
+  {
+    "id": 2,
+    "application_id": 8,
+    "student_id": 41
+  }
+]
+APPLICATION_RECORDS:
+[
+  {
+    "id": 5,
+    "student_id": 41
+  },
+  {
+    "id": 6,
+    "student_id": 41
+  },
+  {
+    "id": 7,
+    "student_id": 41
+  },
+  {
+    "id": 8,
+    "student_id": 41
+  },
+  {
+    "id": 14,
+    "student_id": 41
+  },
+  {
+    "id": 2,
+    "student_id": 46
+  },
+  {
+    "id": 3,
+    "student_id": 46
+  },
+  {
+    "id": 4,
+    "student_id": 49
+  },
+  {
+    "id": 9,
+    "student_id": 1000
+  },
+  {
+    "id": 10,
+    "student_id": 1000
+  },
+  {
+    "id": 11,
+    "student_id": 1000
+  },
+  {
+    "id": 12,
+    "student_id": 1000
+  },
+  {
+    "id": 13,
+    "student_id": 1000
+  },
+  {
+    "id": 16,
+    "student_id": 1026
+  }
+]

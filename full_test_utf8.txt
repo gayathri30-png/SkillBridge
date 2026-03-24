@@ -1,0 +1,31 @@
+﻿≡ƒöì DB Config - Loading environment variables:
+DB_HOST: localhost
+DB_USER: root
+DB_NAME: skillbridge
+Registering test student...
+Γ£à MySQL Pool Connected Successfully!
+Γ£à Test query result: 2
+Γ£à Registered! Student ID: 1028
+Creating test application and interview...
+node : Γ¥î Setup 
+Failed: Data truncated 
+for column 'status' at 
+row 1
+At line:1 char:1
++ node 
+full_diag_test.js > 
+../full_test_output.txt 
+2>&1; Get-Content .. ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo      
+        : NotSpecified  
+  : (Γ¥î Setup Faile.   
+ ..tatus' at row 1:S    
+tring) [], RemoteEx    
+ception
+    + FullyQualifiedErr 
+   orId : NativeComman  
+  dError
+ 
