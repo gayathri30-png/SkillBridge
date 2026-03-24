@@ -349,7 +349,7 @@ const experienceLevels = [
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="budget">
-                  Budget (USD) <span className="required">*</span>
+                  Annual Salary (INR) <span className="required">*</span>
                 </label>
                 <input
                   type="number"
@@ -357,7 +357,7 @@ const experienceLevels = [
                   name="budget"
                   value={jobData.budget}
                   onChange={handleInputChange}
-                  placeholder="e.g., 5000"
+                  placeholder="e.g., 1200000 (for 12 LPA)"
                   min="0"
                   className={errors.budget ? "error" : ""}
                   disabled={loading}
@@ -366,7 +366,7 @@ const experienceLevels = [
                   <span className="error-message">{errors.budget}</span>
                 )}
                 <small className="hint">
-                  Enter the total project budget or salary
+                  Enter the total annual compensation in Rupees
                 </small>
               </div>
 
@@ -498,7 +498,10 @@ const experienceLevels = [
             <div className="preview-details">
               <div className="preview-detail">
                 <span className="detail-icon">💰</span>
-                <span>${jobData.budget || "0"}</span>
+                <span>
+                  ₹{Number(jobData.budget).toLocaleString('en-IN')} 
+                  {Number(jobData.budget) >= 100000 ? ` (${(Number(jobData.budget) / 100000).toFixed(1)} LPA)` : ''}
+                </span>
               </div>
               <div className="preview-detail">
                 <span className="detail-icon">📍</span>

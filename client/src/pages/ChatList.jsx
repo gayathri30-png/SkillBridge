@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { MessageSquare, Search, Clock, ChevronRight, Inbox } from 'lucide-react';
@@ -11,11 +11,7 @@ const ChatList = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  useEffect(() => {
-    fetchRooms();
-  }, []);
-
-  const fetchRooms = async () => {
+  const fetchRooms = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const res = await axios.get('/api/chat/rooms', {
@@ -27,7 +23,14 @@ const ChatList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchRooms();
+    // Poll every 10 seconds for new rooms/unread counts
+    const interval = setInterval(fetchRooms, 10000);
+    return () => clearInterval(interval);
+  }, [fetchRooms]);
 
   const formatTime = (ts) => {
     if (!ts) return '';
@@ -44,6 +47,8 @@ const ChatList = () => {
 
   const getInitials = (name = '') =>
     name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const totalUnread = rooms.reduce((sum, r) => sum + Number(r.unread_count || 0), 0);
 
   const filtered = rooms.filter(r =>
     getOtherName(r)?.toLowerCase().includes(search.toLowerCase()) ||
@@ -66,9 +71,9 @@ const ChatList = () => {
         <div className="header-title">
           <MessageSquare size={24} />
           <h1>Messages</h1>
-          {rooms.filter(r => r.unread_count > 0).length > 0 && (
+          {totalUnread > 0 && (
             <span className="total-unread-badge">
-              {rooms.reduce((sum, r) => sum + Number(r.unread_count), 0)}
+              {totalUnread}
             </span>
           )}
         </div>
@@ -95,12 +100,12 @@ const ChatList = () => {
           filtered.map(room => (
             <div
               key={room.room_id}
-              className={`room-item ${room.unread_count > 0 ? 'unread' : ''}`}
+              className={`room-item ${Number(room.unread_count) > 0 ? 'unread' : ''}`}
               onClick={() => navigate(`/chat/${room.room_id}`)}
             >
               <div className="room-avatar">
                 <span>{getInitials(getOtherName(room))}</span>
-                {room.unread_count > 0 && (
+                {Number(room.unread_count) > 0 && (
                   <span className="unread-dot">{room.unread_count}</span>
                 )}
               </div>

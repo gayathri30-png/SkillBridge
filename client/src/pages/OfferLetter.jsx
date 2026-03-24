@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { 
-  FileText, Calendar, DollarSign, Briefcase, 
+  FileText, Calendar, IndianRupee, Briefcase, 
   CheckCircle, XCircle, ArrowLeft, Download,
   Printer, ShieldCheck, Sparkles
 } from 'lucide-react';
+import { formatSalary } from '../utils/formatters';
 
 const OfferLetter = () => {
   const { id } = useParams();
@@ -121,11 +122,11 @@ const OfferLetter = () => {
              <div className="space-y-6">
                 <div className="flex items-center gap-4">
                    <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
-                       <DollarSign size={20} className="text-emerald-400" />
+                       <IndianRupee size={20} className="text-emerald-400" />
                    </div>
                    <div>
-                       <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Base Salary</div>
-                       <div className="text-xl font-bold">{offer.salary}</div>
+                       <div className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Base Salary (INR)</div>
+                       <div className="text-xl font-bold">{formatSalary(offer.salary)}</div>
                    </div>
                 </div>
 

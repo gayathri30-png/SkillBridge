@@ -1,43 +1,47 @@
-import { GoogleGenAI } from '@google/genai';
+import axios from "axios";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const getGeminiClient = () => {
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'your_api_key_here' || process.env.GEMINI_API_KEY === '') {
-        console.warn("WARNING: GEMINI_API_KEY is not set or is invalid in .env. Falling back to simulated AI mode.");
-        return null;
-    }
-    return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-};
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load .env explicitly to handle ESM hoisting
+dotenv.config({ path: path.join(__dirname, "../.env") });
 
 /**
- * Generate a text response using Google Gemini 2.5 Flash model
- * @param {string} prompt The user's prompt or data to analyze
- * @param {string} systemInstruction Optional system instruction to guide the AI's persona
- * @returns {Promise<string|null>} The generated text or null if the API key is missing
+ * Generate a text response using Google Gemini 1.5 Flash model via REST API
+ * @param {string} prompt The user's prompt
+ * @returns {Promise<string|null>} 
  */
-export const generateGeminiResponse = async (prompt, systemInstruction = null) => {
-    const ai = getGeminiClient();
+export const generateGeminiResponse = async (prompt) => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    console.log("DEBUG: GEMINI_API_KEY set?", !!apiKey);
+    if (apiKey) console.log("DEBUG: GEMINI_API_KEY start:", apiKey.substring(0, 5));
     
-    // Fallback if no API key is set
-    if (!ai) return null;
+    if (!apiKey || apiKey === 'your_api_key_here' || apiKey === '') {
+        console.warn("WARNING: GEMINI_API_KEY is not set. Generic fallback will be used.");
+        return null;
+    }
 
     try {
-        const config = {
-            temperature: 0.7,
-        };
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
         
-        if (systemInstruction) {
-            config.systemInstruction = systemInstruction;
-        }
-
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: config,
+        const response = await axios.post(url, {
+            contents: [{
+                parts: [{ text: prompt }]
+            }]
+        }, {
+            headers: { 'Content-Type': 'application/json' }
         });
 
-        return response.text;
+        if (response.data && response.data.candidates && response.data.candidates[0].content.parts[0].text) {
+            return response.data.candidates[0].content.parts[0].text;
+        }
+        
+        return null;
     } catch (error) {
-        console.error("Gemini AI Generation Error:", error);
-        throw new Error("Failed to generate AI response.");
+        console.error("Gemini API Error:", error.response ? error.response.data : error.message);
+        return null; 
     }
 };

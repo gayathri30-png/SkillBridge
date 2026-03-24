@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { formatSalary } from "../utils/formatters";
 import "./AdminTable.css"; 
 
 const AdminJobs = () => {
@@ -83,7 +84,7 @@ const AdminJobs = () => {
                    <span className="chip chip-info">{job.job_type}</span>
                 </td>
                 <td>
-                   <span className="font-bold text-primary">${job.budget}</span>
+                   <span className="font-bold text-primary">{formatSalary(job.budget)}</span>
                 </td>
                 <td className="text-right">
                   <button 

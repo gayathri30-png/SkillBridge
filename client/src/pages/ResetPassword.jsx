@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from "framer-motion";
 import { Lock, ArrowRight, Zap, ShieldCheck, Eye, EyeOff, AlertCircle } from "lucide-react";
 import "../AuthPages.css";
 
 const ResetPassword = () => {
-  const { token } = useParams();
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const phone = queryParams.get('phone');
   const navigate = useNavigate();
   
   const [password, setPassword] = useState('');
@@ -18,6 +20,10 @@ const ResetPassword = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!phone) {
+      setError("Session expired. Please try forgot password again.");
+      return;
+    }
     setLoading(true);
     setMessage('');
     setError('');
@@ -29,7 +35,7 @@ const ResetPassword = () => {
     }
 
     try {
-      const { data } = await axios.post(`/api/auth/reset-password/${token}`, { password });
+      const { data } = await axios.post(`/api/auth/reset-password-phone`, { phone, newPassword: password });
       if (data.success) {
         setMessage('Password reset successful! Redirecting to login...');
         setTimeout(() => {

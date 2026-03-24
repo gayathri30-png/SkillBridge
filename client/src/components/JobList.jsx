@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import './JobList.css';
 import JobApplyModal from './JobApplyModal';
+import { formatSalary } from '../utils/formatters';
 
 const getJobIcon = (title) => {
   const t = title.toLowerCase();
@@ -464,7 +465,7 @@ const JobList = () => {
                     <span><Briefcase size={14} /> {job.job_type}</span>
                   </div>
                   <div className="meta-row mt-2">
-                    <span className="text-primary font-bold"><IndianRupee size={14} /> {job.salary_range || 'Competitive'}</span>
+                    <span className="text-primary font-bold"><IndianRupee size={14} /> {formatSalary(job.budget)}</span>
                     <span><Clock size={14} /> 2 days ago</span>
                   </div>
                 </div>

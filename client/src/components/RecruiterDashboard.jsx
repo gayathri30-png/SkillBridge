@@ -34,6 +34,13 @@ const RecruiterDashboard = () => {
         });
 
         setData(res.data);
+
+        // Fetch Interviews separately if not in dashboard payload
+        const interviewsRes = await axios.get('/api/interviews', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setInterviews(interviewsRes.data);
+
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
         setError('Failed to load dashboard data. Please try again later.');
@@ -50,6 +57,7 @@ const RecruiterDashboard = () => {
     topCandidates: [],
     recentJobs: []
   });
+  const [interviews, setInterviews] = useState([]);
 
   const handleDeleteJob = async (jobId) => {
     try {
@@ -192,8 +200,54 @@ const RecruiterDashboard = () => {
                      </div>
                   </motion.div>
                 ))}
-             </div>
+              </div>
           </section>
+
+          {/* 7.5 UPCOMING INTERVIEWS (Recruiter) */}
+          {interviews.length > 0 && (
+            <section className="upcoming-interviews-section mt-12">
+               <div className="section-header">
+                  <h2>📅 UPCOMING INTERVIEWS</h2>
+               </div>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {interviews.map((interview, i) => (
+                    <motion.div 
+                        key={interview.id} 
+                        className="p-6 bg-white rounded-[32px] border border-slate-100 shadow-lg hover:shadow-xl transition-all"
+                        whileHover={{ scale: 1.02 }}
+                    >
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                    <User size={20} />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-black text-slate-800 m-0">{interview.student_name}</h4>
+                                    <p className="text-[10px] font-bold text-slate-400 m-0 uppercase">{interview.job_title}</p>
+                                </div>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                                interview.status === 'accepted' ? 'bg-emerald-100 text-emerald-600' : 
+                                interview.status === 'declined' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'
+                            }`}>
+                                {interview.status}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-6 mt-4 pt-4 border-t border-slate-50">
+                            <div className="flex items-center gap-2 text-xs font-black text-slate-600">
+                                <Calendar size={14} className="text-slate-400" />
+                                {new Date(interview.scheduled_at).toLocaleDateString()}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs font-black text-slate-600">
+                                <Clock size={14} className="text-slate-400" />
+                                {new Date(interview.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                        </div>
+                    </motion.div>
+                  ))}
+               </div>
+            </section>
+          )}
 
           {/* 8. Recent Applications */}
           <section className="recommendations-section mt-8">

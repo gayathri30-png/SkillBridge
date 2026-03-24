@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
 
 const Login = () => {
@@ -18,44 +18,51 @@ const Login = () => {
       const res = await api.post("/auth/login", form);
       setMessage(res.data.message);
       
-      // Save token and user data
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       
-      // Redirect to dashboard
-      // Force reload to ensure App.js picks up audio/auth state if necessary, 
-      // or just navigate if state is handled correctly. 
-      // Given App.js structure, a reload is safest or just navigate and let ProtectedRoute check.
-      // We will just navigate for now, users often prefer SPA feel. 
-      // If App.js doesn't react, we might need window.location.href = "/dashboard";
       navigate("/dashboard");
-      window.location.reload(); // Ensuring state refresh for now as requested in plan
+      window.location.reload();
     } catch (err) {
       setMessage(err.response?.data?.error || "Error logging in");
     }
   };
 
   return (
-    <div>
+    <div style={{ maxWidth: "400px", margin: "50px auto", padding: "20px", border: "1px solid #ddd", borderRadius: "8px" }}>
       <h2>Login</h2>
       <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-        />
-        <button type="submit">Login</button>
+        <div style={{ marginBottom: "15px" }}>
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={handleChange}
+            style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+          />
+        </div>
+        <div style={{ marginBottom: "15px" }}>
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={handleChange}
+            style={{ width: "100%", padding: "8px", borderRadius: "4px", border: "1px solid #ccc" }}
+          />
+        </div>
+        <button type="submit" style={{ width: "100%", padding: "10px", backgroundColor: "#007bff", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}>
+          Login
+        </button>
       </form>
-      {message && <p>{message}</p>}
+      {message && <p style={{ color: "red", marginTop: "10px" }}>{message}</p>}
+      
+      <div style={{ marginTop: "15px", textAlign: "center" }}>
+        <Link to="/forgot-password" style={{ color: "#007bff", textDecoration: "none" }}>
+          Forgot Password?
+        </Link>
+      </div>
     </div>
   );
 };

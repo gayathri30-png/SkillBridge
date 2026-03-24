@@ -1,5 +1,5 @@
 import express from "express";
-import { getOrCreateRoom, getUserRooms, getRoomMessages } from "../controllers/chatController.js";
+import { getOrCreateRoom, getUserRooms, getRoomMessages, sendMessage, getUnreadMessageCount } from "../controllers/chatController.js";
 import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
@@ -13,11 +13,10 @@ router.get("/rooms", protect, getUserRooms);
 // Get message history for a room
 router.get("/rooms/:roomId/messages", protect, getRoomMessages);
 
-// User also requested POST /api/chat/messages
-// We can use this to send messages via REST (useful for testing or non-socket fallback)
-// For now, mapping it to a logic that could be handled by a controller
-router.post("/messages", protect, (req, res) => {
-    res.status(501).json({ message: "Please use Socket.io for real-time messaging. REST support coming soon." });
-});
+// Send a message via REST (fallback for non-socket clients)
+router.post("/messages", protect, sendMessage);
+
+// Get total unread message count
+router.get("/unread-count", protect, getUnreadMessageCount);
 
 export default router;

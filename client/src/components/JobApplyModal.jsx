@@ -334,10 +334,10 @@ const JobApplyModal = ({ isOpen, onClose, job, userSkills }) => {
                 </button>
                 <button 
                   onClick={handleSubmit}
-                  disabled={isSubmitting || !resumeName}
+                  disabled={isSubmitting}
                   style={{
                     padding: '12px 40px', borderRadius: '12px', border: 'none',
-                    background: resumeName ? '#0057D9' : '#94a3b8', 
+                    background: '#0057D9', 
                     color: 'white', fontWeight: 700, cursor: 'pointer',
                     display: 'flex', alignItems: 'center', gap: '8px', 
                     boxShadow: resumeName ? '0 4px 12px rgba(0, 87, 217, 0.2)' : 'none'

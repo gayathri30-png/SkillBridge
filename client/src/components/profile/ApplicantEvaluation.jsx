@@ -1,983 +1,425 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  X, Zap, Brain, Target, MessageSquare, Award, 
+  X, Brain, Target, Award, 
   CheckCircle2, AlertTriangle, TrendingUp, Sparkles,
-  ChevronRight, Download, Printer, Copy, Calendar,
-  Activity, ShieldCheck, Mail
+  Calendar, User, FileText, Send, ThumbsDown, RotateCcw
 } from 'lucide-react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import './ApplicantEvaluation.css';
-import HireConfirmationModal from './HireConfirmationModal';
-import HireSuccess from './HireSuccess';
 
 const ApplicantEvaluation = () => {
-  const { state } = useLocation();
-  const application = state?.application;
+  const { applicationId } = useParams();
   const navigate = useNavigate();
   
-  const [insights, setInsights] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('summary');
-  const [materials, setMaterials] = useState({ questions: [], feedback: '' });
-  const [generating, setGenerating] = useState(false);
-  const [similarCandidates, setSimilarCandidates] = useState([]);
-  const [schedulingAdvice, setSchedulingAdvice] = useState(null);
-  const [fetchingSourcing, setFetchingSourcing] = useState(false);
-  const [marketData, setMarketData] = useState(null);
-  const [autoLogs, setAutoLogs] = useState([]);
-  const [runningAuto, setRunningAuto] = useState(false);
-  const [coachAdvice, setCoachAdvice] = useState(null);
-  const [skillVerification, setSkillVerification] = useState(null);
-  const [biasData, setBiasData] = useState(null);
-  const [eqData, setEqData] = useState(null);
-  const [clvData, setClvData] = useState(null);
-  const [funnelData, setFunnelData] = useState(null);
-  const [showHireModal, setShowHireModal] = useState(false);
-  const [showHireSuccess, setShowHireSuccess] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const [interviewDate, setInterviewDate] = useState('');
+  const [interviewTime, setInterviewTime] = useState('');
+  const [interviewMsg, setInterviewMsg] = useState('I would like to invite you for an interview to discuss your application.');
+  const [sendingMsg, setSendingMsg] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectFeedback, setRejectFeedback] = useState('');
 
   useEffect(() => {
-    if (application) {
-      fetchInsights();
-    }
-  }, [application?.application_id]);
+    if (applicationId) fetchEvaluation();
+  }, [applicationId]);
 
-  const onRefresh = () => {
-    fetchInsights();
-  };
-
-  const fetchInsights = async () => {
+  const fetchEvaluation = async () => {
     try {
       setLoading(true);
+      setError(null);
       const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/ai/analyze/${application.application_id}`, {
+      const res = await axios.get(`/api/ai/evaluate/${applicationId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setInsights({
-        ...res.data.insights,
-        summary: res.data.insights.summary || "Exceptional candidate with strong React fundamentals and architectural thinking.",
-        successProbability: res.data.insights.successProbability || 88,
-        commStyle: res.data.insights.commStyle || 'Structured & Technical',
-        keyStrengths: res.data.insights.keyStrengths || ["React Hooks", "TypeScript", "Performance Tuning"],
-        keyRisks: res.data.insights.keyRisks || ["AWS S3/EC2", "Docker"],
-        commStyle: res.data.insights.commStyle || "Structural / Detailed",
-        sentiment: res.data.insights.sentiment || "Positive"
-      });
+      setData(res.data);
     } catch (err) {
-      console.error("Failed to fetch AI insights", err);
+      console.error(err);
+      setError("Failed to load evaluation.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGenerateMaterials = async (type) => {
+  const handleUpdateStatus = async (newStatus, feedbackMsg = null) => {
     try {
-      setGenerating(true);
       const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/ai/materials/${application.application_id}?type=${type}`, {
+      const payload = { status: newStatus };
+      if (feedbackMsg) payload.feedback_message = feedbackMsg;
+
+      await axios.put(`/api/applications/${applicationId}/status`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setMaterials(prev => ({ ...prev, [type]: res.data[type] }));
+      
+      alert(`Candidate marked as ${newStatus}!`);
+      setShowRejectModal(false);
+      
+      // Reflect status without leaving
+      fetchEvaluation();
     } catch (err) {
-      alert("Failed to generate materials");
+      console.error(err);
+      alert('Failed to update status');
+    }
+  };
+
+  const handleSendInvite = async () => {
+    if(!interviewDate || !interviewTime) return alert("Please select date and time");
+    
+    try {
+      setSendingMsg(true);
+      const token = localStorage.getItem('token');
+      await axios.put(`/api/applications/${applicationId}/suggestion`, {
+        interviewDate,
+        interviewTime,
+        message: interviewMsg
+      }, { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      alert(`Interview invitation sent successfully!`);
+      fetchEvaluation(); // Refresh to get suggestion_sent=true
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send suggestion");
     } finally {
-      setGenerating(false);
+      setSendingMsg(false);
     }
   };
 
-  const fetchSimilarCandidates = async () => {
-    if (similarCandidates.length > 0) return;
+  const handleReEvaluate = async () => {
     try {
-      setFetchingSourcing(true);
+      setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await axios.post('/api/ai/source-similar', { studentId: application.student_id }, {
+      const res = await axios.put(`/api/ai/re-evaluate/${applicationId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setSimilarCandidates(res.data.candidates);
+      alert(res.data.message);
+      fetchEvaluation();
     } catch (err) {
       console.error(err);
-    } finally {
-      setFetchingSourcing(false);
+      alert('Failed to re-evaluate application');
+      setLoading(false);
     }
   };
-
-  const fetchSchedulingAdvice = async () => {
-    if (schedulingAdvice) return;
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/ai/scheduling-advice/${application.application_id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSchedulingAdvice(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchMarketData = async () => {
-    if (marketData) return;
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/ai/market-intelligence/${application.job_id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setMarketData(res.data.benchmarks);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const executeAutomation = async () => {
-    try {
-      setRunningAuto(true);
-      const token = localStorage.getItem('token');
-      const res = await axios.post('/api/ai/automate', { 
-        applicationId: application.application_id,
-        rules: { autoShortlist: true, threshold: 75 } 
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setAutoLogs(res.data.logs);
-      if (res.data.success) {
-        onRefresh();
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setRunningAuto(false);
-    }
-  };
-
-  const fetchCoachAdvice = async () => {
-    if (coachAdvice) return;
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/ai/coach/${application.application_id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setCoachAdvice(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchVerification = async () => {
-    if (skillVerification) return;
-    try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get(`/api/ai/verify-skills/${application.student_id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSkillVerification(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchAdvancedInsights = async () => {
-    try {
-        const token = localStorage.getItem('token');
-        const [bias, clv, eq, funnel] = await Promise.all([
-            axios.get(`/api/ai/bias-check/${application.application_id}`, { headers: { Authorization: `Bearer ${token}` } }),
-            axios.get(`/api/ai/clv-predict/${application.student_id}`, { headers: { Authorization: `Bearer ${token}` } }),
-            axios.get(`/api/ai/eq-score/${application.application_id}`, { headers: { Authorization: `Bearer ${token}` } }),
-            axios.get(`/api/ai/funnel-viz/${application.job_id}`, { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        setBiasData(bias.data);
-        setClvData(clv.data);
-        setEqData(eq.data);
-        setFunnelData(funnel.data);
-    } catch(err) {
-        console.error(err);
-        // Fallback for demo/missing endpoints
-        setBiasData({ bias_score: 0, mitigation_tip: "No bias detected in automated scoring paths." });
-        setClvData({ projected_value: "$140k/yr", tenure_probability: "High (82%)", insight: "Candidate matches long-term growth patterns for Senior roles." });
-        setEqData({ eq_score: 91, traits: ["Empathetic", "Self-aware", "Resilient"], analysis: "Strong indicators of leadership potential and team cohesion." });
-        setFunnelData({ velocity: "Top 5%", conversion_rate: "94%", bottlenecks: "None Detected", ai_suggestion: "Fast-track to final round recommended." });
-    }
-  };
-
-  if (!application) return (
-    <div className="flex flex-col items-center justify-center p-12 h-[calc(100vh-80px)]">
-      <h2 className="text-xl font-bold text-slate-800 mb-4">No Applicant Selected</h2>
-      <button className="btn btn-primary" onClick={() => navigate('/my-jobs')}>Go Back</button>
-    </div>
-  );
 
   if (loading) return (
-    <div className="evaluation-modal h-full w-full flex items-center justify-center bg-slate-50">
-        <div className="evaluation-loading text-center p-8 bg-white rounded-2xl shadow-sm border border-slate-100">
-            <div className="ai-loader mx-auto mb-4">
-                <Sparkles className="animate-pulse text-primary mx-auto" size={40} />
-            </div>
-            <p className="font-bold text-slate-700">AI is analyzing candidate patterns...</p>
+    <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <div className="text-center p-8 bg-white rounded-3xl shadow-sm border border-slate-100">
+            <Sparkles className="animate-pulse text-indigo-600 mx-auto mb-4" size={48} />
+            <p className="font-bold text-slate-700 text-lg">AI Loading Candidate Dossier...</p>
         </div>
     </div>
   );
 
+  if (error || !data) return (
+    <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <div className="text-center p-8">
+            <AlertTriangle className="text-red-400 mx-auto mb-4" size={48} />
+            <p className="font-bold text-red-600 mb-6 text-xl">{error}</p>
+            <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors" onClick={fetchEvaluation}>Retry</button>
+        </div>
+    </div>
+  );
+
+  const { tabs, candidate, job, application } = data;
+  const { skillGap: sg, behavioralAnalysis: ba, interviewPrep: ip, executiveSummary: es } = tabs;
+
   return (
-    <div className="evaluation-modal bg-white">
-        <div className="evaluation-header">
-            <div className="header-left">
-                <div className="ai-badge"><Brain size={14} /> AI Evaluation Engine</div>
-                <h2>Evaluation for {application.student_name}</h2>
-                <div className="header-meta">
-                    <span className="match-pill large">
-                        <TrendingUp size={16} /> {application.ai_match_score}% Suitability
-                    </span>
-                    <span className="meta-sep">•</span>
-                    <span className="date-meta">Applied {new Date(application.created_at).toLocaleDateString()}</span>
+    <div className="min-h-screen bg-slate-50 pb-40 font-sans">
+      {/* 1. Header */}
+      <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200 px-8 py-4 flex justify-between items-center shadow-sm">
+        <div className="flex items-center gap-6">
+          <div className="h-16 w-16 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-3xl font-black shadow-lg shadow-indigo-200">
+            {candidate.name.charAt(0)}
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">{candidate.name}</h1>
+            <div className="flex items-center gap-4 mt-3 flex-wrap">
+              <span className="font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-indigo-100 shadow-sm">
+                <TrendingUp size={16}/> {application.matchScore}% Match
+              </span>
+              <button 
+                onClick={handleReEvaluate}
+                className="p-1.5 bg-white text-indigo-600 hover:bg-indigo-50 rounded-lg border border-indigo-100 transition-all flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest"
+                title="Refresh AI score logic"
+              >
+                <RotateCcw size={12} className={loading ? 'animate-spin' : ''} /> Refresh AI Score
+              </button>
+              {data.benchmarks && (
+                <span className="font-medium text-slate-500 text-xs flex items-center gap-2">
+                  <span>Top: <strong className="text-slate-700">{data.benchmarks.max}%</strong></span>
+                  <span>Avg: <strong className="text-slate-700">{data.benchmarks.avg}%</strong></span>
+                </span>
+              )}
+              <div className="w-px h-5 bg-slate-200 mx-1"></div>
+              <span className="font-medium text-slate-600 flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+                <User size={16}/> {job.title}
+              </span>
+              <span className={`px-4 py-1.5 rounded-full font-bold uppercase tracking-wider text-[11px] ${application.status === 'hired' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : application.status === 'accepted' ? 'bg-blue-100 text-blue-800 border-blue-200' : application.status === 'rejected' ? 'bg-red-100 text-red-800 border-red-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>
+                {application.status === 'accepted' ? 'Shortlisted' : application.status}
+              </span>
+            </div>
+          </div>
+        </div>
+        <button onClick={() => navigate(-1)} className="p-3 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors">
+          <X size={24} />
+        </button>
+      </div>
+
+      <div className="max-w-5xl mx-auto mt-10 space-y-10 px-4">
+        
+        {/* NEW AI OPINION / RECOMMENDATION */}
+        <section className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 rounded-3xl shadow-lg border border-indigo-500 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-bl-full -z-10"></div>
+            <div className="flex items-center gap-3 mb-4">
+                <Sparkles size={28} className="text-indigo-200" />
+                <h2 className="text-2xl font-black text-white">AI Verdict & Recommendation</h2>
+            </div>
+            <p className="text-lg text-indigo-50 leading-relaxed font-medium">
+                <strong className="text-white">{es?.verdict || ba?.sentiment?.label}: </strong> 
+                {es?.summary || ba?.sentiment?.description} 
+            </p>
+        </section>
+
+        {/* NEW ACTIVITY TIMELINE */}
+        {data.timeline && (
+          <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-around flex-wrap gap-4">
+            <div className="flex flex-col items-center text-center">
+              <span className="text-3xl font-black text-slate-800">{data.timeline.account_age_days}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Days on Platform</span>
+            </div>
+            <div className="w-px h-12 bg-slate-100 hidden md:block"></div>
+            <div className="flex flex-col items-center text-center">
+              <span className="text-3xl font-black text-slate-800">{data.timeline.total_applications}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Total Applications</span>
+            </div>
+            <div className="w-px h-12 bg-slate-100 hidden md:block"></div>
+            <div className="flex flex-col items-center text-center">
+              <span className="text-lg font-bold text-slate-700 mt-2">{new Date(data.timeline.last_active).toLocaleDateString()}</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Last Active</span>
+            </div>
+          </section>
+        )}
+
+        {/* 2 & 3. Skills Match & Gap Analysis */}
+        <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-3 bg-indigo-100 rounded-2xl text-indigo-600"><Target size={26} /></div>
+            <div>
+                <h2 className="text-2xl font-black text-slate-800">Skills Alignment</h2>
+                <p className="text-slate-500 font-medium mt-1">Comparing candidate expertise against job requirements</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {sg.skills.map((skill, i) => (
+              <div key={i} className={`p-5 rounded-2xl border-2 transition-transform hover:-translate-y-1 ${skill.status === 'match' ? 'bg-emerald-50/50 border-emerald-100' : skill.status === 'missing' ? 'bg-red-50/50 border-red-100' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="font-bold text-slate-900 text-lg">{skill.skill}</span>
+                  {skill.status === 'match' ? <CheckCircle2 size={24} className="text-emerald-500" /> : skill.status === 'missing' ? <AlertTriangle size={24} className="text-red-400" /> : <Award size={24} className="text-indigo-400" />}
+                </div>
+                <div className="flex justify-between text-sm text-slate-500 font-medium">
+                  <span>Required: {skill.requirement}</span>
+                  <span className={`px-2 py-0.5 rounded-md ${skill.status === 'match' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700'}`}>{skill.candidateLevel || 'None'}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {sg.missingSkills?.length > 0 && (
+            <div className="mt-8 p-6 bg-rose-50 rounded-2xl border-2 border-rose-100 flex items-start gap-4">
+                <div className="p-2 bg-white rounded-xl shadow-sm text-rose-500 shrink-0"><AlertTriangle size={24}/></div>
+                <div>
+                    <h4 className="font-bold text-rose-900 mb-3 text-lg">Critical Skill Gaps Identified</h4>
+                    <div className="flex flex-wrap gap-2">
+                        {sg.missingSkills.map((m, i) => <span key={i} className="px-4 py-1.5 bg-white text-rose-700 rounded-full font-bold border border-rose-200 shadow-sm">{m}</span>)}
+                    </div>
                 </div>
             </div>
-            <button className="btn btn-outline btn-sm font-bold flex items-center gap-2" onClick={() => navigate(-1)}>
-                <X size={16} /> Close Evaluation
-            </button>
-        </div>
+          )}
+        </section>
 
-        <div className="evaluation-layout">
-            {/* Sidebar Navigation */}
-            <aside className="evaluation-sidebar">
-                <button 
-                    className={`nav-item ${activeTab === 'summary' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('summary')}
-                >
-                    <Target size={18} /> Executive Summary
-                </button>
-                <button 
-                    className={`nav-item ${activeTab === 'analysis' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('analysis')}
-                >
-                    <Zap size={18} /> Behavioral Analysis
-                </button>
-                <button 
-                    className={`nav-item ${activeTab === 'interview' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('interview')}
-                >
-                    <MessageSquare size={18} /> Interview Prep
-                </button>
-                <button 
-                    className={`nav-item ${activeTab === 'skills' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('skills')}
-                >
-                    <Award size={18} /> Skill Gap Visualizer
-                </button>
-                {false && <button 
-                    className={`nav-item ${activeTab === 'sourcing' ? 'active' : ''}`}
-                    onClick={() => {
-                        setActiveTab('sourcing');
-                        fetchSimilarCandidates();
-                    }}
-                >
-                    <Sparkles size={18} /> Smart Sourcing
-                </button>}
-                {false && <button 
-                    className={`nav-item ${activeTab === 'scheduling' ? 'active' : ''}`}
-                    onClick={() => {
-                        setActiveTab('scheduling');
-                        fetchSchedulingAdvice();
-                    }}
-                >
-                    <Brain size={18} /> AI Scheduler
-                </button>}
-                <button 
-                    className={`nav-item ${activeTab === 'market' ? 'active' : ''}`}
-                    onClick={() => {
-                        setActiveTab('market');
-                        fetchMarketData();
-                    }}
-                >
-                    <TrendingUp size={18} /> Market Intel
-                </button>
-                <button 
-                    className={`nav-item ${activeTab === 'automation' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('automation')}
-                >
-                    <Zap size={18} /> Smart Workflow
-                </button>
-                {false && <button 
-                    className={`nav-item ${activeTab === 'coach' ? 'active' : ''}`}
-                    onClick={() => {
-                        setActiveTab('coach');
-                        fetchCoachAdvice();
-                    }}
-                >
-                    <MessageSquare size={18} /> AI Recruiter Coach
-                </button>}
-                {false && <button 
-                    className={`nav-item ${activeTab === 'verification' ? 'active' : ''}`}
-                    onClick={() => {
-                        setActiveTab('verification');
-                        fetchVerification();
-                    }}
-                >
-                    <CheckCircle2 size={18} /> Skills Verification
-                </button>}
-                {/* <div className="sidebar-sep"></div> */}
-                {false && <button 
-                    className={`nav-item premium ${activeTab === 'advanced' ? 'active' : ''}`}
-                    onClick={() => {
-                        setActiveTab('advanced');
-                        fetchAdvancedInsights();
-                    }}
-                >
-                    <Sparkles size={18} /> Expert AI Suite
-                </button>}
-            </aside>
-
-            {/* Main Display Area */}
-            <main className="evaluation-main">
-                {activeTab === 'summary' && (
-                    <div className="fade-in">
-                        <section className="insight-card primary-card">
-                            <div className="flex justify-between items-start mb-6">
-                                <div>
-                                    <h3 className="mb-1"><Sparkles size={20} className="text-primary" /> AI Candidate Verdict</h3>
-                                    <p className="text-slate-500 text-sm">Automated executive summary of suitability and potential.</p>
-                                </div>
-                                <div className="verdict-pill hire-candidate">Highly Recommended</div>
-                            </div>
-                            <p className="summary-text">{insights.summary || "This candidate demonstrates exceptional technical depth in React and modern frontend ecosystems. Their profile showcases complex architectural decisions and a high standard of code quality. Based on behavioral token analysis, they are a proactive communicator likely to excel in remote environments."}</p>
-                            <div className="success-metrics">
-                                <div className="metric">
-                                    <div className="flex justify-between mb-2">
-                                        <label>Technical Proficiency</label>
-                                        <span className="font-bold text-primary">88%</span>
-                                    </div>
-                                    <div className="metric-bar-bg">
-                                        <div className="metric-bar-fill" style={{width: '88%'}}></div>
-                                    </div>
-                                </div>
-                                <div className="metric">
-                                    <div className="flex justify-between mb-2">
-                                        <label>Cultural Alignment</label>
-                                        <span className="font-bold text-primary">92%</span>
-                                    </div>
-                                    <div className="metric-bar-bg">
-                                        <div className="metric-bar-fill" style={{width: '92%'}}></div>
-                                    </div>
-                                </div>
-                                <div className="metric">
-                                    <div className="flex justify-between mb-2">
-                                        <label>Technical Depth</label>
-                                        <span className="font-bold text-amber-500">74%</span>
-                                    </div>
-                                    <div className="metric-bar-bg">
-                                        <div className="metric-bar-fill warning" style={{width: '74%'}}></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* HIRE ACTION BLOCK - Page 1 */}
-                            <div className="hire-action-block mt-8 bg-slate-900 text-white p-6 rounded-2xl border border-slate-700 shadow-xl">
-                                <div className="flex justify-between items-center mb-6">
-                                    <div>
-                                        <h3 className="text-white mb-1 flex items-center gap-2">
-                                            <Target size={20} className="text-emerald-400" /> 🎯 Hire Action
-                                        </h3>
-                                        <p className="text-slate-400 text-xs">Finalize this candidate for the position.</p>
-                                    </div>
-                                    <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${application.status === 'hired' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-                                        Status: {application.status}
-                                    </div>
-                                </div>
-
-                                <div className="flex gap-4">
-                                    <button 
-                                        className="btn btn-outline border-slate-700 text-slate-300 hover:bg-slate-800 flex-1"
-                                        onClick={() => {/* Reject logic if needed */}}
-                                    >
-                                        Reject Candidate
-                                    </button>
-                                    <button 
-                                        className="btn btn-primary bg-emerald-600 hover:bg-emerald-700 border-none flex-1 shadow-lg shadow-emerald-900/20"
-                                        onClick={() => setShowHireModal(true)}
-                                        disabled={application.status === 'hired'}
-                                    >
-                                        <CheckCircle2 size={16} /> {application.status === 'hired' ? 'Hired' : 'Hire Candidate'}
-                                    </button>
-                                </div>
-                                <p className="text-[10px] text-slate-500 mt-4 text-center italic">
-                                    Hiring will notify the candidate and unlock their onboarding dashboard.
-                                </p>
-                            </div>
-                        </section>
-
-                        <div className="grid grid-cols-2 gap-6 mt-6">
-                            <section className="insight-card">
-                                <h3><Target size={16} /> Key Strengths</h3>
-                                <ul className="strengths-list">
-                                    {insights.keyStrengths.map((s, i) => (
-                                        <li key={i}><CheckCircle2 size={14} className="text-success" /> {s}</li>
-                                    ))}
-                                    {insights.keyStrengths.length === 0 && <li className="text-slate-400">Analysis ongoing...</li>}
-                                </ul>
-                            </section>
-                            <section className="insight-card">
-                                <h3><AlertTriangle size={16} /> Potential Risks</h3>
-                                <ul className="strengths-list">
-                                    <li><AlertTriangle size={14} className="text-warning" /> Limited production experience</li>
-                                    <li><AlertTriangle size={14} className="text-warning" /> Skill gap in specific niche tools</li>
-                                </ul>
-                            </section>
-                        </div>
-                    </div>
-                )}
-
-                {activeTab === 'analysis' && (
-                    <div className="fade-in space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
-                            <section className="insight-card">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3>Communication Style</h3>
-                                    <span className="style-badge">Structural / Detailed</span>
-                                </div>
-                                <p className="description-text">AI analysis of the proposal and project descriptions indicates a <strong>highly structured</strong> communication style. The candidate prioritizes technical clarity and documentation-first thinking.</p>
-                                <div className="mt-4 flex gap-2">
-                                    <span className="mini-tag blue">Articulate</span>
-                                    <span className="mini-tag blue">Professional</span>
-                                </div>
-                            </section>
-
-                            <section className="insight-card">
-                                <div className="flex justify-between items-center mb-4">
-                                    <h3>Emotional Intelligence</h3>
-                                    <span className="style-badge enthusiasm">High EQ Detected</span>
-                                </div>
-                                <p className="description-text">Linguistic tokens suggest strong self-awareness and empathy in collaborative contexts. Candidate uses inclusive language ("We", "Team") when describing successes.</p>
-                                <div className="mt-4 flex gap-2">
-                                    <span className="mini-tag blue">Empathetic</span>
-                                    <span className="mini-tag blue">Collaborative</span>
-                                </div>
-                            </section>
-                        </div>
-
-                        <section className="insight-card">
-                            <h3>Linguistic Sentiment Analysis</h3>
-                            <div className="py-4">
-                                <div className="flex justify-between mb-2">
-                                    <span className="text-sm font-semibold">Professional Enthusiasm</span>
-                                    <span className="text-sm font-bold text-success">Positive (94%)</span>
-                                </div>
-                                <div className="metric-bar-bg">
-                                    <div className="metric-bar-fill" style={{width: '94%', background: 'linear-gradient(to right, #10B981, #059669)'}}></div>
-                                </div>
-                                <p className="mt-4 text-sm text-slate-500 italic">"The tone is consistently professional, evidence-based, and focused on value delivery. Zero red flags in behavioral sentiment."</p>
-                            </div>
-                        </section>
-                    </div>
-                )}
-
-                {activeTab === 'interview' && (
-                    <div className="fade-in space-y-6">
-                        <div className="materials-header flex items-center justify-between">
-                            <div>
-                                <h4 className="font-bold text-slate-900 mb-1">Smart Interview Toolkit</h4>
-                                <p className="text-slate-500 text-xs">AI has synthesized these resources specifically for this candidate's profile.</p>
-                            </div>
-                            <div className="flex gap-3">
-                                <button 
-                                    className="btn btn-primary btn-sm" 
-                                    onClick={() => handleGenerateMaterials('questions')}
-                                    disabled={generating}
-                                >
-                                    <Brain size={14} /> {generating ? 'Analyzing...' : 'Generate Questions'}
-                                </button>
-                                <button 
-                                    className="btn btn-outline btn-sm"
-                                    onClick={() => handleGenerateMaterials('feedback')}
-                                    disabled={generating}
-                                >
-                                    <MessageSquare size={14} /> Generate Feedback
-                                </button>
-                            </div>
-                        </div>
-
-                        {materials.questions.length > 0 ? (
-                            <section className="insight-card qa-card">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3>Suggested Probing Questions</h3>
-                                    <button className="icon-btn-v2 p-2 hover:bg-slate-100 rounded-lg"><Copy size={16} /></button>
-                                </div>
-                                <ul className="qa-list">
-                                    {materials.questions.map((q, i) => (
-                                        <li key={i} className="qa-item">
-                                            <span className="q-num">{i+1}</span>
-                                            <p className="font-medium text-slate-800">{q}</p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </section>
-                        ) : (
-                            <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl">
-                                <Brain size={48} className="text-slate-200 mx-auto mb-4" />
-                                <p className="text-slate-400 font-medium">Click "Generate Questions" to see AI suggestions.</p>
-                            </div>
-                        )}
-
-                        {materials.feedback && (
-                            <section className="insight-card feedback-card fade-in">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3>AI Feedback Draft (for candidate)</h3>
-                                    <div className="flex gap-2">
-                                        <button className="icon-btn-v2 p-2 hover:bg-slate-100 rounded-lg"><Copy size={16} /></button>
-                                        <button className="icon-btn-v2 p-2 hover:bg-slate-100 rounded-lg"><Download size={16} /></button>
-                                    </div>
-                                </div>
-                                <div className="feedback-content border-l-4 border-primary bg-slate-50 p-6 rounded-r-xl">
-                                    <p className="text-slate-700 leading-relaxed font-medium">{materials.feedback}</p>
-                                </div>
-                            </section>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'skills' && (
-                    <div className="fade-in">
-                         <section className="insight-card">
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h3>Skill Alignment Comparison</h3>
-                                    <p className="text-sm text-slate-500 mt-1">Detailed breakdown of candidate proficiency vs. job requirements.</p>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-2xl font-black text-primary">{application.ai_match_score}%</div>
-                                    <div className="text-[10px] uppercase font-bold text-slate-400">Match Accuracy</div>
-                                </div>
-                            </div>
-                            
-                            <table className="comparison-table-v2">
-                                <thead>
-                                    <tr>
-                                        <th>Skill Name</th>
-                                        <th>Requirement</th>
-                                        <th>Candidate Level</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(application.student_skills || "").split(',').map((skill, i) => (
-                                        <tr key={i}>
-                                            <td className="font-bold">{skill.trim()}</td>
-                                            <td>Required</td>
-                                            <td>
-                                                <span className="level-pill advanced">Advanced</span>
-                                            </td>
-                                            <td>
-                                                <span className="status-indicator matched">✅ Match</span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {/* Mocking missing skills for visual completeness as per Page 4 */}
-                                    <tr>
-                                        <td className="font-bold text-slate-400">Docker</td>
-                                        <td className="text-slate-400">Required</td>
-                                        <td className="text-slate-400">—</td>
-                                        <td>
-                                            <span className="status-indicator missing">❌ Missing</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="font-bold text-slate-400">AWS S3/EC2</td>
-                                        <td className="text-slate-400">Preferred</td>
-                                        <td className="text-slate-400">—</td>
-                                        <td>
-                                            <span className="status-indicator missing">❌ Missing</span>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-
-                            <div className="mt-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-start gap-4">
-                                <div className="p-2 bg-white rounded-lg shadow-sm">
-                                    <Brain size={20} className="text-primary" />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-bold text-slate-900 mb-1">AI Upskilling Insight</h4>
-                                    <p className="text-sm text-slate-600 leading-relaxed italic">
-                                        "While the candidate lacks Docker experience, their Advanced Node.js background suggests a fast learning curve. Estimated time to proficiency: 10 days."
-                                    </p>
-                                </div>
-                            </div>
-                         </section>
-                    </div>
-                )}
-
-                {false && activeTab === 'sourcing' && (
-                    <div className="fade-in">
-                        <section className="insight-card sourcing-card-main">
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h3><Sparkles size={20} className="text-primary" /> Smart-Sourcing: Similar Talent</h3>
-                                    <p className="text-sm text-slate-500 mt-1">Discover other top-tier candidates with matching profiles.</p>
-                                </div>
-                                <button className="btn btn-outline btn-sm" onClick={fetchSimilarCandidates}><Zap size={14} /> Refresh Search</button>
-                            </div>
-                            
-                            {fetchingSourcing ? (
-                                <div className="text-center py-16">
-                                    <Brain className="animate-spin text-primary mx-auto mb-4" size={40} />
-                                    <p className="text-slate-500">Scanning semantic talent pool...</p>
-                                </div>
-                            ) : (
-                                <div className="sourcing-grid">
-                                    {[
-                                        { name: 'Sarah Chen', loc: 'San Francisco (Remote)', match: 96, reason: 'Identical tech stack, 8+ years experience.' },
-                                        { name: 'Michael Ross', loc: 'New York', match: 91, reason: 'Strong React experience, similar project history.' },
-                                        { name: 'Elena Gilbert', loc: 'Remote', match: 89, reason: 'Exceptional TypeScript skills and architecture.' }
-                                    ].map((c, i) => (
-                                        <div key={i} className="sourcing-card hover:border-primary transition-all cursor-pointer">
-                                            <div className="flex justify-between items-start mb-3">
-                                                <div>
-                                                    <h4 className="font-bold text-slate-900">{c.name}</h4>
-                                                    <span className="location-tag flex items-center gap-1"><Target size={12} /> {c.loc}</span>
-                                                </div>
-                                                <div className="suitability-chip">{c.match}% Match</div>
-                                            </div>
-                                            <p className="reason-text text-sm italic">{c.reason}</p>
-                                            <div className="flex gap-2 mt-4">
-                                                <button className="btn btn-primary btn-sm flex-1">View Profile</button>
-                                                <button className="btn btn-outline btn-sm flex-1">Invite to Job</button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </section>
-                    </div>
-                )}
-
-                {false && activeTab === 'scheduling' && schedulingAdvice && (
-                    <div className="fade-in space-y-6">
-                        <section className="insight-card advice-card">
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h3>AI Scheduling Smart-Advice</h3>
-                                    <p className="text-sm text-slate-500 mt-1">Optimal interview slots based on candidate's activity patterns.</p>
-                                </div>
-                                <div className="bg-primary-soft p-3 rounded-xl border border-primary/20">
-                                    <Calendar size={24} className="text-primary" />
-                                </div>
-                            </div>
-                            <div className="advice-grid">
-                                {schedulingAdvice.advice.map((a, i) => (
-                                    <div key={i} className="advice-item border-l-4 border-primary">
-                                        <div className="time text-primary font-bold mb-2">{a.time}</div>
-                                        <p className="text-slate-600 text-sm">{a.reason}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        <section className="insight-card format-card">
-                            <div className="flex justify-between items-center mb-6">
-                                <h3>Recommended Interview Format</h3>
-                                <div className="format-badge">{schedulingAdvice.best_format}</div>
-                            </div>
-                            <p className="text-slate-600 leading-relaxed font-medium">Based on candidate's technical profile and proposal complexity, AI suggests a hands-on architectural review session.</p>
-                            <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-800 text-sm">
-                                <strong>AI Tip:</strong> Don't ask basic React questions; they clearly excel at the foundations. Focus on state machine logic.
-                            </div>
-                        </section>
-                    </div>
-                )}
-
-                {activeTab === 'market' && marketData && (
-                    <div className="fade-in space-y-6">
-                        <section className="insight-card market-card">
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h3>AI Market Intelligence</h3>
-                                    <p className="text-sm text-slate-500 mt-1">Real-time benchmarks for this specific role and expertise.</p>
-                                </div>
-                                <div className="demand-pill high">Extremely High Demand</div>
-                            </div>
-
-                            <div className="market-stats">
-                                <div className="stat">
-                                    <label>Market Low</label>
-                                    <div className="value">${marketData.min.toLocaleString()}</div>
-                                </div>
-                                <div className="stat highlight">
-                                    <label>Skill-Adjusted Median</label>
-                                    <div className="value">${marketData.median.toLocaleString()}</div>
-                                </div>
-                                <div className="stat">
-                                    <label>Market High</label>
-                                    <div className="value">${marketData.max.toLocaleString()}</div>
-                                </div>
-                            </div>
-                            
-                            <div className="mt-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                                <h4 className="font-bold text-slate-900 mb-2">Talent Competitive Analysis</h4>
-                                <p className="text-sm text-slate-600 leading-relaxed">{marketData.insight}</p>
-                            </div>
-                        </section>
-                    </div>
-                )}
-
-                {activeTab === 'automation' && (
-                    <div className="fade-in space-y-6">
-                        <section className="insight-card automation-card">
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h3>AI Workflow Automation</h3>
-                                    <p className="text-sm text-slate-500 mt-1">Set background rules for auto-processing this candidate.</p>
-                                </div>
-                                <button className="btn btn-primary btn-sm" onClick={executeAutomation}>
-                                    <Zap size={14} /> {runningAuto ? 'Running...' : 'Trigger Rule Engine'}
-                                </button>
-                            </div>
-                            
-                            <div className="rules-list space-y-4">
-                                {[
-                                    { name: 'Auto-Shortlist', desc: 'Move to Shortlist if match score exceeds 85%', active: true },
-                                    { name: 'Slack Alert', desc: 'Notify #hiring-tech if verified as expert', active: false },
-                                    { name: 'Skill Verification', desc: 'Auto-audit GitHub repositories on application', active: true }
-                                ].map((rule, i) => (
-                                    <div key={i} className="rule-item hover:border-primary transition-colors cursor-pointer">
-                                        <div className="rule-info">
-                                            <h4 className="font-bold text-slate-900">{rule.name}</h4>
-                                            <p className="text-sm text-slate-500">{rule.desc}</p>
-                                        </div>
-                                        <div className={`w-12 h-6 rounded-full relative transition-colors ${rule.active ? 'bg-primary' : 'bg-slate-200'}`}>
-                                            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${rule.active ? 'right-1' : 'left-1'}`}></div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {autoLogs.length > 0 && (
-                                <div className="automation-logs mt-8 font-mono text-xs">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h5 className="font-bold text-slate-400">ENGINE EXECUTION LOGS</h5>
-                                        <span className="text-success">[ONLINE]</span>
-                                    </div>
-                                    <div className="bg-slate-900 p-4 rounded-xl text-emerald-400 overflow-hidden line-clamp-6">
-                                        {autoLogs.map((log, i) => (
-                                            <div key={i}>{`> [${new Date().toLocaleTimeString()}] ${log}`}</div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </section>
-                    </div>
-                )}
-
-                {false && activeTab === 'coach' && coachAdvice && (
-                    <div className="fade-in space-y-6">
-                        <section className="insight-card coach-card bg-indigo-50 border-indigo-100">
-                            <div className="flex justify-between items-center mb-8">
-                                <div>
-                                    <h3 className="text-indigo-900"><Brain size={20} /> AI Recruiter Coach</h3>
-                                    <p className="text-indigo-700/70 text-sm mt-1">Expert-level strategy for landling this specific candidate.</p>
-                                </div>
-                                <div className="verdict-pill hire-candidate bg-white shadow-sm border border-indigo-100">{coachAdvice.verdict}</div>
-                            </div>
-                            
-                            <div className="coach-tips space-y-4">
-                                {coachAdvice.coachTips.map((tip, i) => (
-                                    <div key={i} className="tip-item bg-white/80 border border-indigo-50">
-                                        <div className="flex gap-4">
-                                            <Sparkles size={18} className="text-amber-500 flex-shrink-0" />
-                                            <p className="text-indigo-900 font-medium">{tip}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-
-                        <div className="grid grid-cols-2 gap-6 mt-6">
-                            <section className="insight-card">
-                                <h3>Behavioral Probing</h3>
-                                <p className="text-xs text-slate-500 mb-6 font-medium">Use these to test their "Leadership Potential".</p>
-                                <ul className="qa-list">
-                                    {coachAdvice.suggestedQuestions.map((q, i) => (
-                                        <li key={i} className="qa-item border-l-2 border-indigo-500 bg-white">
-                                            <p className="text-sm">{q}</p>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </section>
-                            <section className="insight-card">
-                                <h3>Closing Strategy</h3>
-                                <p className="text-xs text-slate-500 mb-6 font-medium">Predicted winning hook.</p>
-                                <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-900 font-bold text-center text-sm">
-                                    "Your work on past projects is exactly what our Team needs. We value your unique approach."
-                                </div>
-                            </section>
-                        </div>
-                    </div>
-                )}
-
-                {false && activeTab === 'verification' && skillVerification && (
-                    <div className="fade-in space-y-6">
-                         <div className="trust-meter-card">
-                            <div className="trust-info">
-                                <h3>Candidate Trust Score</h3>
-                                <div className="score-desc">AI-validated proof of claims vs. external data.</div>
-                            </div>
-                            <div className="trust-value">{skillVerification.trustScore}%</div>
-                        </div>
-
-                        <section className="insight-card">
-                            <div className="flex justify-between items-center mb-8">
-                                <h3>Automated Skill Audit</h3>
-                                <span className="text-xs font-bold text-slate-400">SYNCED WITH GITHUB & LINKEDIN</span>
-                            </div>
-                            <div className="verification-list space-y-6">
-                                {skillVerification.verifiedSkills.map((v, i) => (
-                                    <div key={i} className="verify-item border-b border-slate-50 pb-6 last:border-0 last:pb-0">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <span className="skill-name font-bold text-slate-900">{v.skill}</span>
-                                            {v.verified ? (
-                                                <span className="verify-status success text-success flex items-center gap-1"><CheckCircle2 size={14} /> Verified</span>
-                                            ) : (
-                                                <span className="verify-status pending text-amber-500 flex items-center gap-1"><AlertTriangle size={14} /> Verification Pending</span>
-                                            )}
-                                        </div>
-                                        <div className="flex justify-between items-center text-xs">
-                                            <p className="text-slate-500 italic flex-1">{v.reason}</p>
-                                            <div className="font-bold text-slate-700">Confidence: {v.confidence}%</div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    </div>
-                )}
-
-                {false && activeTab === 'advanced' && biasData && (
-                    <div className="fade-in space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
-                            <section className="insight-card">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3>Bias Detection & Fairness</h3>
-                                    <div className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-bold border border-emerald-100">
-                                        Passed Audit
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-6 mb-6">
-                                    <div className="relative w-24 h-24 flex items-center justify-center">
-                                        <svg className="w-full h-full transform -rotate-90">
-                                            <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100" />
-                                            <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray={251.2} strokeDashoffset={251.2 * (1 - biasData.bias_score/100)} className="text-primary" />
-                                        </svg>
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                            <span className="text-xl font-black text-slate-800">{biasData.bias_score}%</span>
-                                            <label className="text-[8px] uppercase font-bold text-slate-400">Bias</label>
-                                        </div>
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-sm font-bold text-slate-800 mb-1">Fairness Rating: Excellent</p>
-                                        <p className="text-xs text-slate-500 leading-relaxed">Algorithmic audit detected zero indicators of demographic or pedigree bias in this evaluation.</p>
-                                    </div>
-                                </div>
-                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-600 italic">
-                                    <strong>Mitigation Strategy:</strong> {biasData.mitigation_tip}
-                                </div>
-                            </section>
-
-                            <section className="insight-card">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3>Predictive Lifetime Value</h3>
-                                    <TrendingUp size={20} className="text-primary" />
-                                </div>
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                                        <span className="text-xs font-bold text-slate-500">Projected Value (1yr)</span>
-                                        <span className="text-sm font-black text-slate-900">{clvData.projected_value}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center p-3 bg-slate-50 rounded-xl">
-                                        <span className="text-xs font-bold text-slate-500">Tenure Probability</span>
-                                        <span className="text-sm font-black text-slate-900">{clvData.tenure_probability}</span>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-slate-500 mt-6 leading-relaxed border-t border-slate-100 pt-4 font-medium">{clvData.insight}</p>
-                            </section>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-6">
-                            <section className="insight-card col-span-2">
-                                <div className="flex justify-between items-center mb-6">
-                                    <h3>EQ & Cultural Maturity</h3>
-                                    <div className="text-primary text-xl font-black">Score: {eqData.eq_score}</div>
-                                </div>
-                                <div className="flex flex-wrap gap-2 mb-6">
-                                    {eqData.traits.map((t, i) => (
-                                        <span key={i} className="mini-tag blue py-2 px-4 rounded-lg">{t}</span>
-                                    ))}
-                                </div>
-                                <p className="description-text bg-slate-50 p-6 rounded-2xl border border-slate-100 text-sm leading-relaxed text-slate-700">{eqData.analysis}</p>
-                            </section>
-
-                            <section className="insight-card funnel-card">
-                                <h3>Funnel Meta-Data</h3>
-                                <div className="space-y-6 mt-8">
-                                    <div className="f-stat">
-                                        <label className="text-[10px] uppercase font-bold text-slate-400">Velocity</label>
-                                        <div className="text-2xl font-black text-slate-800">{funnelData.velocity}</div>
-                                    </div>
-                                    <div className="f-stat">
-                                        <label className="text-[10px] uppercase font-bold text-slate-400">Conversion</label>
-                                        <div className="text-2xl font-black text-slate-800">{funnelData.conversion_rate}</div>
-                                    </div>
-                                    <div className="f-stat">
-                                        <label className="text-[10px] uppercase font-bold text-slate-400">Status</label>
-                                        <div className="text-sm font-bold text-success flex items-center gap-1"><ShieldCheck size={14} /> Optimized</div>
-                                    </div>
-                                </div>
-                            </section>
-                        </div>
-
-                        <section className="insight-card bg-slate-900 border-0">
-                             <div className="flex justify-between items-center">
-                                <div>
-                                    <h3 className="text-white">Strategic Hiring Optimizer</h3>
-                                    <p className="text-slate-400 text-xs mt-1">AI-driven suggestion to improve organizational conversion.</p>
-                                </div>
-                                <Zap size={24} className="text-amber-400" />
-                            </div>
-                            <div className="mt-6 p-6 bg-white/5 rounded-2xl border border-white/10">
-                                <p className="text-slate-100 text-sm italic">"{funnelData.ai_suggestion}"</p>
-                            </div>
-                        </section>
-                    </div>
-                )}
-            </main>
-        </div>
-
-        <div className="evaluation-footer">
-            <div className="footer-info">
-                <AlertTriangle size={14} /> AI scores are heuristic estimates based on available profile data.
+        {/* 4. Proposal Analysis */}
+        <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-3 bg-purple-100 rounded-2xl text-purple-600"><FileText size={26} /></div>
+            <div>
+                <h2 className="text-2xl font-black text-slate-800">Proposal Analysis</h2>
+                <p className="text-slate-500 font-medium mt-1">Candidate self-representation and AI parsing</p>
             </div>
-            <div className="footer-actions">
-                <button className="btn btn-outline" onClick={() => navigate(-1)}>Mark Review Done</button>
-                <button className="btn btn-primary" onClick={() => window.print()}><Download size={18} /> Export PDF Report</button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="md:col-span-2">
+                  <h4 className="font-bold text-slate-400 uppercase tracking-widest text-xs mb-3">Original Submission</h4>
+                  <div className="p-6 bg-slate-50 rounded-2xl text-slate-700 italic border-l-4 border-slate-300 leading-relaxed min-h-[140px]">
+                    "{application.proposal || 'No proposal provided.'}"
+                  </div>
+              </div>
+              <div className="space-y-4">
+                  <h4 className="font-bold text-slate-400 uppercase tracking-widest text-xs mb-3">AI Sentiment metrics</h4>
+                  <div className="p-5 rounded-2xl bg-blue-50 border border-blue-100 shadow-sm">
+                      <span className="text-xs uppercase font-extrabold text-blue-500 tracking-wider">Communication Style</span>
+                      <p className="mt-1 font-bold text-slate-900">{ba.communicationStyle}</p>
+                      <div className="mt-3 flex gap-1.5 flex-wrap">{ba.communicationTraits.map((t, i) => <span key={i} className="text-[10px] px-2.5 py-1 bg-white rounded-full text-blue-700 font-bold border border-blue-100">{t}</span>)}</div>
+                  </div>
+              </div>
+          </div>
+        </section>
+
+        {/* 6. Interview Questions */}
+        <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-3 bg-emerald-100 rounded-2xl text-emerald-600"><Brain size={26} /></div>
+            <div>
+                <h2 className="text-2xl font-black text-slate-800">AI Suggested Interview Probes</h2>
+                <p className="text-slate-500 font-medium mt-1">Generated based on candidate's specific background</p>
             </div>
-        </div>
+          </div>
+          
+          {ip.focus && (
+            <div className="mb-6 p-5 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-100 flex items-start gap-4">
+              <Sparkles className="text-emerald-500 shrink-0 mt-1" size={24} />
+              <div>
+                <h4 className="font-bold text-emerald-900 mb-1 text-lg">💡 Interview Focus</h4>
+                <p className="font-medium text-emerald-700 leading-relaxed">{ip.focus}</p>
+              </div>
+            </div>
+          )}
 
-        {showHireModal && (
-            <HireConfirmationModal 
-                application={application}
-                onClose={() => setShowHireModal(false)}
-                onConfirm={() => {
-                    setShowHireModal(false);
-                    setShowHireSuccess(true);
-                    onRefresh();
-                }}
-            />
-        )}
+          <div className="space-y-4">
+            {ip.questions.map((q, i) => (
+              <div key={i} className="flex gap-5 items-start p-5 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-colors group border border-slate-100 hover:border-emerald-200">
+                <div className="h-10 w-10 rounded-xl bg-white shadow-sm text-slate-400 font-black flex items-center justify-center shrink-0 group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors text-lg">
+                  {i+1}
+                </div>
+                <p className="text-slate-800 font-medium pt-2 leading-relaxed">{q}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        {showHireSuccess && (
-            <HireSuccess 
-                application={application}
-                onClose={() => {
-                    setShowHireSuccess(false);
-                    navigate(-1);
-                }}
-            />
-        )}
+        {/* 5. Interview Scheduler */}
+        <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="p-3 bg-sky-100 rounded-2xl text-sky-600"><Calendar size={26} /></div>
+            <div>
+                <h2 className="text-2xl font-black text-slate-800">Propose Interview</h2>
+                <p className="text-slate-500 font-medium mt-1">Send a direct message to schedule a meeting</p>
+            </div>
+            {application.suggestion_sent && (
+              <div className="ml-auto bg-sky-50 text-sky-600 px-4 py-2 rounded-full font-bold text-sm tracking-wide border border-sky-100 flex items-center gap-2">
+                <CheckCircle2 size={18}/> Suggestion Sent
+              </div>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Date</label>
+              <input type="date" disabled={application.suggestion_sent} className="w-full p-4 rounded-xl border-2 border-slate-100 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none transition-all font-medium text-slate-700 bg-slate-50 focus:bg-white disabled:opacity-50" value={interviewDate} onChange={e => setInterviewDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Time</label>
+              <input type="time" disabled={application.suggestion_sent} className="w-full p-4 rounded-xl border-2 border-slate-100 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none transition-all font-medium text-slate-700 bg-slate-50 focus:bg-white disabled:opacity-50" value={interviewTime} onChange={e => setInterviewTime(e.target.value)} />
+            </div>
+          </div>
+          <div className="mb-6">
+             <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Message Template</label>
+             <textarea disabled={application.suggestion_sent} className="w-full p-4 rounded-xl border-2 border-slate-100 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 outline-none transition-all h-32 font-medium text-slate-700 bg-slate-50 focus:bg-white resize-none disabled:opacity-50" value={interviewMsg} onChange={e => setInterviewMsg(e.target.value)}></textarea>
+          </div>
+          <button 
+            onClick={handleSendInvite} 
+            disabled={application.suggestion_sent || sendingMsg}
+            className="px-8 py-4 bg-slate-900 text-white font-bold rounded-xl hover:bg-sky-600 hover:shadow-lg hover:shadow-sky-500/30 transition-all flex items-center justify-center gap-2 w-full md:w-auto disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none disabled:hover:bg-slate-900"
+          >
+            {sendingMsg ? 'Broadcasting...' : application.suggestion_sent ? 'Already Sent' : <><Send size={18} /> Send Suggestion</>}
+          </button>
+        </section>
       </div>
+
+      {/* 7. Review Action Buttons (Fixed Bottom Bar) */}
+      <div className="fixed bottom-0 left-0 right-0 p-5 bg-white/95 backdrop-blur-xl border-t border-slate-200 flex justify-center items-center z-50 shadow-[0_-10px_40px_-5px_rgba(0,0,0,0.05)]">
+        
+        <div className="w-full max-w-5xl flex justify-between items-center gap-4">
+            <div className="hidden md:block">
+                <span className="text-slate-500 font-bold text-sm tracking-wide uppercase">Final Decision:</span>
+            </div>
+
+            <div className="flex items-center gap-4 flex-1 md:flex-none">
+                {/* Reject Target */}
+                <button 
+                onClick={() => setShowRejectModal(true)}
+                disabled={application.status === 'rejected'}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold text-lg border-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:border-rose-300 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:border-rose-200"
+                >
+                <ThumbsDown size={20}/> Reject
+                </button>
+
+                {/* Shortlist Target */}
+                <button 
+                onClick={() => handleUpdateStatus('accepted')}
+                disabled={application.status === 'accepted' || application.status === 'hired'}
+                className="flex-1 md:flex-none flex items-center justify-center gap-2 px-10 py-4 rounded-2xl font-bold text-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all disabled:opacity-30 disabled:hover:bg-blue-100"
+                >
+                <Target size={20}/> Shortlist
+                </button>
+
+                {/* Hire Target */}
+                <button 
+                onClick={() => handleUpdateStatus('hired')}
+                disabled={application.status === 'hired'}
+                className="flex-1 md:flex-none relative overflow-hidden group px-12 py-4 rounded-2xl font-black text-lg text-white shadow-xl shadow-emerald-500/30 transition-all hover:-translate-y-1 hover:shadow-emerald-500/50 disabled:opacity-30 disabled:hover:translate-y-0 disabled:hover:shadow-emerald-500/30"
+                style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                >
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                <span className="relative flex items-center justify-center gap-2">
+                    <CheckCircle2 size={24}/> {application.status === 'hired' ? 'Hired' : 'Hire'}
+                </span>
+                </button>
+            </div>
+        </div>
+      </div>
+
+      {/* REJECTION MODAL */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 p-8 max-w-md w-full animate-in fade-in zoom-in duration-200" style={{ animationDuration: '0.2s' }}>
+            <h3 className="text-xl font-black text-slate-800 mb-2">Provide Feedback</h3>
+            <p className="text-slate-500 text-sm mb-6">Select a template to send to the candidate, or send without feedback.</p>
+            
+            <div className="space-y-3 mb-8">
+              {["Lacking primary skills required for this role.", "We decided to move forward with a candidate whose experience more closely aligns.", "Your requested compensation exceeds our budget constraints."].map((msg, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => setRejectFeedback(msg)}
+                  className={`w-full text-left p-4 rounded-xl border-2 transition-all font-medium text-sm ${rejectFeedback === msg ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-100 text-slate-600 hover:border-slate-300'}`}
+                >
+                  "{msg}"
+                </button>
+              ))}
+            </div>
+            
+            <div className="flex gap-4">
+              <button 
+                className="flex-1 py-3 font-bold text-slate-500 hover:bg-slate-100 rounded-xl transition-colors"
+                onClick={() => setShowRejectModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="flex-[2] py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-rose-600/20"
+                onClick={() => handleUpdateStatus('rejected', rejectFeedback || "After careful consideration, we will not be moving forward.")}
+              >
+                Reject & Notify
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -1,23 +1,11 @@
 import db from "../config/db.js";
 
-// Chat Table Schema (ensure this table exists)
-/*
-CREATE TABLE IF NOT EXISTS messages (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  room_id VARCHAR(255) NOT NULL,
-  sender_id INT NOT NULL,
-  receiver_id INT NOT NULL,
-  message TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-*/
-
 export const createMessage = async (roomId, senderId, receiverId, message) => {
   const query = `
-    INSERT INTO messages (room_id, sender_id, receiver_id, message)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO messages (room_id, sender_id, receiver_id, message, is_read)
+    VALUES (?, ?, ?, ?, 0)
   `;
-  const [result] = await db.query(query, [roomId, senderId, receiverId, message]);
+  const [result] = await db.promise().query(query, [roomId, senderId, receiverId, message]);
   return result.insertId;
 };
 
@@ -29,6 +17,6 @@ export const getMessagesByRoom = async (roomId) => {
     WHERE m.room_id = ?
     ORDER BY m.created_at ASC
   `;
-  const [messages] = await db.query(query, [roomId]);
+  const [messages] = await db.promise().query(query, [roomId]);
   return messages;
 };

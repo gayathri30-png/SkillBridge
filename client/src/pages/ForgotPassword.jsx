@@ -6,7 +6,7 @@ import { Mail, ArrowRight, Zap, ShieldCheck, ChevronLeft, AlertCircle } from "lu
 import "../AuthPages.css";
 
 const ForgotPassword = () => {
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,12 +19,15 @@ const ForgotPassword = () => {
     setError('');
 
     try {
-      const { data } = await axios.post('/api/auth/forgot-password', { email });
+      const { data } = await axios.post('/api/auth/verify-phone', { phone });
       if (data.success) {
-        setMessage('Password reset link sent to your email.');
+        setMessage('Phone number verified. Redirecting...');
+        setTimeout(() => {
+          navigate(`/reset-password?phone=${phone}`);
+        }, 1500);
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Something went wrong');
+      setError(err.response?.data?.error || 'No account found with that phone number');
     } finally {
       setLoading(false);
     }
@@ -74,7 +77,7 @@ const ForgotPassword = () => {
 
           <div className="auth-form-header">
             <h2>Forgot Password?</h2>
-            <p>Enter your email and we'll send a secure reset link.</p>
+            <p>Enter your registered phone number to reset your password.</p>
           </div>
 
           {message && (
@@ -91,15 +94,14 @@ const ForgotPassword = () => {
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="floating-group">
               <input 
-                type="email" 
+                type="text" 
                 className="floating-input"
                 placeholder=" "
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
                 required
               />
-              <label className="floating-label">Email Address</label>
-              <Mail className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+              <label className="floating-label">Phone Number</label>
             </div>
 
             <button 
@@ -107,9 +109,9 @@ const ForgotPassword = () => {
               className="auth-btn-primary"
               disabled={loading}
             >
-              {loading ? "Sending link..." : (
+              {loading ? "Verifying..." : (
                 <>
-                  Send Reset Link <ArrowRight size={18} />
+                  Verify Phone Number <ArrowRight size={18} />
                 </>
               )}
             </button>

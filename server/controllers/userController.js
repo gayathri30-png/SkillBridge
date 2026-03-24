@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 import bcrypt from "bcryptjs";
+import { createNotification } from "./notificationController.js";
 
 // GET ALL USERS
 export const getUsers = (req, res) => {
@@ -188,6 +189,12 @@ export const verifyRecruiter = (req, res) => {
       db.query("UPDATE users SET is_verified = ? WHERE id = ?", [newStatus, id], (err, result) => {
           if (err) return res.status(500).json({ error: err });
           
+          // Notify the recruiter about verification status change
+          const notifMessage = newStatus 
+            ? "Your recruiter account has been verified! You can now post jobs." 
+            : "Your recruiter account verification has been revoked.";
+          createNotification(id, "account_verified", notifMessage).catch(console.error);
+
           res.json({ 
               message: `User ${newStatus ? 'verified' : 'unverified'} successfully`, 
               is_verified: newStatus 

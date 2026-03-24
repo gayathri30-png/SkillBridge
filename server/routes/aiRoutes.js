@@ -25,12 +25,20 @@ import {
   updateSavedProposal,
   deleteSavedProposal,
   generateJobPost,
-  getRecruiterAISummary
+  getRecruiterAISummary,
+  evaluateApplication,
+  reEvaluateApplication,
+  getStudentInterviewPrep
 } from "../controllers/aiController.js";
 import { protect } from "../middleware/auth.js";
+
 import { allowRoles } from "../middleware/role.js";
 
 const router = express.Router();
+
+// Unified AI Evaluation Engine
+router.get("/evaluate/:applicationId", protect, allowRoles("recruiter", "admin"), evaluateApplication);
+router.put("/re-evaluate/:applicationId", protect, allowRoles("recruiter", "admin"), reEvaluateApplication);
 
 // Tier 1-2
 router.get("/match/:jobId", protect, calculateMatchScore);
@@ -63,6 +71,7 @@ router.get("/funnel-viz/:jobId", protect, allowRoles("recruiter", "admin"), getF
 router.get("/recruiter/summary", protect, allowRoles("recruiter", "admin"), getRecruiterAISummary);
 
 // Student Advanced AI (Phase 2 Specialized)
+router.get("/interview-prep/:interviewId", protect, allowRoles("student"), getStudentInterviewPrep);
 router.get("/skill-gap/jobs", protect, allowRoles("student"), getJobsForSkillGap);
 router.get("/skill-gap/pathways", protect, allowRoles("student"), getSkillGapPathways);
 router.get("/summary", protect, allowRoles("student"), getAISummary);

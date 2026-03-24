@@ -32,6 +32,8 @@ const StudentDashboard = ({ user }) => {
   const [advancedUpskilling, setAdvancedUpskilling] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [aiTargetJob, setAiTargetJob] = useState("");
+  const [interviews, setInterviews] = useState([]);
 
   const triggerAIAnalysis = async () => {
     setIsAnalyzing(true);
@@ -100,6 +102,9 @@ const StudentDashboard = ({ user }) => {
         });
 
         setRecommendedJobs(enrichedJobs);
+        if (enrichedJobs.length > 0) {
+          setAiTargetJob(enrichedJobs[0].id);
+        }
 
         // Update stats average to reflect current recommendations
         if (enrichedJobs.length > 0) {
@@ -113,6 +118,15 @@ const StudentDashboard = ({ user }) => {
           setMessages(roomsRes.data.slice(0, 3));
         } catch (msgErr) {
           console.error("Failed to fetch messages:", msgErr);
+        }
+
+        // 3.5 Fetch Interviews
+        try {
+          const interviewsRes = await axios.get('/api/interviews', { headers });
+          setInterviews(interviewsRes.data);
+          setStats(prev => ({ ...prev, pendingInterviews: interviewsRes.data.filter(i => i.status === 'pending').length }));
+        } catch (intErr) {
+          console.error("Failed to fetch interviews:", intErr);
         }
 
         // 4. Fetch Advanced Upskilling Data
@@ -323,6 +337,52 @@ const StudentDashboard = ({ user }) => {
         </div>
       </section>
 
+      {/* --- 4. UPCOMING INTERVIEWS --- */}
+      {interviews.length > 0 && (
+        <section className="mt-12">
+            <div className="section-header">
+                <h2 className="flex items-center gap-3">
+                    <Calendar size={24} className="text-rose-500" /> Upcoming Interviews
+                </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {interviews.map((interview, idx) => (
+                    <motion.div 
+                        key={interview.id}
+                        className="p-6 bg-white rounded-[32px] border border-slate-100 shadow-xl hover:shadow-2xl transition-all cursor-pointer group"
+                        variants={itemVars}
+                        onClick={() => navigate(`/interviews/${interview.id}`)}
+                    >
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+                                <Clock size={24} />
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                interview.status === 'accepted' ? 'bg-emerald-100 text-emerald-600' : 
+                                interview.status === 'declined' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'
+                            }`}>
+                                {interview.status}
+                            </span>
+                        </div>
+                        <h3 className="text-lg font-black text-slate-800 mb-1">{interview.job_title}</h3>
+                        <p className="text-slate-500 text-sm font-bold mb-4">{interview.company_name}</p>
+                        
+                        <div className="pt-4 border-t border-slate-50 space-y-2">
+                            <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                <Calendar size={14} className="text-slate-400" />
+                                {new Date(interview.scheduled_at).toLocaleDateString()}
+                            </div>
+                            <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                <Clock size={14} className="text-slate-400" />
+                                {new Date(interview.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+        </section>
+      )}
+
       {/* --- 4. MODULES GRID --- */}
       <div className="modules-grid">
         {/* Recent Applications (REPLACED PLACEHOLDER COLOR/TEXT) */}
@@ -398,7 +458,11 @@ const StudentDashboard = ({ user }) => {
              <div className="space-y-4">
                 <div className="p-5 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-sm">
                    <label className="text-[10px] font-black uppercase text-blue-400 tracking-widest mb-3 block">Target Job Context</label>
-                   <select className="quick-generate-select w-full font-bold outline-none">
+                   <select 
+                      onChange={(e) => setAiTargetJob(e.target.value)}
+                      value={aiTargetJob}
+                      className="quick-generate-select w-full font-bold outline-none"
+                   >
                       {recommendedJobs.length > 0 ? recommendedJobs.map(j => (
                         <option key={j.id} value={j.id}>{j.title} @ {j.company_name}</option>
                       )) : (
@@ -407,7 +471,7 @@ const StudentDashboard = ({ user }) => {
                    </select>
                 </div>
                 <button 
-                  onClick={() => navigate('/ai')}
+                  onClick={() => navigate('/ai/proposals', { state: { jobId: aiTargetJob } })}
                   className="boost-btn-premium w-full mt-4"
                 >
                   Boost Match Score <Sparkles size={16} />

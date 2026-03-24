@@ -8,8 +8,8 @@ import {
   Zap, Share2, Heart, ExternalLink,
   BrainCircuit, LayoutGrid, Target, GraduationCap
 } from "lucide-react";
-import "./JobDetails.css";
 import JobApplyModal from "./JobApplyModal";
+import { formatSalary } from "../utils/formatters";
 
 const JobDetails = () => {
   const { id } = useParams();
@@ -105,8 +105,8 @@ const JobDetails = () => {
                 </div>
                 <div className="budget-display">
                    <p className="budget-label">Project Budget</p>
-                   <h2 className="budget-amount">{job.salary_range || 'Competitive'}</h2>
-                   <p className="budget-label">LPA / Fixed Price</p>
+                   <h2 className="budget-amount">{formatSalary(job.budget)}</h2>
+                   <p className="budget-label">Annual Compensation (INR)</p>
                 </div>
               </div>
             </header>

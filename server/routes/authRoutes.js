@@ -5,6 +5,8 @@ import {
   login,
   forgotPassword,
   resetPassword,
+  verifyPhone,
+  resetPasswordByPhone,
   testJWTConfig,
   getMe,
 } from "../controllers/authController.js";
@@ -15,6 +17,8 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
+router.post("/verify-phone", verifyPhone);
+router.post("/reset-password-phone", resetPasswordByPhone);
 router.get("/me", protect, getMe);
 router.get("/test-jwt-config", testJWTConfig); // Add this test route
 

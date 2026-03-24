@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, DollarSign, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Calendar, IndianRupee, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
 const HireConfirmationModal = ({ application, onClose, onConfirm }) => {
@@ -75,12 +75,12 @@ const HireConfirmationModal = ({ application, onClose, onConfirm }) => {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-500 uppercase">Salary Offered (Yearly)</label>
+              <label className="text-xs font-bold text-slate-500 uppercase">Salary Offered (Annual INR)</label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                 <input 
                   type="text"
-                  placeholder="e.g. $120,000"
+                  placeholder="e.g. 1200000 (for 12 LPA)"
                   className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
                   value={hiringDetails.salary}
                   onChange={(e) => setHiringDetails({...hiringDetails, salary: e.target.value})}

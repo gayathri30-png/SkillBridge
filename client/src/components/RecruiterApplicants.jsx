@@ -10,7 +10,8 @@ import {
   Brain, X, Search, Filter, ChevronDown, ChevronUp, 
   Star, MessageSquare, Calendar, CheckCircle, 
   XCircle, Filter as FilterIcon, ExternalLink, Download,
-  TrendingUp, Zap, Target, Clock, Tags, Settings
+  TrendingUp, Zap,  MoreVertical, Send, Menu, Sparkles, Trash2, 
+  Target, Clock, Tags, Settings
 } from "lucide-react";
 import "./RecruiterApplicants.css"; 
 
@@ -53,7 +54,7 @@ const RecruiterApplicants = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `/api/applications/job/${jobId}/sorted`, 
+        `/api/applications/job/${jobId}/smart-sort`, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setApplicants(response.data.applicants);
@@ -330,6 +331,37 @@ const RecruiterApplicants = () => {
                     <option value="recent">Most Recent</option>
                 </select>
                 <button className="btn btn-outline btn-sm" onClick={handleExportCSV}><Download size={16} /> Export</button>
+                <button 
+                    className="btn btn-primary btn-sm bg-indigo-600 hover:bg-indigo-700"
+                    onClick={async () => {
+                        if (window.confirm("Are you sure you want to auto-invite the top 3 applicants? This will send invitations with a default 10:00 AM slot for tomorrow.")) {
+                            try {
+                                const token = localStorage.getItem("token");
+                                const tomorrow = new Date();
+                                tomorrow.setDate(tomorrow.getDate() + 1);
+                                const year = tomorrow.getFullYear();
+                                const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
+                                const day = String(tomorrow.getDate()).padStart(2, '0');
+                                const scheduledAt = `${year}-${month}-${day}T10:00`;
+
+                                await axios.post(`/api/interviews/auto-invite/${jobId}`, {
+                                    count: 3,
+                                    scheduled_at: scheduledAt,
+                                    instructions: "Automatic invitation based on your high match score. Please accept if you are available."
+                                }, {
+                                    headers: { Authorization: `Bearer ${token}` }
+                                });
+                                alert("Top 3 applicants have been invited!");
+                                fetchApplicants();
+                            } catch (err) {
+                                console.error("Auto-invite failed", err);
+                                alert("Failed to auto-invite applicants.");
+                            }
+                        }
+                    }}
+                >
+                    <Sparkles size={16} /> Auto-invite Top 3
+                </button>
             </div>
         </div>
 
@@ -439,6 +471,11 @@ const RecruiterApplicants = () => {
                                         {app.ai_match_score}% Match
                                     </span>
                                     {app.ai_match_score >= 90 && <span className="top-candidate-badge">Top Candidate</span>}
+                                    {app.interview_status && (
+                                        <span className={`status-pill ml-2 ${app.interview_status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                            Interview: {app.interview_status.toUpperCase()}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>

@@ -40,6 +40,14 @@ import reportRoutes from "./routes/reportRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 
 import adminRoutes from "./routes/adminRoutes.js";
+import interviewsRoutes from "./routes/interviewsRoutes.js";
+
+// Socket.IO & Models for Real-time
+import { createServer } from "http";
+import { Server } from "socket.io";
+import { createMessage, getMessagesByRoom } from "./models/Chat.js";
+import { updateRoomLastMessage } from "./controllers/chatController.js";
+import { createNotification } from "./controllers/notificationController.js";
 
 // Serve Uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -57,6 +65,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/chat", chatRoutes);
 
 app.use("/api/admin", adminRoutes);
+app.use("/api/interviews", interviewsRoutes);
 
 console.log("\n✅ ALL ROUTES MOUNTED:");
 console.log("✅ POST /api/auth/register");
@@ -146,11 +155,9 @@ app.use((err, req, res, next) => {
 // =====================
 // START SERVER WITH SOCKET.IO
 // =====================
-import { createServer } from "http";
-import { Server } from "socket.io";
-import { createMessage, getMessagesByRoom } from "./models/Chat.js";
-import { updateRoomLastMessage } from "./controllers/chatController.js";
-import { createNotification } from "./controllers/notificationController.js";
+// =====================
+// START SERVER WITH SOCKET.IO
+// =====================
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -186,8 +193,7 @@ io.on("connection", (socket) => {
         await createNotification(
           data.receiverId,
           "message",
-          `New message from ${data.author}`,
-          data.room
+          `New message from ${data.author}`
         );
         // Broadcast to room (including sender)
         io.to(data.room).emit("receive_message", {

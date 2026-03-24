@@ -1,46 +1,61 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { 
   X, Calendar as CalendarIcon, Clock, Sparkles, 
-  Mail, ChevronLeft, ChevronRight, Video, 
-  MapPin, Brain, ShieldCheck, Zap, Info
+  Video, MapPin, Brain, ShieldCheck, Zap, Info
 } from 'lucide-react';
+import axios from 'axios';
+import { motion } from 'framer-motion';
 import './InterviewScheduler.css';
 
 const InterviewScheduler = ({ application, onClose }) => {
-  const [selectedDay, setSelectedDay] = useState(24);
-  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [scheduledAt, setScheduledAt] = useState('');
+  const [meetingLink, setMeetingLink] = useState('');
+  const [instructions, setInstructions] = useState('');
   const [scheduling, setScheduling] = useState(false);
   const [scheduled, setScheduled] = useState(false);
 
-  // Mock data for AI suggestions
-  const suggestedDays = [18, 24, 25];
-  const timeSlots = [
-    { id: 1, time: '10:00 AM', reason: 'Common activity peak', ai: true },
-    { id: 2, time: '11:30 AM', reason: 'High recruiter availability', ai: false },
-    { id: 3, time: '02:00 PM', reason: 'Optimal for deep focus prep', ai: true },
-    { id: 4, time: '04:00 PM', reason: 'End of day review', ai: false },
-  ];
-
-  const handleSchedule = () => {
-    if (!selectedSlot) return;
+  const handleSchedule = async () => {
+    if (!scheduledAt) return alert("Please select a date and time");
+    
     setScheduling(true);
-    // Simulate API call
-    setTimeout(() => {
-      setScheduling(false);
-      setScheduled(true);
-      setTimeout(onClose, 2000);
-    }, 1500);
+    try {
+        const token = localStorage.getItem("token");
+        const user = JSON.parse(localStorage.getItem("user"));
+        
+        await axios.post('/api/interviews', {
+            application_id: application.application_id,
+            recruiter_id: user.id,
+            student_id: application.student_id || application.user_id,
+            scheduled_at: scheduledAt,
+            meeting_link: meetingLink,
+            instructions: instructions
+        }, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        setScheduled(true);
+        setTimeout(onClose, 2500);
+    } catch (err) {
+        console.error("Failed to schedule interview:", err);
+        alert("Failed to schedule interview. Please try again.");
+    } finally {
+        setScheduling(false);
+    }
   };
 
   if (scheduled) {
     return (
       <div className="scheduler-backdrop">
         <div className="scheduler-container items-center justify-center p-20 text-center">
-            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 scale-up">
+            <motion.div 
+               initial={{ scale: 0 }}
+               animate={{ scale: 1 }}
+               className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6"
+            >
                 <ShieldCheck size={40} />
-            </div>
-            <h2 className="text-2xl font-black text-slate-800 mb-2">Interview Scheduled!</h2>
-            <p className="text-slate-500">Google Calendar invite and AI briefing sent to {application.student_name}.</p>
+            </motion.div>
+            <h2 className="text-2xl font-black text-slate-800 mb-2">Interview Invitation Sent!</h2>
+            <p className="text-slate-500">{application.student_name} has been notified via in-app notification.</p>
         </div>
       </div>
     );
@@ -50,104 +65,74 @@ const InterviewScheduler = ({ application, onClose }) => {
     <div className="scheduler-backdrop">
       <div className="scheduler-container">
         <header className="scheduler-header">
-          <h2><CalendarIcon size={24} /> AI Interview Scheduler</h2>
+          <h2><CalendarIcon size={24} /> Schedule Interview</h2>
           <button className="btn-close" onClick={onClose}><X size={20} /></button>
         </header>
 
         <div className="scheduler-layout">
           {/* Left Pane: Selection */}
-          <div className="scheduler-left">
-            <div className="calendar-mock">
-              <div className="calendar-header">
-                <h3>February 2026</h3>
-                <div className="flex gap-2">
-                  <button className="p-2 hover:bg-slate-100 rounded-lg"><ChevronLeft size={18} /></button>
-                  <button className="p-2 hover:bg-slate-100 rounded-lg"><ChevronRight size={18} /></button>
+          <div className="scheduler-left space-y-6">
+            <div className="form-group">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Interview Date & Time</label>
+                <div className="relative">
+                    <input 
+                        type="datetime-local" 
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:border-blue-500 transition-all"
+                        value={scheduledAt}
+                        onChange={(e) => setScheduledAt(e.target.value)}
+                    />
                 </div>
-              </div>
-              <div className="calendar-grid">
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d => (
-                  <div key={d} className="text-[10px] uppercase font-bold text-slate-400 text-center mb-2">{d}</div>
-                ))}
-                {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
-                  <div 
-                    key={day} 
-                    className={`calendar-day ${day === selectedDay ? 'active' : ''} ${suggestedDays.includes(day) ? 'suggested' : ''}`}
-                    onClick={() => setSelectedDay(day)}
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <div className="slots-section">
-              <h4><Sparkles size={16} className="text-primary" /> AI Suggested Slots</h4>
-              <div className="time-slots">
-                {timeSlots.map(slot => (
-                  <div 
-                    key={slot.id} 
-                    className={`time-slot ${selectedSlot === slot.id ? 'selected' : ''} ${slot.ai ? 'ai-recommended' : ''}`}
-                    onClick={() => setSelectedSlot(slot.id)}
-                  >
-                    <div className="slot-time">{slot.time}</div>
-                    <div className="slot-reason">{slot.reason}</div>
-                  </div>
-                ))}
-              </div>
+            <div className="form-group">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Meeting Link / Location</label>
+                <div className="relative">
+                    <input 
+                        type="text" 
+                        placeholder="e.g. https://zoom.us/j/..."
+                        className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:border-blue-500 transition-all"
+                        value={meetingLink}
+                        onChange={(e) => setMeetingLink(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            <div className="form-group">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2 block">Additional Instructions</label>
+                <textarea 
+                    placeholder="e.g. Please be prepared to discuss your portfolio."
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 outline-none focus:border-blue-500 transition-all min-h-[120px]"
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                />
             </div>
           </div>
 
-          {/* Right Pane: AI Intelligence */}
+          {/* Right Pane: AI Intelligence (Simplified/Stylized) */}
           <div className="scheduler-right">
-            <div className="ai-briefing-card">
-              <h4><Brain size={18} className="text-primary" /> Recruiter Briefing</h4>
-              <div className="space-y-3">
-                <div className="briefing-item">
-                  <strong>Focus Area:</strong> Architectural Scalability
+            <div className="ai-briefing-card mb-6">
+              <h4><Brain size={18} className="text-primary" /> AI Candidate Brief</h4>
+              <div className="space-y-3 mt-4">
+                <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-[10px] font-medium text-blue-700">
+                    <strong>Match Logic:</strong> {application.student_name} matches 92% of required skills. Highlight projects in React & Node.js.
                 </div>
-                <div className="briefing-item">
-                  <strong>Tone Tip:</strong> Candidate appreciates direct, technical questions.
-                </div>
-                <div className="briefing-item">
-                  <strong>Risk:</strong> Potential mismatch on AWS experience levels.
+                <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 text-[10px] font-medium text-purple-700">
+                    <strong>Recruiter Tip:</strong> Best time to schedule is morning (10 AM - 12 PM) for highest engagement.
                 </div>
               </div>
             </div>
 
-            <div className="email-preview-card">
-              <div className="preview-header">
-                <div className="flex items-center gap-2">
-                  <Mail size={16} className="text-slate-400" />
-                  <span className="text-xs font-bold text-slate-500 uppercase">Email Preview</span>
-                </div>
-                <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded">AI GENERATED</span>
-              </div>
-              <div className="preview-body">
-                <p>Hi {application.student_name},</p>
-                <p className="mt-4">
-                  We were truly impressed by your skills and AI match analysis. We'd love to schedule a 
-                  technical deep-dive session on <strong>Feb {selectedDay}</strong> at 
-                  <strong> {selectedSlot ? timeSlots.find(s => s.id === selectedSlot).time : '...'}</strong>.
-                </p>
-                <p className="mt-4">Looking forward to discusing your React expertise!</p>
-              </div>
-              <div className="preview-footer">
+            <div className="mt-auto pt-6 border-t border-slate-100">
                  <button 
-                  className="btn-schedule" 
+                  className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-[24px] font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-200 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
                   onClick={handleSchedule}
-                  disabled={!selectedSlot || scheduling}
+                  disabled={!scheduledAt || scheduling}
                 >
                   {scheduling ? <Zap size={18} className="animate-spin" /> : <Video size={18} />}
-                  {scheduling ? 'Syncing...' : 'Schedule & Send Invite'}
+                  {scheduling ? 'Sending...' : 'Send Interview Invite'}
                 </button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                <Info size={18} className="text-amber-600 flex-shrink-0" />
-                <p className="text-[10px] text-amber-700 leading-relaxed font-medium">
-                  AI detected high activity from {application.student_name} on Tuesdays. This slot has a 92% acceptance probability.
+                <p className="text-[10px] text-slate-400 text-center mt-4 font-medium uppercase tracking-tight">
+                    Candidate will be notified instantly via dashboard.
                 </p>
             </div>
           </div>

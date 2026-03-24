@@ -224,6 +224,14 @@ const ApplicationsList = () => {
                     >
                         <ExternalLink size={16} /> Listing
                     </button>
+                    {app.interview_id && (
+                      <button
+                        className="btn btn-primary-glass flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 border-none group"
+                        onClick={() => navigate(`/ai/interview/${app.interview_id}`)}
+                      >
+                        <Sparkles size={16} className="group-hover:animate-pulse" /> AI Simulation
+                      </button>
+                    )}
                     <button
                       className="btn btn-primary-glass flex-1"
                       onClick={async () => {

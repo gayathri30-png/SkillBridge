@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   PenTool, ChevronLeft, Sparkles, Settings2, 
@@ -10,6 +10,7 @@ import axios from 'axios';
 
 const AIProposalGenerator = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [proposals, setProposals] = useState([]);
@@ -35,7 +36,11 @@ const AIProposalGenerator = () => {
       const res = await axios.get('/api/jobs');
       if (res.data && res.data.length > 0) {
         setAvailableJobs(res.data);
-        setSelectedJobId(res.data[0].id.toString());
+        if (location.state?.jobId) {
+            setSelectedJobId(location.state.jobId.toString());
+        } else {
+            setSelectedJobId(res.data[0].id.toString());
+        }
       }
     } catch (err) {
       console.error('Failed to fetch jobs for dropdown');

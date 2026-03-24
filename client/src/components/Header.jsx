@@ -16,11 +16,15 @@ const Header = ({ onMenuClick }) => {
   const notifDropdownRef = useRef(null);
   const profileDropdownRef = useRef(null);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
   useEffect(() => {
     if (user) {
         fetchNotifications();
-        // Optional: Poll every 30s
-        const interval = setInterval(fetchNotifications, 30000);
+        const interval = setInterval(fetchNotifications, 10000);
         return () => clearInterval(interval);
     }
   }, []);
@@ -44,13 +48,10 @@ const Header = ({ onMenuClick }) => {
           const token = localStorage.getItem("token");
           if (!token) return;
           
-          const res = await axios.get("/api/notifications", {
-              headers: { Authorization: `Bearer ${token}` }
-          });
+          const res = await axios.get("/api/notifications", getAuthHeaders());
           const fetchedNotifications = res.data;
-          console.log("Fetched notifications:", fetchedNotifications);
           setNotifications(fetchedNotifications);
-          setUnreadCount(fetchedNotifications.filter(n => !n.is_read || n.is_read.data?.[0] === 0).length);
+          setUnreadCount(fetchedNotifications.filter(n => !n.is_read || n.is_read === 0).length);
       } catch (error) {
           console.error("Error fetching notifications", error);
       }
@@ -58,11 +59,7 @@ const Header = ({ onMenuClick }) => {
 
   const handleMarkAsRead = async (id) => {
       try {
-          const token = localStorage.getItem("token");
-          await axios.put(`/api/notifications/${id}/read`, {}, {
-              headers: { Authorization: `Bearer ${token}` }
-          });
-          // Update local state
+          await axios.put(`/api/notifications/${id}/read`, {}, getAuthHeaders());
           setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: 1 } : n));
           setUnreadCount(prev => Math.max(0, prev - 1));
       } catch (error) {
@@ -72,15 +69,23 @@ const Header = ({ onMenuClick }) => {
   
   const handleMarkAllRead = async () => {
       try {
-          const token = localStorage.getItem("token");
-          await axios.put(`/api/notifications/read-all`, {}, {
-              headers: { Authorization: `Bearer ${token}` }
-          });
+          await axios.put(`/api/notifications/read-all`, {}, getAuthHeaders());
            setNotifications(prev => prev.map(n => ({ ...n, is_read: 1 })));
            setUnreadCount(0);
       } catch (error) {
           console.error("Error marking all read", error);
       }
+  };
+
+  const handleNotifClick = (notif) => {
+      handleMarkAsRead(notif.id);
+      setShowNotifDropdown(false);
+      if (notif.type === 'message') navigate('/chat');
+      else if (notif.type === 'application') navigate('/my-jobs');
+      else if (notif.type === 'status_update') navigate('/applications');
+      else if (notif.type === 'offer_accepted') navigate('/my-jobs');
+      else if (notif.type === 'account_verified') navigate('/dashboard');
+      else navigate('/notifications');
   };
 
   const handleLogout = () => {
@@ -108,7 +113,7 @@ const Header = ({ onMenuClick }) => {
              <Bell className={`h-6 w-6 ${unreadCount > 0 ? 'text-indigo-600' : 'text-slate-500'}`} />
              {unreadCount > 0 && (
                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
-                     {unreadCount}
+                     {unreadCount > 9 ? '9+' : unreadCount}
                  </span>
              )}
           </div>
@@ -125,23 +130,26 @@ const Header = ({ onMenuClick }) => {
                   </div>
                   <div className="max-h-96 overflow-y-auto">
                       {notifications.length === 0 ? (
-                          <div className="p-4 text-center text-slate-500 text-sm">No notifications to show right now.</div>
+                          <div className="p-4 text-center text-slate-500 text-sm">No notifications yet.</div>
                       ) : (
-                          notifications.map(notif => {
-                              const isUnread = !notif.is_read || notif.is_read?.data?.[0] === 0;
+                          notifications.slice(0, 10).map(notif => {
+                              const isNotifUnread = !notif.is_read || notif.is_read === 0;
                               return (
                                 <div 
                                   key={notif.id} 
-                                  className={`p-3 border-b border-slate-50 hover:bg-slate-50 transition-colors ${isUnread ? 'bg-indigo-50/50' : ''}`}
-                                  onClick={() => { handleMarkAsRead(notif.id); setShowNotifDropdown(false); }}
+                                  className={`p-3 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${isNotifUnread ? 'bg-indigo-50/50' : ''}`}
+                                  onClick={() => handleNotifClick(notif)}
                                 >
                                     <div className="flex justify-between items-start">
-                                      <p className="text-sm text-slate-800">{notif.message}</p>
-                                      {isUnread && <span className="h-2 w-2 bg-indigo-500 rounded-full mt-1.5 flex-shrink-0"></span>}
+                                      <p className={`text-sm ${isNotifUnread ? 'text-slate-800 font-semibold' : 'text-slate-600'}`}>{notif.message}</p>
+                                      {isNotifUnread && <span className="h-2 w-2 bg-indigo-500 rounded-full mt-1.5 flex-shrink-0"></span>}
                                     </div>
-                                    <span className="text-xs text-slate-400 mt-1 block">
-                                        {new Date(notif.created_at).toLocaleDateString()}
-                                    </span>
+                                    <div className="flex justify-between items-center mt-1">
+                                      <span className="text-[10px] text-slate-400 capitalize">{(notif.type || '').replace(/_/g, ' ')}</span>
+                                      <span className="text-xs text-slate-400">
+                                          {new Date(notif.created_at).toLocaleDateString()}
+                                      </span>
+                                    </div>
                                 </div>
                               );
                           })

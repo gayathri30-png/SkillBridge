@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Plus, Users, Edit3, XCircle, MapPin, DollarSign, Clock } from "lucide-react";
+import { Plus, Users, Edit3, XCircle, MapPin, IndianRupee, Clock } from "lucide-react";
 import "./RecruiterJobs.css";
+import { formatSalary } from "../utils/formatters";
 
 const RecruiterJobs = () => {
   const [jobs, setJobs] = useState([]);
@@ -88,7 +89,7 @@ const RecruiterJobs = () => {
                   <h3>{job.title}</h3>
                   <div className="rj-meta">
                      <span><MapPin size={14}/> {job.location || "Remote"}</span>
-                     <span><DollarSign size={14}/> {job.budget}</span>
+                     <span><IndianRupee size={14}/> {formatSalary(job.budget)}</span>
                      <span><Clock size={14}/> {job.duration || 'Flexible'}</span>
                   </div>
                 </div>

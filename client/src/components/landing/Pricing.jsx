@@ -20,7 +20,7 @@ const Pricing = () => {
     },
     {
       name: 'Pro',
-      price: '19',
+      price: '1,499',
       description: 'For serious candidates looking to stand out.',
       features: [
         'Everything in Free',
@@ -35,7 +35,7 @@ const Pricing = () => {
     },
     {
       name: 'Enterprise',
-      price: '99',
+      price: '7,999',
       description: 'For recruiters and scaling companies.',
       features: [
         'Everything in Pro',
@@ -79,7 +79,7 @@ const Pricing = () => {
                         <div className="mb-8">
                             <h3 className="text-xl font-black mb-2 uppercase tracking-tight">{tier.name}</h3>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-black">${tier.price}</span>
+                                <span className="text-4xl font-black">₹{tier.price}</span>
                                 <span className={tier.highlight ? 'text-slate-400' : 'text-slate-500'}>/month</span>
                             </div>
                             <p className={`mt-4 text-sm font-medium ${tier.highlight ? 'text-slate-400' : 'text-slate-500'}`}>

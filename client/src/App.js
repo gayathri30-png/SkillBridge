@@ -17,6 +17,7 @@ import PublicProfile from "./pages/PublicProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Notifications from "./pages/Notifications";
+import InterviewDetails from "./pages/InterviewDetails";
 
 
 // Student Pages
@@ -33,13 +34,13 @@ import OnboardingChecklist from "./pages/OnboardingChecklist";
 
 import AISkillGapDetector from './pages/AISkillGapDetector';
 import AIProposalGenerator from './pages/AIProposalGenerator';
+import AIInterviewCoach from "./pages/AIInterviewCoach";
 
 // Recruiter Pages
 import PostJob from "./components/PostJob";
 import RecruiterJobs from "./components/RecruiterJobs";
 import RecruiterApplicants from "./components/RecruiterApplicants";
 import ApplicantEvaluation from "./components/profile/ApplicantEvaluation";
-import RecruiterMarketIntelligence from "./pages/RecruiterMarketIntelligence";
 
 // Admin Pages
 import AdminDashboard from "./pages/AdminDashboard";
@@ -103,7 +104,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ---------------- PROTECTED ROUTES ---------------- */}
 
@@ -139,6 +140,17 @@ function App() {
             }
           />
 
+          <Route
+            path="/interviews/:id"
+            element={
+              <ProtectedRoute allowedRoles={["student", "recruiter", "admin"]}>
+                <Layout>
+                  <InterviewDetails />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
           {/* Student Routes */}
           <Route
             path="/skills"
@@ -169,6 +181,16 @@ function App() {
               <ProtectedRoute allowedRoles={["student"]}>
                 <Layout>
                   <AIProposalGenerator />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/ai/interview/:id"
+            element={
+              <ProtectedRoute allowedRoles={["student"]}>
+                <Layout>
+                  <AIInterviewCoach />
                 </Layout>
               </ProtectedRoute>
             }
@@ -401,16 +423,6 @@ function App() {
             }
           />
 
-          <Route
-            path="/market-intelligence"
-            element={
-              <ProtectedRoute allowedRoles={["recruiter", "admin"]}>
-                <Layout>
-                  <RecruiterMarketIntelligence />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
 
           <Route
             path="/admin"

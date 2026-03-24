@@ -109,7 +109,68 @@ export const forgotPassword = (req, res) => {
 };
 
 // =======================
-// RESET PASSWORD
+// VERIFY PHONE
+// =======================
+export const verifyPhone = (req, res) => {
+  console.log("🎯 VERIFY PHONE endpoint HIT!");
+  const { phone } = req.body;
+
+  if (!phone) {
+    return res.status(400).json({ error: "Phone number is required" });
+  }
+
+  db.query("SELECT * FROM users WHERE phone = ?", [phone], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "No account found with that phone number" });
+    }
+
+    return res.json({ 
+      success: true, 
+      message: "Phone number verified" 
+    });
+  });
+};
+
+// =======================
+// RESET PASSWORD BY PHONE
+// =======================
+export const resetPasswordByPhone = (req, res) => {
+  console.log("🎯 RESET PASSWORD BY PHONE endpoint HIT!");
+  const { phone, newPassword } = req.body;
+
+  if (!phone || !newPassword) {
+    return res.status(400).json({ error: "Phone and new password are required" });
+  }
+
+  // Find user with phone
+  db.query("SELECT * FROM users WHERE phone = ?", [phone], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const user = results[0];
+    const hash = bcrypt.hashSync(newPassword, 10);
+
+    // Update password
+    const updateQuery = "UPDATE users SET password = ?, reset_password_token = NULL, reset_password_expires = NULL WHERE id = ?";
+
+    db.query(updateQuery, [hash, user.id], (err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      return res.json({ 
+        success: true, 
+        message: "Password has been reset successfully" 
+      });
+    });
+  });
+};
+
+// =======================
+// RESET PASSWORD (Legacy Token Based)
 // =======================
 export const resetPassword = (req, res) => {
   console.log("🎯 RESET PASSWORD endpoint HIT!");

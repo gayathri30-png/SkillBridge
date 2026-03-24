@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 import { createNotification } from "./notificationController.js";
+import { autoCreateChatRoom } from "./chatController.js";
 
 // --------------------------------
 // 1. STUDENT APPLY TO JOB (WITH AI MATCH SCORE)
@@ -80,10 +81,11 @@ export const applyToJob = (req, res) => {
                   createNotification(
                       recruiterId, 
                       'application', 
-                      `New application for ${jobTitle}`,
-                      job_id
+                      `New application for ${jobTitle}`
                   ).catch(console.error);
 
+                  // AUTO-CREATE CHAT ROOM
+                  autoCreateChatRoom(insertResult.insertId).catch(console.error);
 
                   res.status(201).json({
                     success: true,
@@ -118,6 +120,7 @@ export const getJobApplications = (req, res) => {
       u.id AS student_id,
       u.name AS student_name,
       u.email AS student_email,
+      i.status AS interview_status,
       (SELECT GROUP_CONCAT(s.name) 
        FROM user_skills us 
        JOIN skills s ON us.skill_id = s.id 
@@ -125,6 +128,7 @@ export const getJobApplications = (req, res) => {
     FROM applications a
     JOIN users u ON a.student_id = u.id
     JOIN jobs j ON a.job_id = j.id
+    LEFT JOIN interviews i ON a.id = i.application_id
     WHERE a.job_id = ? AND j.posted_by = ?
     ORDER BY a.ai_match_score DESC
   `;
@@ -151,6 +155,7 @@ export const getStudentApplications = (req, res) => {
       a.id,
       a.status,
       a.ai_match_score,
+      a.is_offer_accepted,
       a.created_at,
       j.id AS job_id,
       j.title AS job_title,
@@ -159,10 +164,12 @@ export const getStudentApplications = (req, res) => {
       j.experience_level,
       j.location,
       j.description AS job_description,
-      u.name AS company_name
+      u.name AS company_name,
+      i.id AS interview_id
     FROM applications a
     JOIN jobs j ON a.job_id = j.id
     JOIN users u ON j.posted_by = u.id
+    LEFT JOIN interviews i ON a.id = i.application_id
     WHERE a.student_id = ?
     ORDER BY a.created_at DESC
     `,
@@ -228,14 +235,14 @@ export const updateStatus = (req, res) => {
           if(!err && appRows.length > 0) {
               const studentId = appRows[0].student_id;
               const jobId = appRows[0].job_id;
+              const feedbackMsg = req.body.feedback_message ? ` Feedback: "${req.body.feedback_message}"` : '';
               
               db.query("SELECT title FROM jobs WHERE id = ?", [jobId], (err, jobRows) => {
                   const jobTitle = jobRows[0]?.title || "Job";
                   createNotification(
                       studentId,
                       'status_update',
-                      `Your application for ${jobTitle} was ${status}`,
-                      jobId
+                      `Your application for ${jobTitle} was ${status}.${feedbackMsg}`
                   ).catch(console.error);
               });
           }
@@ -266,6 +273,7 @@ export const getJobApplicantsSorted = (req, res) => {
       u.id AS student_id,
       u.name AS student_name,
       u.email AS student_email,
+      i.status AS interview_status,
       (SELECT GROUP_CONCAT(s.name) 
        FROM user_skills us 
        JOIN skills s ON us.skill_id = s.id 
@@ -274,6 +282,7 @@ export const getJobApplicantsSorted = (req, res) => {
     FROM applications a
     JOIN users u ON a.student_id = u.id
     JOIN jobs j ON a.job_id = j.id
+    LEFT JOIN interviews i ON a.id = i.application_id
 
     WHERE a.job_id = ?
       AND j.posted_by = ?
@@ -479,4 +488,65 @@ export const getOfferDetails = (req, res) => {
       res.json(results[0]);
     },
   );
+};
+
+// --------------------------------
+// 11. RECRUITER: MARK SUGGESTION SENT & NOTIFY STUDENT
+// --------------------------------
+export const markSuggestionSent = async (req, res) => {
+  const { id } = req.params;
+  const { interviewDate, interviewTime, message } = req.body;
+  const recruiter_id = req.user.id;
+  const recruiter_name = req.user.name;
+
+  try {
+    // 1. Update application flag
+    const [updateResult] = await db.promise().query(`
+      UPDATE applications a
+      JOIN jobs j ON a.job_id = j.id
+      SET a.suggestion_sent = TRUE
+      WHERE a.id = ? AND j.posted_by = ?
+    `, [id, recruiter_id]);
+
+    if (updateResult.affectedRows === 0) {
+      return res.status(404).json({ error: "Application not found or unauthorized" });
+    }
+
+    // 2. Fetch details for notification and chat
+    const [appRows] = await db.promise().query(`
+      SELECT a.student_id, a.job_id, j.title as job_title
+      FROM applications a
+      JOIN jobs j ON a.job_id = j.id
+      WHERE a.id = ?
+    `, [id]);
+
+    if (appRows.length > 0) {
+      const { student_id, job_id, job_title } = appRows[0];
+      const notificationMsg = `Interview Invite for ${job_title}: ${interviewDate} at ${interviewTime}.`;
+      
+      // 3. Create Notification
+      createNotification(student_id, 'interview_invitation', notificationMsg).catch(console.error);
+
+      // 4. Auto-create/Get Chat Room and send message
+      const room = await autoCreateChatRoom(id);
+      if (room) {
+        const chatMsg = `Hi! I'd like to invite you for an interview for the **${job_title}** position.\n\n**Proposed Time:** ${interviewDate} at ${interviewTime}\n\n**Note:** ${message || 'Looking forward to meeting you.'}`;
+        
+        await db.promise().query(
+          "INSERT INTO messages (room_id, sender_id, receiver_id, message, is_read) VALUES (?, ?, ?, ?, 0)",
+          [room.room_id, recruiter_id, student_id, chatMsg]
+        );
+
+        await db.promise().query(
+          "UPDATE chat_rooms SET last_message = ?, last_message_at = NOW() WHERE room_id = ?",
+          [`Interview Invitation: ${interviewDate}`, room.room_id]
+        );
+      }
+    }
+
+    res.json({ success: true, message: "Interview invitation sent and student notified" });
+  } catch (error) {
+    console.error("markSuggestionSent error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
 };
