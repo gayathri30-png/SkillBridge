@@ -65,7 +65,7 @@ const StudentDashboard = ({ user }) => {
         const summary = summaryRes.data;
         
         setStats({
-          profileStrength: 75,
+          profileStrength: summary.profileStrength || 75,
           appsSent: summary.application_count || 0,
           matchScoreAvg: summary.match_score_avg || 0,
           skillGap: summary.skillGaps?.length > 0 ? 100 - (summary.skillGaps[0].match_percentage || 0) : 0,
@@ -106,8 +106,8 @@ const StudentDashboard = ({ user }) => {
           setAiTargetJob(enrichedJobs[0].id);
         }
 
-        // Update stats average to reflect current recommendations
-        if (enrichedJobs.length > 0) {
+        // Update stats average ONLY if current sent match avg is 0 (new student fallback)
+        if (enrichedJobs.length > 0 && summary.match_score_avg === 0) {
           const avg = Math.round(enrichedJobs.reduce((sum, j) => sum + j.matchScore, 0) / enrichedJobs.length);
           setStats(prev => ({ ...prev, matchScoreAvg: avg }));
         }

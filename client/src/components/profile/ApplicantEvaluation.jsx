@@ -269,37 +269,7 @@ const ApplicantEvaluation = () => {
           </div>
         </section>
 
-        {/* 6. Interview Questions */}
-        <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="p-3 bg-emerald-100 rounded-2xl text-emerald-600"><Brain size={26} /></div>
-            <div>
-                <h2 className="text-2xl font-black text-slate-800">AI Suggested Interview Probes</h2>
-                <p className="text-slate-500 font-medium mt-1">Generated based on candidate's specific background</p>
-            </div>
-          </div>
-          
-          {ip.focus && (
-            <div className="mb-6 p-5 bg-emerald-50 text-emerald-800 rounded-2xl border border-emerald-100 flex items-start gap-4">
-              <Sparkles className="text-emerald-500 shrink-0 mt-1" size={24} />
-              <div>
-                <h4 className="font-bold text-emerald-900 mb-1 text-lg">💡 Interview Focus</h4>
-                <p className="font-medium text-emerald-700 leading-relaxed">{ip.focus}</p>
-              </div>
-            </div>
-          )}
 
-          <div className="space-y-4">
-            {ip.questions.map((q, i) => (
-              <div key={i} className="flex gap-5 items-start p-5 bg-slate-50 hover:bg-emerald-50 rounded-2xl transition-colors group border border-slate-100 hover:border-emerald-200">
-                <div className="h-10 w-10 rounded-xl bg-white shadow-sm text-slate-400 font-black flex items-center justify-center shrink-0 group-hover:bg-emerald-100 group-hover:text-emerald-700 transition-colors text-lg">
-                  {i+1}
-                </div>
-                <p className="text-slate-800 font-medium pt-2 leading-relaxed">{q}</p>
-              </div>
-            ))}
-          </div>
-        </section>
 
         {/* 5. Interview Scheduler */}
         <section className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">

@@ -65,305 +65,44 @@ export const calculateMatchScore = async (req, res) => {
   }
 };
 
-// AI Logic: Generate Proposal
-// Uses stored templates + dynamic insertion of student/job data
-export const generateProposal = async (req, res) => {
-  const { jobId } = req.params;
-  const studentId = req.user.id;
 
-  try {
-    // 1. Fetch Data with Join for Company Name (from Recruiter's user profile)
-    const [[job]] = await db.promise().query(`
-      SELECT j.*, u.name as company_name 
-      FROM jobs j 
-      JOIN users u ON j.posted_by = u.id 
-      WHERE j.id = ?
-    `, [jobId]);
 
-    const [[student]] = await db.promise().query("SELECT * FROM users WHERE id = ?", [studentId]);
-    
-    // Get Skills
-     const [studentSkills] = await db.promise().query(
-      `SELECT s.name FROM skills s
-       JOIN user_skills us ON s.id = us.skill_id
-       WHERE us.user_id = ?`,
-      [studentId]
-    );
-
-    if (!job || !student) {
-        return res.status(404).json({ message: "Job or Student not found" });
-    }
-
-    const skillsString = (studentSkills && studentSkills.length > 0) 
-      ? studentSkills.map(s => s.name).join(", ") 
-      : "my technical repertoire";
-    
-    const studentBio = student.bio || "a dedicated professional with a passion for excellence";
-    
-    // 2. Generate Logic (Template Based acting as AI)
-    const templates = [
-        `Dear Hiring Manager,\n\nI am excited to apply for the ${job.title} position at ${job.company_name || 'your company'}. With my background in ${skillsString}, I am confident I can contribute effectively to your team.\n\nI have a strong understanding of ${job.description.substring(0, 80)}... and I adhere to high standards of code quality.\n\nLooking forward to the opportunity to discuss how my skills align with your needs.\n\nSincerely,\n${student.name}`,
-        
-        `To the ${job.title} Hiring Team,\n\nI discovered your opening for a ${job.title} and was immediately drawn to the challenge. My expertise in ${skillsString} makes me a strong fit for this role.\n\nSpecifically, your requirement for ${job.description.substring(0, 60)}... aligns perfectly with my background as ${studentBio.substring(0, 100)}.\n\nThank you for considering my application.\n\nBest regards,\n${student.name}`
-    ];
-
-    // Pick a random template to simulate "varied AI generation"
-    const proposal = templates[Math.floor(Math.random() * templates.length)];
-
-    res.json({ proposal });
-
-  } catch (error) {
-    console.error("AI Proposal Error:", error);
-    res.status(500).json({ message: "Error generating proposal." });
-  }
-};
-// --------------------------------
-// AI 10, 8, 9, 12, 18: UNIFIED APPLICATION ANALYSIS
-// --------------------------------
-export const analyzeApplicationInsights = async (req, res) => {
-  const { applicationId } = req.params;
-
-  try {
-    // 1. Fetch Application + Student Profile + Job Requirements
-    const query = `
-      SELECT 
-        a.proposal, a.ai_match_score,
-        j.title as job_title, j.description as job_desc,
-        u.id as student_id, u.name as student_name, u.bio as student_bio,
-        (SELECT GROUP_CONCAT(s.name) FROM user_skills us JOIN skills s ON us.skill_id = s.id WHERE us.user_id = u.id) as student_skills
-      FROM applications a
-      JOIN jobs j ON a.job_id = j.id
-      JOIN users u ON a.student_id = u.id
-      WHERE a.id = ?
-    `;
-
-    const [[data]] = await db.promise().query(query, [applicationId]);
-    if (!data) return res.status(404).json({ error: "Application not found" });
-
-    // 2. AI 10: Candidate Summary
-    const summary = `Candidate ${data.student_name} is a strong fit for the ${data.job_title} role with expertise in ${data.student_skills || 'various technologies'}. Their proposal shows ${data.proposal.length > 200 ? 'depth' : 'conciseness'} and aligns with the core requirements.`;
-    
-    // 4. AI 9 & 18: Communication & Sentiment
-    const words = data.proposal.toLowerCase().split(/\s+/);
-    const positiveWords = ['excited', 'confident', 'passionate', 'expert', 'love', 'contribute', 'growth'];
-    const positiveMatch = words.filter(w => positiveWords.includes(w)).length;
-    
-    const commStyle = data.proposal.length > 300 ? "Detail-oriented & Professional" : "Direct & Results-focused";
-    const sentiment = positiveMatch > 2 ? "Highly Enthusiastic" : "Professional/Neutral";
-
-    // 5. AI 12: Predictive Success Score (Weighted Heuristic)
-    const successProbability = Math.min(100, Math.round(
-        (parseFloat(data.ai_match_score) * 0.7) + (positiveMatch * 10)
-    ));
-
-    res.json({
-      applicationId,
-      insights: {
-        summary,
-        commStyle,
-        sentiment,
-        successProbability,
-        keyStrengths: data.student_skills ? data.student_skills.split(',').slice(0, 3) : []
-      }
-    });
-
-  } catch (error) {
-    console.error("AI Analysis Error:", error);
-    res.status(500).json({ error: "Failed to generate AI insights" });
-  }
-};
 
 // --------------------------------
-// AI 13 & 14: INTERVIEW & FEEDBACK GENERATOR
-// --------------------------------
-export const generateInterviewMaterials = async (req, res) => {
-  const { applicationId } = req.params;
-  const { type } = req.query; // 'questions' or 'feedback'
-
-  try {
-    const query = `
-      SELECT a.proposal, j.title, j.description 
-      FROM applications a 
-      JOIN jobs j ON a.job_id = j.id 
-      WHERE a.id = ?
-    `;
-    const [[data]] = await db.promise().query(query, [applicationId]);
-
-    if (type === 'questions') {
-      const questions = [
-        `Based on your experience with ${data.title}, how do you handle technical debt?`,
-        `In your proposal, you mentioned interest in ${data.description.substring(0, 20)}... Can you elaborate?`,
-        `How would you apply your specific skillset to improve our current workflow?`
-      ];
-      return res.json({ questions });
-    }
-
-    if (type === 'feedback') {
-      const feedback = `Thank you for applying for the ${data.title} role. While we were impressed with your proposal, we've decided to move forward with candidates whose experience more closely aligns with our current specific stack. We encourage you to keep developing your skills in ${data.title} related domains.`;
-      return res.json({ feedback });
-    }
-
-    res.status(400).json({ error: "Invalid request type" });
-
-  } catch (error) {
-    res.status(500).json({ error: "Failed to generate materials" });
-  }
-};
-
-// --------------------------------
-// AI 11: CANDIDATE COMPARISON ENGINE
-// --------------------------------
-export const compareCandidates = async (req, res) => {
-  const { ids } = req.body; // Array of application IDs
-
-  if (!ids || !Array.isArray(ids) || ids.length < 2) {
-    return res.status(400).json({ error: "Select at least 2 candidates to compare" });
-  }
-
-  try {
-    const query = `
-      SELECT 
-        a.id, a.ai_match_score, u.name, 
-        (SELECT GROUP_CONCAT(s.name) FROM user_skills us JOIN skills s ON us.skill_id = s.id WHERE us.user_id = u.id) as skills
-      FROM applications a
-      JOIN users u ON a.student_id = u.id
-      WHERE a.id IN (?)
-    `;
-
-    const [results] = await db.promise().query(query, [ids]);
-    
-    const comparison = results.map(r => ({
-      name: r.name,
-      matchScore: r.ai_match_score,
-      topSkills: r.skills ? r.skills.split(',').slice(0, 4) : [],
-      verdict: r.ai_match_score > 80 ? "Top Tier" : "Mid Range"
-    }));
-
-    res.json({ comparison });
-  } catch (error) {
-    res.status(500).json({ error: "Comparison failed" });
-  }
-};
-
-// --------------------------------
-// AI 16: SMART CANDIDATE SOURCING
-// --------------------------------
-export const findSimilarCandidates = async (req, res) => {
-  const { studentId } = req.body;
-
-  try {
-    // 1. Get reference student's skills
-    const [refSkills] = await db.promise().query(
-      `SELECT skill_id FROM user_skills WHERE user_id = ?`,
-      [studentId]
-    );
-
-    if (refSkills.length === 0) {
-      return res.json({ candidates: [] });
-    }
-
-    const skillIds = refSkills.map(s => s.skill_id);
-
-    // 2. Find other students with overlapping skills
-    const query = `
-      SELECT 
-        u.id, u.name, u.email, u.bio,
-        u.location, u.github_url,
-        COUNT(us.skill_id) as overlap_count
-      FROM users u
-      JOIN user_skills us ON u.id = us.user_id
-      WHERE us.skill_id IN (?) AND u.id != ? AND u.role = 'student'
-      GROUP BY u.id
-      ORDER BY overlap_count DESC
-      LIMIT 5
-    `;
-
-    const [similar] = await db.promise().query(query, [skillIds, studentId]);
-    
-    // Add additional metadata for "AI feel"
-    const candidates = similar.map(c => ({
-      ...c,
-      ai_recommendation_reason: `Matches ${c.overlap_count} core skills with your top candidate.`,
-      suitability_index: Math.round((c.overlap_count / skillIds.length) * 100)
-    }));
-
-    res.json({ candidates });
-  } catch (error) {
-    console.error("Sourcing Error:", error);
-    res.status(500).json({ error: "Failed to find similar candidates" });
-  }
-};
-
-// --------------------------------
-// AI 17: AI-POWERED INTERVIEW SCHEDULER (RECOMMENDATION)
-// --------------------------------
-export const getInterviewSchedulingAdvice = async (req, res) => {
-  const { applicationId } = req.params;
-
-  try {
-    const [[app]] = await db.promise().query(
-      `SELECT u.name, a.created_at FROM applications a JOIN users u ON a.student_id = u.id WHERE a.id = ?`,
-      [applicationId]
-    );
-
-    // AI heuristic for "Best time to interview"
-    const advice = [
-      { time: "Tuesday, 10:00 AM", reason: "Candidate typically most active during morning hours based on application timestamp." },
-      { time: "Wednesday, 2:00 PM", reason: "Mid-week consistency matches candidate's historical engagement patterns." }
-    ];
-
-    res.json({ 
-      candidate: app.name,
-      advice,
-      best_format: "Technical Peer Review (45 mins)"
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Scheduling analysis failed" });
-  }
-};
-
-// --------------------------------
-// AI 24: MARKET INTELLIGENCE (Salary Benchmarks & Dashboard)
+// MARKET INTELLIGENCE (Salary Benchmarks & Dashboard)
 // --------------------------------
 export const getMarketIntelligence = async (req, res) => {
   const { jobId } = req.params;
 
   try {
     if (jobId) {
-      // Logic for a specific job post
+      // Logic for a specific job post - focus on demand vs supply
       const [skills] = await db.promise().query(
         `SELECT s.name FROM skills s JOIN job_skills js ON s.id = js.skill_id WHERE js.job_id = ?`,
         [jobId]
       );
-
       const skillNames = skills.map(s => s.name);
-      
-      const highDemand = ['React', 'Node.js', 'Python', 'AI', 'Cloud', 'TypeScript', 'Docker', 'AWS', 'Next.js'];
-      const matchedHighDemand = skillNames.filter(s => highDemand.includes(s));
-      
-      const minSalary = 45000 + (matchedHighDemand.length * 8000);
-      const maxSalary = minSalary + 25000;
+
+      const [candidateMatchCount] = await db.promise().query(`
+        SELECT COUNT(DISTINCT us.user_id) as count
+        FROM user_skills us
+        JOIN skills s ON us.skill_id = s.id
+        WHERE s.name IN (?)
+      `, [skillNames.length > 0 ? skillNames : ['']]);
 
       return res.json({
         jobId,
         benchmarks: {
-          currency: "USD",
-          min: minSalary,
-          max: maxSalary,
-          median: (minSalary + maxSalary) / 2,
-          market_demand: matchedHighDemand.length > 2 ? "High" : "Moderate",
-          insight: matchedHighDemand.length > 0 
-            ? `High demand for ${matchedHighDemand.join(", ")} is driving up local benchmarks.`
-            : "Standard market rates apply for this skill set."
+          market_demand: candidateMatchCount[0].count > 5 ? "High" : "Moderate",
+          insight: `${candidateMatchCount[0].count} qualified candidates found on the platform with matching skills.`
         }
       });
     }
 
     // GENERAL DASHBOARD LOGIC
-    // Get total active candidates
     const [[candidatesRes]] = await db.promise().query(`SELECT COUNT(*) as total FROM users WHERE role = 'student'`);
+    const [[avgScoreRes]] = await db.promise().query(`SELECT AVG(ai_match_score) as avgScore FROM applications WHERE ai_match_score IS NOT NULL`);
     
-    // Get top trending skills based on student profiles
     const [topSkillsList] = await db.promise().query(`
       SELECT s.name as skill, COUNT(us.skill_id) as demand
       FROM skills s
@@ -373,28 +112,13 @@ export const getMarketIntelligence = async (req, res) => {
       LIMIT 5
     `);
 
-    // Get average match score historically (Mock heuristic for now based on applications)
-    const [[avgScoreRes]] = await db.promise().query(`SELECT AVG(ai_match_score) as avgScore FROM applications WHERE ai_match_score IS NOT NULL`);
-    
-    // Generate some insights based on data
-    const insights = [];
-    if (topSkillsList.length > 0) {
-      insights.push(`**${topSkillsList[0].skill}** is the most abundant skill among candidates on the platform.`);
-      if (topSkillsList[0].demand > 5) {
-        insights.push(`There is an oversupply of ${topSkillsList[0].skill} developers. Consider raising requirements to filter top talent.`);
-      }
-    }
-    insights.push(`The platform average candidate match score is currently ${Math.round(avgScoreRes.avgScore || 75)}%.`);
-
-    // Format for the dashboard
     res.json({
       success: true,
       data: {
         totalCandidates: candidatesRes.total || 0,
-        averageMatchScore: Math.round(avgScoreRes.avgScore || 75),
+        averageMatchScore: Math.round(avgScoreRes.avgScore || 0),
         topSkills: topSkillsList.map(s => ({ name: s.skill, count: s.demand })),
-        marketVelocity: 88, // Mock metric
-        insights
+        insights: [`The platform currently hosts ${candidatesRes.total || 0} active talent profiles.`]
       }
     });
 
@@ -404,168 +128,9 @@ export const getMarketIntelligence = async (req, res) => {
   }
 };
 
-// --------------------------------
-// AI 21: AI-POWERED WORKFLOW AUTOMATION
-// --------------------------------
-export const runApplicantAutomation = async (req, res) => {
-  const { applicationId, rules } = req.body;
 
-  try {
-    const [[app]] = await db.promise().query(
-      `SELECT ai_match_score, status FROM applications WHERE id = ?`,
-      [applicationId]
-    );
 
-    let logs = [];
-    let updatedStatus = app.status;
 
-    // Rule: Auto-Shortlist if score > threshold
-    if (rules.autoShortlist && app.ai_match_score >= (rules.threshold || 85)) {
-      updatedStatus = 'accepted';
-      logs.push(`Auto-shortlisted candidate due to high match score (${app.ai_match_score}%)`);
-      
-      await db.promise().query(`UPDATE applications SET status = ? WHERE id = ?`, ['accepted', applicationId]);
-    }
-
-    res.json({
-      success: true,
-      status: updatedStatus,
-      logs
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Automation execution failed" });
-  }
-};
-
-// --------------------------------
-// AI 26: AI COACH FOR RECRUITERS
-// --------------------------------
-export const getRecruiterCoachAdvice = async (req, res) => {
-  const { applicationId } = req.params;
-
-  try {
-    const [[app]] = await db.promise().query(
-      `SELECT ai_match_score, proposal FROM applications WHERE id = ?`,
-      [applicationId]
-    );
-
-    const match = app.ai_match_score;
-    let tips = [];
-
-    if (match > 85) {
-      tips.push("High-priority hire. Fast-track to final round if culture fit is verified.");
-      tips.push("Negotiation Tip: This candidate likely has multiple offers. Lead with growth and project impact.");
-    } else if (match > 60) {
-      tips.push("Solid technical base. Focus interview on 'Potential Risks' highlighted in analysis.");
-      tips.push("Ask about 'Cloud Architecture' - candidate shows theoretical knowledge but limited applied examples.");
-    } else {
-      tips.push("Consider archiving. Low skill overlap may lead to long onboarding cycles.");
-    }
-
-    res.json({
-      verdict: match > 80 ? "Hire Candidate" : "Mixed Signals",
-      coachTips: tips,
-      suggestedQuestions: [
-        "How would you handle a production failure in a high-concurrency Node.js environment?",
-        "Describe a time you had to learn a complex framework under a tight deadline."
-      ]
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Coach analysis failed" });
-  }
-};
-
-// --------------------------------
-// AI 27: SKILLS VERIFICATION AI
-// --------------------------------
-export const verifySkillsAI = async (req, res) => {
-  const { studentId } = req.params;
-
-  try {
-    const [skills] = await db.promise().query(
-      `SELECT s.name, us.id FROM skills s JOIN user_skills us ON s.id = us.skill_id WHERE us.user_id = ?`,
-      [studentId]
-    );
-
-    // AI Mock Verification Logic
-    // In a real app, this would check GitHub repos, project links, or external certs
-    const verifyStatus = skills.map(s => ({
-      skill: s.name,
-      verified: Math.random() > 0.3,
-      confidence: Math.round(70 + Math.random() * 30),
-      reason: "Validated via project analysis."
-    }));
-
-    res.json({
-      verifiedSkills: verifyStatus,
-      trustScore: Math.round(verifyStatus.filter(v => v.verified).length / verifyStatus.length * 100)
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Verification failed" });
-  }
-};
-
-// --------------------------------
-// AI 19: BIAS DETECTION & MITIGATION
-// --------------------------------
-export const analyzeBiasAI = async (req, res) => {
-  const { applicationId } = req.params;
-  // Mock analysis for gender/age/origin bias keywords
-  res.json({
-    bias_score: 5, // 0-100 (lower is better)
-    detected_patterns: ["No biased linguistic patterns detected in recruiter evaluation notes."],
-    mitigation_tip: "Ensure anonymous resume screening is active to further reduce unconscious bias."
-  });
-};
-
-// --------------------------------
-// AI 20: CANDIDATE LIFETIME VALUE (CLV)
-// --------------------------------
-export const predictCLV = async (req, res) => {
-  const { studentId } = req.params;
-  // Predict based on skill growth rate and project complexity
-  res.json({
-    projected_value: "High",
-    tenure_probability: "82%",
-    growth_velocity: "Top 15%",
-    insight: "Candidate displays traits of a 'Rapid Upskiller' based on certificate acquisition rate."
-  });
-};
-
-// --------------------------------
-// AI 28: EMOTIONAL INTELLIGENCE (EQ) SCORING
-// --------------------------------
-export const analyzeEQ = async (req, res) => {
-  const { applicationId } = req.params;
-  // Mock EQ analysis from communication style
-  res.json({
-    eq_score: 78,
-    traits: ["Empathetic Communication", "Collaboration-Oriented", "Conflict-Resilient"],
-    analysis: "Proposal text shows high social awareness and structured professional maturity."
-  });
-};
-
-// --------------------------------
-// AI 30: HIRING FUNNEL OPTIMIZATION
-// --------------------------------
-export const getFunnelOptimization = async (req, res) => {
-  const { jobId } = req.params;
-  try {
-    const [counts] = await db.promise().query(
-        `SELECT status, COUNT(*) as count FROM applications WHERE job_id = ? GROUP BY status`,
-        [jobId]
-    );
-    
-    res.json({
-        bottlenecks: counts.find(c => c.status === 'pending')?.count > 10 ? "Screening Congestion" : "None",
-        velocity: "Fast (Avg 2.4 days to shortlist)",
-        conversion_rate: "12% (Application to Shortlist)",
-        ai_suggestion: "Automate technical screening for 'React' skills to reduce manual screening time."
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Funnel analysis failed" });
-  }
-};
 // --------------------------------
 // AI 31: SMART JOB POST GENERATOR (COPILOT)
 // --------------------------------
@@ -743,25 +308,17 @@ export const getSkillGapPathways = async (req, res) => {
 
     // Fallback if Gemini failed, gave invalid JSON, or API key is missing
     if (pathways.length === 0 && missing.length > 0) {
-        pathways = missing.map((skill, index) => {
-          // Deterministic logic based on skill name length and index
-          const diffIndex = (skill.length + index) % 3;
-          const difficulties = ["Easy", "Medium", "Complex"];
-          const impact = 5 + ((skill.length * 7 + index * 3) % 15);
-          const timeframes = ["1-2 weeks", "2-4 weeks", "1-2 months"];
-
-          return {
+        pathways = missing.map(skill => ({
             skill,
-            difficulty: difficulties[diffIndex],
-            impact: impact,
+            difficulty: "Analysis Pending",
+            impact: 10,
             resources: [
-              { name: `${skill} Official Docs`, url: `https://www.google.com/search?q=${encodeURIComponent(skill)}+documentation` },
-              { name: `${skill} Tutorials`, url: `https://www.youtube.com/results?search_query=${encodeURIComponent(skill)}+tutorial` }
+              { name: `${skill} Documentation`, url: `https://www.google.com/search?q=${encodeURIComponent(skill)}+official+documentation` }
             ],
-            estimated_time: timeframes[diffIndex]
-          };
-        });
+            estimated_time: "Varies"
+        }));
     }
+
 
     const result = {
       job_title: currentJobTitle,
@@ -1279,23 +836,23 @@ export const getRecruiterAISummary = async (req, res) => {
   }
 };
 
+
+
 // ================================
-// UNIFIED AI EVALUATION ENGINE
+// SIMPLIFIED EVALUATION ENGINE (NON-MOCK)
 // ================================
 export const evaluateApplication = async (req, res) => {
   const { applicationId } = req.params;
 
   try {
-    // 1. Fetch application + student + job data
     const [[appData]] = await db.promise().query(`
       SELECT 
         a.id as application_id, a.student_id, a.job_id, a.proposal, 
         a.ai_match_score, a.status, a.suggestion_sent, a.created_at,
         u.id as user_id, u.name as student_name, u.email as student_email,
         u.bio as student_bio, u.avatar, u.location as student_location,
-        u.github_url, u.linkedin_url, u.created_at as user_created_at,
+        u.github_url, u.linkedin_url,
         j.title as job_title, j.description as job_desc, j.location as job_location,
-        j.budget, j.job_type, j.experience_level,
         (SELECT GROUP_CONCAT(s.name) FROM user_skills us JOIN skills s ON us.skill_id = s.id WHERE us.user_id = u.id) as student_skills,
         (SELECT GROUP_CONCAT(s.name) FROM job_skills js JOIN skills s ON js.skill_id = s.id WHERE js.job_id = j.id) as job_skills
       FROM applications a
@@ -1304,411 +861,17 @@ export const evaluateApplication = async (req, res) => {
       WHERE a.id = ?
     `, [applicationId]);
 
-    if (!appData) {
-      return res.status(404).json({ error: "Application not found" });
-    }
-
-    // New Enhancement: Benchmarks & Timeline
-    const [[benchmarks]] = await db.promise().query(`SELECT MAX(ai_match_score) as max_score, AVG(ai_match_score) as avg_score FROM applications WHERE job_id = ?`, [appData.job_id]);
-    const [[activity]] = await db.promise().query(`SELECT COUNT(*) as total_apps FROM applications WHERE student_id = ?`, [appData.student_id]);
-    const [[lastMsg]] = await db.promise().query(`SELECT MAX(created_at) as last_active FROM messages WHERE sender_id = ?`, [appData.student_id]);
-
-    appData.benchmarks = {
-      max: benchmarks?.max_score ? Math.round(benchmarks.max_score) : Math.round(appData.ai_match_score || 0),
-      avg: benchmarks?.avg_score ? Math.round(benchmarks.avg_score) : Math.round(appData.ai_match_score || 0)
-    };
-
-    appData.timeline = {
-      account_age_days: Math.max(0, Math.floor((new Date() - new Date(appData.user_created_at)) / (1000 * 60 * 60 * 24))),
-      total_applications: activity?.total_apps || 1,
-      last_active: lastMsg?.last_active || appData.created_at
-    };
+    if (!appData) return res.status(404).json({ error: "Application not found" });
 
     const studentSkills = appData.student_skills ? appData.student_skills.split(',').map(s => s.trim()) : [];
     const jobSkills = appData.job_skills ? appData.job_skills.split(',').map(s => s.trim()) : [];
 
-    // Skill matching
-    const matchedSkills = studentSkills.filter(ss => 
-      jobSkills.some(js => js.toLowerCase() === ss.toLowerCase())
-    );
-    const missingSkills = jobSkills.filter(js => 
-      !studentSkills.some(ss => ss.toLowerCase() === js.toLowerCase())
-    );
-    const extraSkills = studentSkills.filter(ss =>
-      !jobSkills.some(js => js.toLowerCase() === ss.toLowerCase())
-    );
+    const matchedSkills = studentSkills.filter(ss => jobSkills.some(js => js.toLowerCase() === ss.toLowerCase()));
+    const missingSkills = jobSkills.filter(js => !studentSkills.some(ss => ss.toLowerCase() === js.toLowerCase()));
 
-    const matchScore = appData.ai_match_score || 
-      (jobSkills.length > 0 ? Math.round((matchedSkills.length / jobSkills.length) * 100) : 75);
-
-    // Proposal analysis
-    const proposalText = appData.proposal || '';
-    const proposalWords = proposalText.toLowerCase().split(/\s+/);
-    const positiveWords = ['excited', 'confident', 'passionate', 'expert', 'love', 'contribute', 'growth', 'innovative', 'dedicated', 'strong', 'eager', 'thrive', 'excel', 'experience', 'proven'];
-    const negativeWords = ['unfortunately', 'lack', 'weakness', 'struggle', 'difficult', 'limited', 'concern'];
-    const positiveCount = proposalWords.filter(w => positiveWords.includes(w)).length;
-    const negativeCount = proposalWords.filter(w => negativeWords.includes(w)).length;
-
-    // Recommended action
-    let recommendedAction = 'Interview';
-    if (matchScore >= 85) recommendedAction = 'Shortlist';
-    else if (matchScore >= 70) recommendedAction = 'Interview';
-    else if (matchScore >= 50) recommendedAction = 'Review Further';
-    else recommendedAction = 'Reject';
-
-    // ===== TAB 1: EXECUTIVE SUMMARY =====
-    const executiveSummary = {
-      overallScore: matchScore,
-      verdict: matchScore >= 80 ? 'Highly Recommended' : matchScore >= 60 ? 'Recommended' : 'Needs Review',
-      summary: `Candidate ${appData.student_name} demonstrates ${matchScore >= 80 ? 'exceptional' : matchScore >= 60 ? 'solid' : 'developing'} alignment with the ${appData.job_title} role, with expertise in ${matchedSkills.slice(0, 3).join(', ') || 'relevant technologies'}. ${proposalText.length > 200 ? 'Their detailed proposal shows depth of thought and genuine interest.' : 'Their proposal is concise and focused on key qualifications.'}`,
-      technicalProficiency: Math.min(100, matchScore + Math.floor(Math.random() * 8)),
-      culturalAlignment: Math.min(100, 60 + positiveCount * 8 + Math.floor(Math.random() * 15)),
-      technicalDepth: Math.min(100, Math.round(matchScore * 0.85) + (extraSkills.length * 3)),
-      keyStrengths: matchedSkills.slice(0, 5),
-      keyRisks: missingSkills.slice(0, 3).length > 0 ? missingSkills.slice(0, 3) : ['Limited production experience visible'],
-      recommendedAction
-    };
-
-    // ===== TAB 2: BEHAVIORAL ANALYSIS =====
-    const commStyle = proposalText.length > 300 ? 'Detail-oriented & Professional' : 
-                       proposalText.length > 150 ? 'Structured & Technical' : 'Direct & Results-focused';
-    const sentimentScore = Math.min(100, Math.max(20, 50 + (positiveCount * 12) - (negativeCount * 15)));
-    const sentimentLabel = sentimentScore >= 80 ? 'Highly Enthusiastic' : sentimentScore >= 60 ? 'Positive' : 'Professional/Neutral';
-
-    const behavioralAnalysis = {
-      communicationStyle: commStyle,
-      communicationTraits: proposalText.length > 200 ? ['Articulate', 'Professional', 'Thorough'] : ['Concise', 'Direct', 'Efficient'],
-      emotionalIntelligence: {
-        label: positiveCount > 2 ? 'High EQ Detected' : 'Standard EQ',
-        description: positiveCount > 2 
-          ? 'Linguistic tokens suggest strong self-awareness and empathy in collaborative contexts. Candidate uses inclusive language when describing successes.' 
-          : 'Communication style is professional and task-oriented. Consider probing for team collaboration examples.',
-        traits: positiveCount > 2 ? ['Empathetic', 'Collaborative'] : ['Task-focused', 'Independent']
-      },
-      sentiment: {
-        score: sentimentScore,
-        label: sentimentLabel,
-        description: `The tone is ${sentimentLabel.toLowerCase()}, ${positiveCount > negativeCount ? 'evidence-based, and focused on value delivery.' : 'with a balanced and realistic perspective.'} ${negativeCount === 0 ? 'Zero red flags in behavioral sentiment.' : 'Minor cautionary notes detected; recommend further discussion.'}`
-      }
-    };
-
-    // ===== TAB 3: INTERVIEW PREP =====
-    let interviewQuestions = [];
-    let interviewFeedback = null;
-    let interviewFocus = null;
-
-    // Try Gemini for interview questions
-    try {
-      const prompt = `Generate 5 targeted interview questions for a ${appData.job_title} candidate who has skills in ${matchedSkills.join(', ') || 'general technologies'} and is missing ${missingSkills.join(', ') || 'no key skills'}.
-
-Job Description: ${appData.job_desc ? appData.job_desc.substring(0, 300) : 'N/A'}
-
-Requirements:
-- 2 technical questions probing their strongest skills
-- 1 question about their skill gaps and willingness to learn
-- 1 behavioral/situational question
-- 1 culture-fit question
-
-Return ONLY a JSON object with this exact structure:
-{
-  "interview_focus": "1-2 sentences of strategic advice to the recruiter on what to probe and focus on during the interview based on the skill gaps.",
-  "questions": ["q1", "q2", "q3", "q4", "q5"]
-}
-No markdown.`;
-
-      const geminiResponse = await generateGeminiResponse(prompt, 'You are a senior technical interviewer. Return only valid JSON.');
-      if (geminiResponse) {
-        const cleanJson = geminiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const parsed = JSON.parse(cleanJson);
-        interviewQuestions = parsed.questions || [];
-        interviewFocus = parsed.interview_focus || null;
-      }
-    } catch (e) {
-      console.warn('Gemini interview questions failed, using templates:', e.message);
-    }
-
-    // Fallback questions and focus
-    if (interviewQuestions.length === 0) {
-      const topSkills = matchedSkills.slice(0, 2);
-      interviewFocus = `Candidate shows strength in core technologies but lacks ${missingSkills[0] || 'some secondary requirements'}. Probe their ability to learn new stacks quickly on the job.`;
-      interviewQuestions = [
-        `Tell me about a challenging project you built using ${topSkills[0] || appData.job_title}. What was the architecture and how did you handle scalability?`,
-        `How do you stay updated with the latest developments in ${topSkills[1] || topSkills[0] || 'your field'}? Can you share a recent example?`,
-        missingSkills.length > 0 
-          ? `Your profile doesn't mention ${missingSkills[0]}. How would you approach learning it if it were required for a project?`
-          : `What's a technology or practice you've been wanting to learn, and why?`,
-        `Describe a time when you disagreed with a team member on a technical approach. How did you resolve it?`,
-        `What kind of work environment do you thrive in, and how do you handle tight deadlines?`
-      ];
-    }
-
-    const interviewPrep = {
-      focus: interviewFocus,
-      questions: interviewQuestions,
-      feedback: interviewFeedback
-    };
-
-    // ===== TAB 4: SKILL GAP VISUALIZER =====
-    const skillsMatch = jobSkills.map(js => {
-      const isMatched = studentSkills.some(ss => ss.toLowerCase() === js.toLowerCase());
-      return {
-        skill: js,
-        requirement: 'Required',
-        candidateLevel: isMatched ? 'Advanced' : null,
-        status: isMatched ? 'match' : 'missing'
-      };
-    });
-
-    // Add extra candidate skills
-    const extraSkillsData = extraSkills.map(es => ({
-      skill: es,
-      requirement: 'Bonus',
-      candidateLevel: 'Proficient',
-      status: 'extra'
-    }));
-
-    let upskillInsight = '';
-    if (missingSkills.length > 0) {
-      upskillInsight = `While the candidate lacks ${missingSkills[0]} experience, their ${matchedSkills[0] || 'existing technical'} background suggests a fast learning curve. Estimated time to proficiency: ${missingSkills.length <= 2 ? '1-2 weeks' : '3-4 weeks'}.`;
-    } else {
-      upskillInsight = 'The candidate meets all required skills. Consider exploring depth of knowledge in each area during the interview.';
-    }
-
-    const skillGap = {
-      matchPercentage: matchScore,
-      skills: [...skillsMatch, ...extraSkillsData],
-      missingSkills,
-      matchedSkills,
-      upskillInsight
-    };
-
-    // ===== TAB 5: SMART SOURCING =====
-    let similarCandidates = [];
-    try {
-      const [refSkills] = await db.promise().query(
-        `SELECT skill_id FROM user_skills WHERE user_id = ?`,
-        [appData.student_id]
-      );
-
-      if (refSkills.length > 0) {
-        const skillIds = refSkills.map(s => s.skill_id);
-        const [similar] = await db.promise().query(`
-          SELECT 
-            u.id, u.name, u.email, u.bio, u.location,
-            COUNT(us.skill_id) as overlap_count
-          FROM users u
-          JOIN user_skills us ON u.id = us.user_id
-          WHERE us.skill_id IN (?) AND u.id != ? AND u.role = 'student'
-          GROUP BY u.id
-          ORDER BY overlap_count DESC
-          LIMIT 5
-        `, [skillIds, appData.student_id]);
-
-        similarCandidates = similar.map(c => ({
-          name: c.name,
-          location: c.location || 'Remote',
-          matchPercentage: Math.round((c.overlap_count / skillIds.length) * 100),
-          reason: `Matches ${c.overlap_count} core skills with this candidate.`
-        }));
-      }
-    } catch (e) { console.warn('Similar candidates fetch failed:', e.message); }
-
-    const smartSourcing = { candidates: similarCandidates };
-
-    // ===== TAB 6: AI SCHEDULER =====
-    const applyDay = new Date(appData.created_at).getDay();
-    const scheduling = {
-      advice: [
-        { 
-          time: 'Tuesday, 10:00 AM', 
-          reason: 'Candidate typically most active during morning hours based on application timestamp.' 
-        },
-        { 
-          time: 'Wednesday, 2:00 PM', 
-          reason: 'Mid-week consistency matches candidate\'s historical engagement patterns.' 
-        },
-        {
-          time: 'Thursday, 11:00 AM',
-          reason: 'Optimal slot for technical interviews based on industry best practices.'
-        }
-      ],
-      bestFormat: matchScore >= 80 
-        ? 'Technical Peer Review (45 mins)' 
-        : matchScore >= 60 
-          ? 'Technical Screen + Behavioral (60 mins)'
-          : 'Initial Phone Screen (30 mins)',
-      tip: matchScore >= 80 
-        ? `Don't ask basic ${matchedSkills[0] || 'technical'} questions; they clearly excel at the foundations. Focus on system design and architecture decisions.`
-        : `Focus the interview on practical exercises that assess ${missingSkills[0] || 'core skills'} and problem-solving approach.`
-    };
-
-    // ===== TAB 7: MARKET INTEL =====
-    let marketIntel = null;
-    try {
-      const [skills] = await db.promise().query(
-        `SELECT s.name FROM skills s JOIN job_skills js ON s.id = js.skill_id WHERE js.job_id = ?`,
-        [appData.job_id]
-      );
-      const skillNames = skills.map(s => s.name);
-      const highDemand = ['React', 'Node.js', 'Python', 'AI', 'Cloud', 'TypeScript', 'Docker', 'AWS', 'Next.js', 'Machine Learning', 'Go', 'Rust', 'Kubernetes'];
-      const matchedHighDemand = skillNames.filter(s => highDemand.some(hd => hd.toLowerCase() === s.toLowerCase()));
-      
-      const minSalary = 800000 + (matchedHighDemand.length * 300000); // Start at 8 LPA + 3 LPA per premium skill
-      const maxSalary = minSalary + 500000; // 5 LPA spread
-
-      marketIntel = {
-        currency: 'INR',
-        min: minSalary,
-        max: maxSalary,
-        median: Math.round((minSalary + maxSalary) / 2),
-        marketDemand: matchedHighDemand.length > 2 ? 'Extremely High Demand' : matchedHighDemand.length > 0 ? 'High Demand' : 'Moderate Demand',
-        insight: matchedHighDemand.length > 0 
-          ? `High demand for ${matchedHighDemand.join(', ')} is driving up local benchmarks in India. Consider competitive offers to secure this talent quickly.`
-          : 'Standard market rates apply for this skill set in the Indian ecosystem. Positioning with competitive LPA and growth opportunities may help attract top candidates.'
-      };
-    } catch (e) { console.warn('Market intel failed:', e.message); }
-
-    // ===== TAB 8: SMART WORKFLOW =====
-    let workflowRules = [
-      { 
-        name: 'Auto-Shortlist', 
-        desc: `Move to Shortlist if match score exceeds 85% (current: ${matchScore}%)`, 
-        active: matchScore >= 85,
-        triggered: matchScore >= 85
-      },
-      { 
-        name: 'Priority Alert', 
-        desc: 'Flag candidate for immediate review if match exceeds 90%', 
-        active: matchScore >= 90,
-        triggered: matchScore >= 90
-      },
-      { 
-        name: 'Skill Verification', 
-        desc: 'Auto-audit public profiles (GitHub/LinkedIn) on application', 
-        active: !!(appData.github_url || appData.linkedin_url),
-        triggered: !!(appData.github_url || appData.linkedin_url)
-      }
-    ];
-
-    const smartWorkflow = {
-      rules: workflowRules,
-      suggestion: matchScore >= 85 
-        ? `High match candidate. Recommend moving directly to interview stage.`
-        : matchScore >= 60
-          ? `Moderate match. Consider a brief technical screening call before full interview.`
-          : `Low match. Review skill gaps before deciding to proceed.`
-    };
-
-    // ===== TAB 9: AI RECRUITER COACH =====
-    let coachTips = [];
-    let coachVerdict = '';
-
-    if (matchScore > 85) {
-      coachVerdict = 'Hire Candidate';
-      coachTips = [
-        'High-priority hire. Fast-track to final round if culture fit is verified.',
-        'Negotiation Tip: This candidate likely has multiple offers. Lead with growth opportunities and project impact.',
-        `Focus on retention strategy — candidates with ${matchedSkills.length}+ matching skills are in high demand.`
-      ];
-    } else if (matchScore > 60) {
-      coachVerdict = 'Strong Potential';
-      coachTips = [
-        'Solid technical base. Focus interview on the skill gaps highlighted in the analysis.',
-        `Ask about ${missingSkills[0] || 'advanced topics'} — candidate shows theoretical knowledge but check for applied experience.`,
-        'Consider a small technical challenge or take-home project to validate depth.'
-      ];
-    } else {
-      coachVerdict = 'Proceed with Caution';
-      coachTips = [
-        'Significant skill gaps detected. Evaluate if training investment is justified.',
-        'Focus on soft skills and cultural alignment — these can compensate for technical gaps.'
-      ];
-    }
-
-    const suggestedCoachQuestions = [
-      `How would you handle a production failure in a high-concurrency ${matchedSkills[0] || 'system'} environment?`,
-      'Describe a time you had to learn a complex framework under a tight deadline.'
-    ];
-
-    const recruiterCoach = {
-      verdict: coachVerdict,
-      tips: coachTips,
-      suggestedQuestions: suggestedCoachQuestions,
-      closingStrategy: matchScore >= 70
-        ? `"Your work on past projects is exactly what our team needs. We value your unique approach to ${matchedSkills[0] || 'problem-solving'}."`
-        : `"We see great potential in your background. Let's discuss how we can support your growth in ${missingSkills[0] || 'key areas'}."`
-    };
-
-    // ===== TAB 10: SKILLS VERIFICATION =====
-    let verifiedSkills = [];
-    try {
-      const [skills] = await db.promise().query(
-        `SELECT s.name, us.proficiency FROM skills s JOIN user_skills us ON s.id = us.skill_id WHERE us.user_id = ?`,
-        [appData.student_id]
-      ); 
-
-      verifiedSkills = skills.map(s => ({
-        skill: s.name,
-        verified: !!appData.github_url || Math.random() > 0.25,
-        confidence: Math.round(65 + Math.random() * 30),
-        reason: appData.github_url 
-          ? 'Validated via GitHub activity and project analysis.'
-          : appData.linkedin_url
-            ? 'Validated via LinkedIn profile review.'
-            : 'Claimed in profile; recommend manual verification.'
-      }));
-    } catch (e) { console.warn('Skills verification failed:', e.message); }
-
-    const trustScore = verifiedSkills.length > 0 
-      ? Math.round(verifiedSkills.filter(v => v.verified).length / verifiedSkills.length * 100)
-      : 50;
-
-    const skillsVerification = {
-      trustScore,
-      verifiedSkills,
-      hasGithub: !!appData.github_url,
-      hasLinkedIn: !!appData.linkedin_url,
-      hasPortfolio: false
-    };
-
-    // ===== TAB 11: EXPERT AI SUITE =====
-    const biasScore = 5 + Math.floor(Math.random() * 8);
-    const expertSuite = {
-      bias: {
-        score: biasScore,
-        rating: biasScore < 15 ? 'Excellent' : biasScore < 30 ? 'Good' : 'Needs Attention',
-        mitigationTip: 'Ensure anonymous resume screening is active to further reduce unconscious bias.'
-      },
-      clv: {
-        projectedValue: matchScore >= 80 ? 'High' : matchScore >= 60 ? 'Moderate' : 'Developing',
-        tenureProbability: `${Math.min(95, 50 + matchScore * 0.4 + positiveCount * 3)}%`,
-        growthVelocity: matchScore >= 80 ? 'Top 15%' : matchScore >= 60 ? 'Top 35%' : 'Average',
-        insight: `Candidate displays traits of a '${matchScore >= 80 ? 'Rapid Upskiller' : 'Steady Grower'}' based on skill diversity and proposal quality.`
-      },
-      eq: {
-        score: Math.min(100, 55 + positiveCount * 6 + (proposalText.length > 200 ? 15 : 0)),
-        traits: positiveCount > 2 
-          ? ['Empathetic Communication', 'Collaboration-Oriented', 'Conflict-Resilient'] 
-          : ['Focused Communication', 'Task-Oriented', 'Professional'],
-        analysis: `Proposal text shows ${positiveCount > 2 ? 'high social awareness and structured professional maturity' : 'a professional and direct communication style. Consider behavioral interview to assess collaboration depth'}.`
-      },
-      funnel: {
-        velocity: matchScore >= 80 ? 'Top 5%' : matchScore >= 60 ? 'Top 25%' : 'Standard',
-        conversionRate: `${Math.min(95, matchScore + 5)}%`,
-        bottlenecks: matchScore >= 70 ? 'None Detected' : 'Screening Stage',
-        aiSuggestion: matchScore >= 85 
-          ? 'Fast-track to final round recommended.'
-          : matchScore >= 60
-            ? 'Standard pipeline progression. Monitor for delays at screening stage.'
-            : 'Consider batch processing with similar candidates for efficiency.'
-      }
-    };
-
-    // ===== BUILD RESPONSE =====
     res.json({
       applicationId: parseInt(applicationId),
       candidate: {
-        id: appData.student_id,
         name: appData.student_name,
         email: appData.student_email,
         bio: appData.student_bio,
@@ -1717,124 +880,40 @@ No markdown.`;
         githubUrl: appData.github_url,
         linkedinUrl: appData.linkedin_url
       },
-      job: {
-        id: appData.job_id,
-        title: appData.job_title,
-        description: appData.job_desc,
-        location: appData.job_location
-      },
+      job: { title: appData.job_title },
       application: {
         status: appData.status,
-        matchScore,
+        matchScore: appData.ai_match_score || 0,
         appliedAt: appData.created_at,
-        proposal: proposalText
+        proposal: appData.proposal
       },
       tabs: {
-        executiveSummary,
-        behavioralAnalysis,
-        interviewPrep,
-        skillGap,
-        smartSourcing,
-        scheduling,
-        marketIntel,
-        smartWorkflow,
-        recruiterCoach,
-        skillsVerification,
-        expertSuite
+        skillGap: {
+          matchPercentage: appData.ai_match_score || 0,
+          skills: jobSkills.map(js => ({
+            skill: js,
+            requirement: 'Required',
+            status: studentSkills.some(ss => ss.toLowerCase() === js.toLowerCase()) ? 'match' : 'missing'
+          })),
+          missingSkills
+        },
+        behavioralAnalysis: {
+           communicationStyle: "Standard",
+           communicationTraits: [],
+           sentiment: { label: "Professional", description: "Standard professional application." }
+        },
+        interviewPrep: { questions: [] },
+        executiveSummary: {
+          verdict: (appData.ai_match_score || 0) >= 70 ? "Recommended" : "Review Needed",
+          summary: `Candidate matches ${matchedSkills.length} out of ${jobSkills.length} required skills.`
+        }
       }
     });
-
   } catch (error) {
-    console.error("AI Evaluation Engine Error:", error);
-    res.status(500).json({ error: "Failed to generate AI evaluation", details: error.message });
+    res.status(500).json({ error: "Evaluation failed" });
   }
 };
 
-// Phase 2: Student-Side Interview Prep & Simulation
-export const getStudentInterviewPrep = async (req, res) => {
-  const { interviewId } = req.params;
-  const studentId = req.user.id;
-
-  try {
-    console.log(`🤖 AI Prep Request for Interview ID: ${interviewId}, Student ID: ${studentId}`);
-
-    // 1. Fetch Interview & Application details
-    const [[interview]] = await db.promise().query(`
-      SELECT i.*, a.id as applicationId, j.title as job_title, j.description as job_desc, u.name as company_name
-      FROM interviews i
-      JOIN applications a ON i.application_id = a.id
-      JOIN jobs j ON a.job_id = j.id
-      JOIN users u ON j.posted_by = u.id
-      WHERE i.id = ? AND a.student_id = ?
-    `, [interviewId, studentId]);
-
-    if (!interview) {
-      console.log(`❌ Interview NOT FOUND or UNAUTHORIZED for ID: ${interviewId}, Student: ${studentId}`);
-      return res.status(404).json({ message: "Interview not found or unauthorized" });
-    }
-    console.log(`✅ Found Interview for ${interview.job_title} at ${interview.company_name}`);
-
-    // 2. We use Gemini to generate personalized questions for the student
-    // For now, we'll reuse the logic from evaluateApplication but tailored for the student
-    const [studentSkills] = await db.promise().query(
-      `SELECT s.name FROM skills s JOIN user_skills us ON s.id = us.skill_id WHERE us.user_id = ?`,
-      [studentId]
-    );
-
-    const prompt = `
-      As an expert technical recruiter, generate 5 challenging interview questions for a student applying for the role of '${interview.job_title}' at '${interview.company_name}'.
-      The student has the following skills: ${studentSkills.map(s => s.name).join(', ')}.
-      The job description is: ${interview.job_desc.substring(0, 500)}...
-      
-      Format the response as a JSON object with:
-      - "questions": array of strings
-      - "focus": a short sentence on what they should focus on
-      - "tips": array of 3 short tips
-    `;
-
-    const aiResponse = await generateGeminiResponse(prompt);
-    let coachData = null;
-    
-    if (aiResponse) {
-      try {
-        const cleanJson = aiResponse.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        coachData = JSON.parse(cleanJson);
-      } catch (parseError) {
-        console.warn("AI JSON parse failed, using fallback.");
-      }
-    }
-
-    if (!coachData) {
-      // Fallback
-      coachData = {
-        questions: [
-          "Can you walk me through your most challenging project using your core skills?",
-          "How do you handle production failures in a team environment?",
-          "What is your approach to learning new technologies quickly?",
-          "How do you ensure code quality and maintainability?",
-          `Why are you interested in joining ${interview.company_name} as a ${interview.job_title}?`
-        ],
-        focus: "Focus on demonstrating your practical problem-solving skills and cultural alignment.",
-        tips: ["Be specific with examples", "Ask clarifying questions", "Show enthusiasm"]
-      };
-    }
-
-    res.json({
-      interviewId: parseInt(interviewId),
-      jobTitle: interview.job_title,
-      companyName: interview.company_name,
-      ...coachData
-    });
-
-  } catch (error) {
-    console.error("Student AI Prep Error:", error);
-    res.status(500).json({ message: "Failed to generate interview prep" });
-  }
-};
-
-// --------------------------------
-// RE-EVALUATE AND PERSIST SCORE
-// --------------------------------
 export const reEvaluateApplication = async (req, res) => {
     const { applicationId } = req.params;
     try {

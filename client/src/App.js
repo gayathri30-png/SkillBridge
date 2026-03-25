@@ -34,7 +34,7 @@ import OnboardingChecklist from "./pages/OnboardingChecklist";
 
 import AISkillGapDetector from './pages/AISkillGapDetector';
 import AIProposalGenerator from './pages/AIProposalGenerator';
-import AIInterviewCoach from "./pages/AIInterviewCoach";
+
 
 // Recruiter Pages
 import PostJob from "./components/PostJob";
@@ -185,16 +185,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
-            path="/ai/interview/:id"
-            element={
-              <ProtectedRoute allowedRoles={["student"]}>
-                <Layout>
-                  <AIInterviewCoach />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+
 
           <Route
             path="/jobs"

@@ -42,7 +42,7 @@ const RecruiterMarketIntelligence = () => {
   if (loading) return (
     <div className="flex items-center justify-center min-h-screen text-purple-600 font-bold gap-3">
        <div className="animate-spin md"><Brain size={32} /></div>
-       Fetching Quantum Market Data...
+       Fetching Market Data...
     </div>
   );
 
@@ -88,15 +88,8 @@ const RecruiterMarketIntelligence = () => {
            </div>
         </div>
 
-        <div className="bg-white p-6 rounded-[32px] shadow-sm border border-slate-100 flex items-center gap-6">
-           <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-              <Activity size={32} />
-           </div>
-           <div>
-              <p className="text-slate-500 font-bold text-sm uppercase tracking-wider mb-1">Market Velocity</p>
-              <h3 className="text-3xl font-black text-slate-900">{data.marketVelocity}/100</h3>
-           </div>
-        </div>
+        {/* Market Velocity card removed as it was mock-based */}
+
 
       </section>
 

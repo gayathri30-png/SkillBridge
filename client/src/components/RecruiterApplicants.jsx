@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
-import CandidateComparison from "./CandidateComparison";
 import InterviewScheduler from "./InterviewScheduler";
-import FeedbackGenerator from "./FeedbackGenerator";
-import AutomationRules from "./AutomationRules";
-import RecruitmentAnalytics from "./RecruitmentAnalytics";
 import { 
   Brain, X, Search, Filter, ChevronDown, ChevronUp, 
   Star, MessageSquare, Calendar, CheckCircle, 
@@ -22,20 +18,14 @@ const RecruiterApplicants = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [jobDetails, setJobDetails] = useState(null);
-  const [selectedForCompare, setSelectedForCompare] = useState([]);
-  const [showComparison, setShowComparison] = useState(false);
-  const [comparisonData, setComparisonData] = useState(null);
-  const [comparing, setComparing] = useState(false);
+
   const [showAIInsights, setShowAIInsights] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [schedulingApplicant, setSchedulingApplicant] = useState(null);
-  const [feedbackApplicant, setFeedbackApplicant] = useState(null);
-  const [showAutomation, setShowAutomation] = useState(false);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [sortBy, setSortBy] = useState("match");
   const [aiFilter, setAiFilter] = useState(null);
   const [visibleCount, setVisibleCount] = useState(10);
+  const [sortBy, setSortBy] = useState("match");
 
   const fetchJobDetails = useCallback(async () => {
     try {
@@ -84,34 +74,10 @@ const RecruiterApplicants = () => {
                 ? { ...app, status: newStatus } 
                 : app
         ));
-        
-        // If rejected, trigger feedback generator
-        if (newStatus === 'rejected') {
-            const applicant = applicants.find(a => a.application_id === applicationId);
-            setFeedbackApplicant(applicant);
-        }
     } catch (err) {
         console.error("Error updating status:", err);
         alert("Failed to update status");
     }
-  };
-
-  const handleCompare = async () => {
-    if (selectedForCompare.length < 2) {
-      alert("Please select at least 2 candidates to compare.");
-      return;
-    }
-    
-    // Get the full applicant objects for the selected IDs
-    const selectedApplicants = applicants.filter(app => selectedForCompare.includes(app.application_id));
-    setComparisonData(selectedApplicants);
-    setShowComparison(true);
-  };
-
-  const toggleSelectForCompare = (id) => {
-    setSelectedForCompare(prev => 
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
   };
 
   const filteredApplicants = applicants.filter(app => {
@@ -121,18 +87,9 @@ const RecruiterApplicants = () => {
     let matchesAi = true;
     if (aiFilter === 'top_match') matchesAi = Number(app.ai_match_score) >= 90;
     if (aiFilter === 'small_gap') matchesAi = Number(app.ai_match_score) >= 75 && Number(app.ai_match_score) < 90;
-    if (aiFilter === 'quick_hire') matchesAi = app.student_skills && app.student_skills.length > 0;
 
     return matchesSearch && matchesStatus && matchesAi;
   });
-
-  const avgMatch = applicants.length > 0 
-    ? Math.round(applicants.reduce((acc, app) => acc + (Number(app.ai_match_score) || 0), 0) / applicants.length) 
-    : 0;
-  
-  const perfectMatches = applicants.filter(app => Number(app.ai_match_score) >= 90).length;
-  const topSkill = jobDetails?.skills_required && jobDetails.skills_required.length > 0 ? jobDetails.skills_required[0] : 'N/A';
-  const budget = jobDetails?.budget || jobDetails?.salary || 'N/A';
 
   const getSortedApplicants = () => {
     let sorted = [...filteredApplicants];
@@ -250,63 +207,6 @@ const RecruiterApplicants = () => {
         </div>
       )}
 
-      {/* AI INSIGHTS DASHBOARD */}
-      {false && <div className={`ai-insights-dashboard ${!showAIInsights ? 'collapsed' : ''}`}>
-        <div className="ai-dashboard-header" onClick={() => setShowAIInsights(!showAIInsights)}>
-            <h2><Brain size={20} /> AI INSIGHTS DASHBOARD</h2>
-            <div className="flex items-center gap-4">
-                <button 
-                  className="text-xs font-bold text-white/90 drop-shadow-sm hover:text-white hover:underline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAnalytics(true);
-                  }}
-                >
-                  View Detailed Analytics →
-                </button>
-                {!showAIInsights ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
-            </div>
-        </div>
-        
-        {showAIInsights && (
-            <div className="fade-in">
-                <div className="ai-stats-grid">
-                    <div className="ai-stat-card">
-                        <div className="ai-stat-icon">🤖</div>
-                        <div className="ai-stat-label">AI Match Avg</div>
-                        <div className="ai-stat-value">{avgMatch}%</div>
-                    </div>
-                    <div className="ai-stat-card">
-                        <div className="ai-stat-icon">📊</div>
-                        <div className="ai-stat-label">Top Req Skill</div>
-                        <div className="ai-stat-value">{typeof topSkill === 'string' ? topSkill : 'Tech'}</div>
-                    </div>
-                    <div className="ai-stat-card">
-                        <div className="ai-stat-icon">🎯</div>
-                        <div className="ai-stat-label">Budget / Salary</div>
-                        <div className="ai-stat-value">{budget}</div>
-                    </div>
-                    <div className="ai-stat-card">
-                        <div className="ai-stat-icon">⏱️</div>
-                        <div className="ai-stat-label">Total Applicants</div>
-                        <div className="ai-stat-value">{applicants.length}</div>
-                    </div>
-                </div>
-                <div className="ai-recommendation-banner">
-                    <div className="recommendation-text">
-                        <strong>AI Recommendation:</strong> "{perfectMatches} candidates are perfect match (90%+). Review now."
-                    </div>
-                    <button 
-                      className="view-top-matches-btn view-matches-btn"
-                      onClick={() => setAiFilter(aiFilter === 'top_match' ? null : 'top_match')}
-                    >
-                      {aiFilter === 'top_match' ? 'Clear Filter' : 'View Top Matches →'}
-                    </button>
-                </div>
-            </div>
-        )}
-      </div>}
-
       {/* FILTERS & ACTIONS BAR */}
       <div className="filters-actions-bar">
         <div className="filters-top">
@@ -327,41 +227,10 @@ const RecruiterApplicants = () => {
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                 >
-                    <option value="match">AI Match Score</option>
+                    <option value="match">Suitability Score</option>
                     <option value="recent">Most Recent</option>
                 </select>
                 <button className="btn btn-outline btn-sm" onClick={handleExportCSV}><Download size={16} /> Export</button>
-                <button 
-                    className="btn btn-primary btn-sm bg-indigo-600 hover:bg-indigo-700"
-                    onClick={async () => {
-                        if (window.confirm("Are you sure you want to auto-invite the top 3 applicants? This will send invitations with a default 10:00 AM slot for tomorrow.")) {
-                            try {
-                                const token = localStorage.getItem("token");
-                                const tomorrow = new Date();
-                                tomorrow.setDate(tomorrow.getDate() + 1);
-                                const year = tomorrow.getFullYear();
-                                const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-                                const day = String(tomorrow.getDate()).padStart(2, '0');
-                                const scheduledAt = `${year}-${month}-${day}T10:00`;
-
-                                await axios.post(`/api/interviews/auto-invite/${jobId}`, {
-                                    count: 3,
-                                    scheduled_at: scheduledAt,
-                                    instructions: "Automatic invitation based on your high match score. Please accept if you are available."
-                                }, {
-                                    headers: { Authorization: `Bearer ${token}` }
-                                });
-                                alert("Top 3 applicants have been invited!");
-                                fetchApplicants();
-                            } catch (err) {
-                                console.error("Auto-invite failed", err);
-                                alert("Failed to auto-invite applicants.");
-                            }
-                        }
-                    }}
-                >
-                    <Sparkles size={16} /> Auto-invite Top 3
-                </button>
             </div>
         </div>
 
@@ -376,7 +245,7 @@ const RecruiterApplicants = () => {
         </div>
 
         <div className="ai-smart-filters">
-            <span className="filter-label">AI Smart Filters:</span>
+            <span className="filter-label">Smart Filters:</span>
             <button 
               className={`smart-filter-chip ${aiFilter === 'top_match' ? 'active shadow-[0_0_10px_rgba(139,92,246,0.5)] border-[var(--neon-purple)]' : ''}`}
               onClick={() => setAiFilter(aiFilter === 'top_match' ? null : 'top_match')}
@@ -387,49 +256,14 @@ const RecruiterApplicants = () => {
               className={`smart-filter-chip ${aiFilter === 'small_gap' ? 'active shadow-[0_0_10px_rgba(139,92,246,0.5)] border-[var(--neon-purple)]' : ''}`}
               onClick={() => setAiFilter(aiFilter === 'small_gap' ? null : 'small_gap')}
             >
-              <Brain size={14} /> Skill Gap Small
-            </button>
-            <button 
-              className={`smart-filter-chip ${aiFilter === 'quick_hire' ? 'active shadow-[0_0_10px_rgba(139,92,246,0.5)] border-[var(--neon-purple)]' : ''}`}
-              onClick={() => setAiFilter(aiFilter === 'quick_hire' ? null : 'quick_hire')}
-            >
-              <Zap size={14} /> With Skills Profile
-            </button>
-            <button className="smart-filter-chip premium ml-auto" onClick={() => setShowAutomation(true)}>
-                <Settings size={14} /> Manage Automation
+              <Brain size={14} /> Low Skill Gap
             </button>
         </div>
       </div>
 
-      {/* APPLICANTS LIST */}
       <div className="list-header">
         <div className="bulk-actions">
-            <input 
-                type="checkbox" 
-                className="w-4 h-4 rounded border-slate-300"
-                checked={selectedForCompare.length === filteredApplicants.length && filteredApplicants.length > 0}
-                onChange={() => {
-                    if (selectedForCompare.length === filteredApplicants.length) {
-                        setSelectedForCompare([]);
-                    } else {
-                        setSelectedForCompare(filteredApplicants.map(app => app.application_id));
-                    }
-                }}
-            />
-            <span className="text-sm font-medium text-slate-600">Select All ({selectedForCompare.length} selected)</span>
-            {selectedForCompare.length > 0 && (
-                <div className="flex gap-2">
-                    <button className="btn btn-outline btn-sm py-1 h-8" onClick={handleCompare}>Bulk Compare</button>
-                    <button className="btn btn-outline btn-sm py-1 h-8" onClick={() => alert('Bulk Message feature coming soon!')}>Message</button>
-                </div>
-            )}
-        </div>
-        <div>
-            {selectedForCompare.length >= 2 && (
-                <button className="btn btn-primary btn-sm" onClick={handleCompare}>
-                    <Brain size={16} /> Compare Selected
-                </button>
-            )}
+            <span className="text-sm font-medium text-slate-600">Applicant List</span>
         </div>
       </div>
 
@@ -444,15 +278,9 @@ const RecruiterApplicants = () => {
             getSortedApplicants().slice(0, visibleCount).map((app) => (
                 <div 
                     key={app.application_id} 
-                    className={`applicant-card ${selectedForCompare.includes(app.application_id) ? 'selected' : ''}`}
+                    className="applicant-card"
                 >
                     <div className="card-avatar-section">
-                        <input 
-                            type="checkbox" 
-                            checked={selectedForCompare.includes(app.application_id)}
-                            onChange={() => toggleSelectForCompare(app.application_id)}
-                            className="w-4 h-4 rounded border-slate-300"
-                        />
                         <div className="applicant-avatar">
                             {app.student_name.charAt(0)}
                         </div>
@@ -462,15 +290,10 @@ const RecruiterApplicants = () => {
                         <div className="applicant-main-info flex items-center justify-between">
                             <div className="flex items-center">
                                 <h3>{app.student_name}</h3>
-                                <div className="applicant-rating ml-3">
-                                    <Star size={14} className="star-icon fill-amber-400 text-amber-400" />
-                                    <span className="rating-text">{(4 + Math.random()).toFixed(1)} ★</span>
-                                </div>
                                 <div className="applicant-match-badge-v2">
                                     <span className={`match-score-pill-v2 ${app.ai_match_score >= 75 ? 'high' : app.ai_match_score >= 50 ? 'mid' : 'low'}`}>
                                         {app.ai_match_score}% Match
                                     </span>
-                                    {app.ai_match_score >= 90 && <span className="top-candidate-badge">Top Candidate</span>}
                                     {app.interview_status && (
                                         <span className={`status-pill ml-2 ${app.interview_status === 'accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                                             Interview: {app.interview_status.toUpperCase()}
@@ -490,14 +313,6 @@ const RecruiterApplicants = () => {
 
                         <div className="meta-row">
                             <span>Applied: {new Date(app.created_at).toLocaleDateString()}</span>
-                            <span>•</span>
-                            <span>Last activity: {Math.floor(Math.random() * 24)} hours ago</span>
-                        </div>
-
-                        <div className="tags-row">
-                            {['Frontend Expert', 'Remote Ready'].map((t, i) => (
-                                <span key={i} className="user-tag">{t}</span>
-                            ))}
                         </div>
                     </div>
 
@@ -521,14 +336,6 @@ const RecruiterApplicants = () => {
                         </div>
 
                         <div className="quick-actions-row">
-                            <button className="quick-btn" onClick={() => setSchedulingApplicant(app)}>
-                                <Calendar size={12} /> Schedule
-                            </button>
-                            {app.ai_match_score > 90 && (
-                                <button className="quick-btn offer" onClick={() => alert('Send Offer feature coming soon!')}>
-                                    <Zap size={12} /> Send Offer
-                                </button>
-                            )}
                             {app.status === 'accepted' && (
                                 <button 
                                     className="quick-btn hire"
@@ -555,44 +362,16 @@ const RecruiterApplicants = () => {
             )}
       </div>
 
-      {feedbackApplicant && (
-          <FeedbackGenerator 
-            application={feedbackApplicant}
-            onClose={() => setFeedbackApplicant(null)}
-            onRefresh={fetchApplicants}
-          />
-      )}
-
       {schedulingApplicant && (
           <InterviewScheduler 
             application={schedulingApplicant}
             onClose={() => setSchedulingApplicant(null)}
           />
       )}
-
-      {showAutomation && (
-          <AutomationRules 
-            onClose={() => setShowAutomation(false)}
-          />
-      )}
-
-      {false && showAnalytics && (
-          <RecruitmentAnalytics 
-            applicants={applicants}
-            jobDetails={jobDetails}
-            onClose={() => setShowAnalytics(false)}
-          />
-      )}
-
-      {showComparison && (
-        <CandidateComparison 
-          candidates={comparisonData}
-          onClose={() => setShowComparison(false)}
-        />
-      )}
     </div>
   );
 };
+
 
 export default RecruiterApplicants;
 

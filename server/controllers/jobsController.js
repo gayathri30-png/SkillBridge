@@ -126,6 +126,7 @@ export const getAllJobs = (req, res) => {
       j.status,
       j.created_at,
       u.name AS recruiter_name,
+      COALESCE(u.company_name, u.name) AS company_name,
       GROUP_CONCAT(s.name) AS skills_required
     FROM jobs j
     JOIN users u ON j.posted_by = u.id

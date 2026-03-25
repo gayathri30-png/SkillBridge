@@ -15,10 +15,24 @@ const AISkillGapDetector = () => {
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [results, setResults] = useState(null);
+  const [advancedUpskilling, setAdvancedUpskilling] = useState(null);
 
   useEffect(() => {
     fetchJobs();
+    fetchAdvancedUpskilling();
   }, []);
+
+  const fetchAdvancedUpskilling = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/api/ai/advanced-upskilling', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setAdvancedUpskilling(res.data);
+    } catch (err) {
+      console.error('Failed to fetch advanced upskilling:', err);
+    }
+  };
 
   const fetchJobs = async () => {
     try {
@@ -134,10 +148,10 @@ const AISkillGapDetector = () => {
                         </div>
                         <div>
                             <h3 className="text-emerald-800 font-black text-xl">{results.job_title} Match</h3>
-                            <p className="text-emerald-600 font-medium">You have {results.matched_skills.length} out of {results.matched_skills.length + results.missing_skills.length} required skills</p>
+                            <p className="text-emerald-600 font-medium text-sm">You have {results.matched_skills?.length || 0} out of {(results.matched_skills?.length || 0) + (results.missing_skills?.length || 0)} required skills</p>
                             {selectedJob?.company_name && (
-                              <p className="text-emerald-500 text-sm mt-1 flex items-center gap-1">
-                                <Briefcase size={12} /> Posted by {selectedJob.company_name}
+                              <p className="text-emerald-500 text-xs mt-1 flex items-center gap-1">
+                                <Briefcase size={10} /> Posted by {selectedJob.company_name}
                               </p>
                             )}
                         </div>
@@ -148,37 +162,37 @@ const AISkillGapDetector = () => {
                     {/* SKILLS BREAKDOWN */}
                     <div className="space-y-8">
                         <div>
-                            <h4 className="text-sm font-black text-emerald-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <CheckCircle size={16} /> Skills You Have ({results.matched_skills.length})
+                            <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <CheckCircle size={14} /> Skills You Have ({results.matched_skills?.length || 0})
                             </h4>
                             <div className="flex flex-wrap gap-2">
-                                {results.matched_skills.map((s, i) => (
-                                    <span key={i} className="bg-white border border-emerald-100 text-emerald-700 px-4 py-2 rounded-xl text-sm font-bold shadow-sm">
+                                {results.matched_skills?.map((s, i) => (
+                                    <span key={i} className="bg-white border border-emerald-100 text-emerald-700 px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm">
                                         {s}
                                     </span>
                                 ))}
-                                {results.matched_skills.length === 0 && (
-                                  <p className="text-slate-400 text-sm italic">None of your current skills match this role.</p>
+                                {(!results.matched_skills || results.matched_skills.length === 0) && (
+                                  <p className="text-slate-400 text-xs italic">None of your current skills match this role.</p>
                                 )}
                             </div>
                         </div>
 
                         <div>
-                            <h4 className="text-sm font-black text-rose-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <AlertCircle size={16} /> Missing Skills ({results.missing_skills.length})
+                            <h4 className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <AlertCircle size={14} /> Missing Skills ({results.missing_skills?.length || 0})
                             </h4>
-                            <div className="space-y-4">
-                                {results.missing_skills.map((s, i) => (
-                                    <div key={i} className="bg-rose-50/30 border border-rose-100 p-4 rounded-2xl flex justify-between items-center">
+                            <div className="space-y-3">
+                                {results.missing_skills?.map((s, i) => (
+                                    <div key={i} className="bg-rose-50/30 border border-rose-100 p-3 rounded-2xl flex justify-between items-center">
                                         <div>
-                                            <span className="font-bold text-slate-900">{s}</span>
-                                            <p className="text-[10px] text-rose-500 font-black uppercase mt-0.5">High Priority</p>
+                                            <span className="font-bold text-slate-900 text-sm">{s}</span>
+                                            <p className="text-[9px] text-rose-500 font-black uppercase mt-0.5">High Priority</p>
                                         </div>
                                     </div>
                                 ))}
-                                {results.missing_skills.length === 0 && (
+                                {(!results.missing_skills || results.missing_skills.length === 0) && (
                                   <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-center">
-                                    <p className="text-emerald-700 font-bold">🎉 You're a perfect match! No missing skills.</p>
+                                    <p className="text-emerald-700 font-bold text-sm">🎉 You're a perfect match! No missing skills.</p>
                                   </div>
                                 )}
                             </div>
@@ -219,6 +233,76 @@ const AISkillGapDetector = () => {
                 <p className="text-slate-400 font-medium">Select a job above to start your AI gap analysis.</p>
             </div>
         ) : null}
+
+        {/* --- ADDITIONAL UPSKILLING INSIGHTS --- */}
+        {advancedUpskilling && advancedUpskilling.priority_skills?.length > 0 && (
+          <div className="mt-12 pt-12 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-700">
+            <header className="mb-10">
+              <h2 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                <Zap className="text-amber-500 fill-amber-500" size={24} /> Advanced Career Insights
+              </h2>
+              <p className="text-slate-500 text-sm">Skills that will boost your employability across the entire market.</p>
+            </header>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+              {/* TOP PRIORITY SKILLS */}
+              <div className="bg-slate-50/50 p-8 rounded-[40px] border border-slate-100/50">
+                   <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                     <Target size={16} /> Top Priority Skills
+                   </h3>
+                   <div className="space-y-4">
+                     {advancedUpskilling.priority_skills?.map((skill, i) => (
+                       <div key={i} className="bg-white p-5 rounded-3xl shadow-sm flex items-center justify-between group hover:shadow-md transition-all border border-slate-50">
+                         <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600 font-black">
+                             {skill.impact}%
+                           </div>
+                           <div>
+                             <span className="font-bold text-slate-900">{skill.skill}</span>
+                             <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase mt-1">
+                               <TrendingUp size={10} /> {skill.category}
+                             </div>
+                           </div>
+                         </div>
+                         <button className="p-3 bg-slate-50 rounded-2xl group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                            <ArrowRight size={16} />
+                         </button>
+                       </div>
+                     ))}
+                   </div>
+              </div>
+
+              {/* JOBS YOU'LL UNLOCK */}
+              <div className="bg-slate-50/50 p-8 rounded-[40px] border border-slate-100/50">
+                   <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+                     <Briefcase size={16} /> Roles You'll Unlock
+                   </h3>
+                   <div className="space-y-4">
+                     {advancedUpskilling.unlocked_jobs?.map((job, i) => (
+                       <div key={i} className="bg-white p-5 rounded-3xl shadow-sm flex items-center gap-5 group hover:shadow-md transition-all border border-slate-50 cursor-pointer" onClick={() => navigate('/jobs')}>
+                         <div className="w-14 h-14 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-900 font-black group-hover:bg-slate-900 group-hover:text-white transition-colors">
+                           {job.match_increase}%
+                         </div>
+                         <div>
+                            <span className="font-black text-slate-900 block">{job.role}</span>
+                            <span className="text-xs font-bold text-slate-400">Target Role</span>
+                         </div>
+                       </div>
+                     ))}
+                   </div>
+                   <div className="mt-8 p-6 bg-slate-900 rounded-3xl text-center shadow-lg">
+                      <p className="text-white font-bold text-sm mb-4">You're closer than you think to these top roles!</p>
+                      <button 
+                        onClick={() => navigate('/jobs')}
+                        className="w-full py-4 bg-emerald-500 text-white rounded-2xl font-black text-sm hover:bg-emerald-600 transition-colors"
+                      >
+                         BROWSE ALL JOBS
+                      </button>
+                   </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
