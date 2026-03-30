@@ -646,7 +646,7 @@ const StudentDashboard = ({ user }) => {
                           onClick={() => navigate('/applications')}
                           className="w-full py-4 boost-btn-premium rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all mt-6"
                          >
-                            Prepare With AI <Sparkles size={14} className="ml-2 inline symbol-glow" />
+                            View Application Details <ChevronsRight size={14} className="ml-2 inline symbol-glow" />
                          </button>
                      </div>
                    ))

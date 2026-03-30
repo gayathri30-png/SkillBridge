@@ -52,7 +52,7 @@ const Profile = () => {
 
 
       // Fetch Recommendations
-      fetchRecommendedJobs(res.data.skills || []);
+      fetchRecommendedJobs();
 
       setLoading(false);
     } catch (error) {
@@ -63,27 +63,13 @@ const Profile = () => {
 
   const [recommendedJobs, setRecommendedJobs] = useState([]);
 
-  const fetchRecommendedJobs = async (userSkills) => {
+  const fetchRecommendedJobs = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get('/api/jobs?status=open', {
+      const res = await axios.get('/api/ai/recommendations/jobs', {
         headers: { Authorization: `Bearer ${token}` }
       });
-
-      // Simple match calculation (similar to JobList)
-      const jobsWithScores = res.data.map(job => {
-        // Fetch job skills if not present (backend getAllJobs might not return skills by default)
-        // Wait, the getAllJobs returns a list but doesn't joined skills? 
-        // Let's check jobsController.js again.
-        // Actually, let's assume jobs returned here don't have skills array yet.
-        // I might need to update getAllJobs to return skills for better performance.
-        return { 
-          ...job, 
-          matchScore: Math.floor(Math.random() * 40) + 60 // Mock for now if skills missing
-        };
-      });
-
-      setRecommendedJobs(jobsWithScores.sort((a,b) => b.matchScore - a.matchScore).slice(0, 3));
+      setRecommendedJobs(res.data);
     } catch (err) {
       console.error("Failed to fetch recommended jobs");
     }

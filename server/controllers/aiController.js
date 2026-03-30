@@ -946,3 +946,60 @@ export const reEvaluateApplication = async (req, res) => {
     }
 };
 
+// --------------------------------
+// AI: REAL-TIME JOB RECOMMENDATIONS
+// --------------------------------
+export const getRecommendedJobs = async (req, res) => {
+  const studentId = req.user.id;
+  try {
+    // 1. Get user's current skills
+    const [userSkillsData] = await db.promise().query(`
+      SELECT s.name 
+      FROM user_skills us 
+      JOIN skills s ON us.skill_id = s.id 
+      WHERE us.user_id = ?
+    `, [studentId]);
+    const userSkills = new Set(userSkillsData.map(s => s.name.toLowerCase()));
+
+    // 2. Get active jobs and their demanded skills
+    const [activeJobs] = await db.promise().query(`
+      SELECT j.id, j.title, j.job_type, j.location, u.name as recruiter_name,
+             GROUP_CONCAT(DISTINCT s.name) as job_skills
+      FROM jobs j 
+      JOIN users u ON j.posted_by = u.id
+      JOIN job_skills js ON j.id = js.job_id
+      JOIN skills s ON js.skill_id = s.id
+      WHERE j.status = 'open'
+      GROUP BY j.id
+    `);
+
+    // 3. Calculate match scores
+    const recommendations = activeJobs.map(job => {
+      if (!job.job_skills) return { ...job, matchScore: 0 };
+      
+      const reqSkills = job.job_skills.split(',').map(s => s.trim().toLowerCase());
+      const matched = reqSkills.filter(s => userSkills.has(s));
+      const score = Math.round((matched.length / reqSkills.length) * 100);
+
+      return {
+        id: job.id,
+        title: job.title,
+        recruiter_name: job.recruiter_name,
+        job_type: job.job_type,
+        location: job.location,
+        matchScore: score
+      };
+    });
+
+    // 4. Sort and return top 3
+    const topRecommendations = recommendations
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 3);
+
+    res.json(topRecommendations);
+
+  } catch (error) {
+    console.error("Job Recommendations Error:", error);
+    res.status(500).json({ error: "Failed to fetch job recommendations" });
+  }
+};

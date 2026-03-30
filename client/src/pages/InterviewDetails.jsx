@@ -208,19 +208,6 @@ const InterviewDetails = () => {
                             </div>
                         </div>
 
-                        <div className="p-6 bg-slate-900 rounded-[32px] text-white overflow-hidden relative group">
-                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
-                                <Sparkles size={48} />
-                            </div>
-                            <h4 className="text-xs font-black text-blue-400 uppercase tracking-widest mb-2 relative z-10">Prepare with AI</h4>
-                            <p className="text-[10px] text-slate-400 font-medium mb-6 relative z-10 leading-relaxed">Practice common questions for this specific role with our AI simulator.</p>
-                            <button 
-                                onClick={() => navigate(`/ai/interview/${id}`)}
-                                className="w-full py-3 bg-white/10 hover:bg-white/20 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors relative z-10"
-                            >
-                                Start Simulation
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>

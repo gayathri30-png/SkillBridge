@@ -111,23 +111,69 @@ export const getProfile = (req, res) => {
   });
 };
 
-// ADD SKILL TO USER
-export const addUserSkill = (req, res) => {
+// ADD SKILL TO USER (Enhanced for custom skills)
+export const addUserSkill = async (req, res) => {
   const userId = req.user.id;
-  const { skillId, proficiency, years_of_experience } = req.body;
+  const { skillId, skillName, proficiency, years_of_experience } = req.body;
 
-  if (!skillId) return res.status(400).json({ error: "Skill ID is required" });
+  try {
+    let finalSkillId = skillId;
 
-  const query = "INSERT INTO user_skills (user_id, skill_id, proficiency, years_of_experience) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE proficiency = ?, years_of_experience = ?";
-  
-  db.query(
-    query, 
-    [userId, skillId, proficiency || 'Beginner', years_of_experience || 0, proficiency, years_of_experience], 
-    (err, result) => {
-      if (err) return res.status(500).json({ error: err });
-      res.json({ message: "Skill updated successfully" });
+    // 1. If no ID but name provided, find or create
+    if (!finalSkillId && skillName) {
+      console.log(`🔍 Searching for custom skill: "${skillName}"`);
+      const [existing] = await db.promise().query(
+        "SELECT id FROM skills WHERE LOWER(name) = LOWER(?)", 
+        [skillName.trim()]
+      );
+
+      if (existing.length > 0) {
+        finalSkillId = existing[0].id;
+        console.log(`✅ Found existing skill ID: ${finalSkillId}`);
+      } else {
+        console.log(`➕ Creating new custom skill: "${skillName}"`);
+        const [insertResult] = await db.promise().query(
+          "INSERT INTO skills (name) VALUES (?)", 
+          [skillName.trim()]
+        );
+        finalSkillId = insertResult.insertId;
+        console.log(`✅ Created new skill ID: ${finalSkillId}`);
+      }
     }
-  );
+
+    if (!finalSkillId) {
+      return res.status(400).json({ error: "Skill ID or Name is required" });
+    }
+
+    // 2. Link to user
+    const query = `
+      INSERT INTO user_skills (user_id, skill_id, proficiency, years_of_experience) 
+      VALUES (?, ?, ?, ?) 
+      ON DUPLICATE KEY UPDATE proficiency = ?, years_of_experience = ?
+    `;
+    
+    await db.promise().query(
+      query, 
+      [
+        userId, 
+        finalSkillId, 
+        proficiency || 'Beginner', 
+        years_of_experience || 0, 
+        proficiency || 'Beginner', 
+        years_of_experience || 0
+      ]
+    );
+
+    res.json({ 
+      success: true, 
+      message: "Skill associated successfully",
+      skillId: finalSkillId 
+    });
+
+  } catch (error) {
+    console.error("Add User Skill Error:", error);
+    res.status(500).json({ error: "Failed to add skill", details: error.message });
+  }
 };
 
 // REMOVE SKILL FROM USER

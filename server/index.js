@@ -75,6 +75,27 @@ console.log("✅ GET  /api/skills/all");
 console.log("✅ GET  /api/users");
 
 // =====================
+// PUBLIC STATS ROUTE
+// =====================
+import db from "./config/db.js";
+app.get("/api/public/stats", async (req, res) => {
+  try {
+    const [[{ students }]] = await db.promise().query("SELECT COUNT(*) as students FROM users WHERE role = 'student'");
+    const [[{ recruiters }]] = await db.promise().query("SELECT COUNT(*) as recruiters FROM users WHERE role = 'recruiter'");
+    const [[{ jobs }]] = await db.promise().query("SELECT COUNT(*) as jobs FROM jobs WHERE status = 'open'");
+    
+    res.json({
+      students: students || 0,
+      companies: recruiters || 0,
+      jobs: jobs || 0
+    });
+  } catch (error) {
+    console.error("Public stats error:", error);
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
+
+// =====================
 // VERIFICATION ROUTE
 // =====================
 app.get("/api/verify", (req, res) => {

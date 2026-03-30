@@ -13,7 +13,8 @@ import {
   deleteSavedProposal,
   getRecruiterAISummary,
   evaluateApplication,
-  reEvaluateApplication
+  reEvaluateApplication,
+  getRecommendedJobs
 } from "../controllers/aiController.js";
 
 import { protect } from "../middleware/auth.js";
@@ -40,6 +41,7 @@ router.get("/skill-gap/pathways", protect, allowRoles("student"), getSkillGapPat
 // Recruiter Evaluation (Genuine)
 router.get("/evaluate/:applicationId", protect, allowRoles("recruiter", "admin"), evaluateApplication);
 router.put("/re-evaluate/:applicationId", protect, allowRoles("recruiter", "admin"), reEvaluateApplication);
+router.get("/recommendations/jobs", protect, allowRoles("student"), getRecommendedJobs);
 
 export default router;
 

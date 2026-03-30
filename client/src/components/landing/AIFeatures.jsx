@@ -14,12 +14,6 @@ const AIFeatures = () => {
       color: 'from-blue-500 to-indigo-600',
     },
     {
-      icon: <Brain size={32} />,
-      title: 'AI Interview Prep & Coaching',
-      desc: 'Targeted interview questions and real-time AI guidance to sharpen your answers and boost confidence.',
-      color: 'from-indigo-500 to-purple-600',
-    },
-    {
       icon: <FileSearch size={32} />,
       title: 'AI Skill Gap Detector',
       desc: 'Personalized career roadmaps. Identify exactly what you need to learn to land your dream role.',
@@ -32,22 +26,16 @@ const AIFeatures = () => {
       color: 'from-amber-500 to-orange-600',
     },
     {
-      icon: <Zap size={32} />,
-      title: 'AI Smart Sourcing',
-      desc: 'For recruiters: Automated auto-invitations and intelligent shortlisting to find top talent in seconds.',
-      color: 'from-emerald-500 to-teal-600',
-    },
-    {
-      icon: <Search size={32} />,
-      title: 'AI Candidate Comparison',
-      desc: 'Data-driven talent evaluation. Compare multiple candidates side-by-side using deep behavioral insights.',
+      icon: <TrendingUp size={32} />,
+      title: 'AI Career Insights',
+      desc: 'Real-time market intelligence. Understand salary benchmarks and demand for your specific skill set.',
       color: 'from-cyan-500 to-blue-600',
     },
     {
-      icon: <MessageSquare size={32} />,
-      title: 'AI Feedback Generator',
-      desc: 'Meaningful coaching for every applicant. Systematically provide high-quality feedback to keep candidates engaged.',
-      color: 'from-rose-500 to-red-600',
+      icon: <Zap size={32} />,
+      title: 'AI Recruiter Copilot',
+      desc: 'Smart job creation and automated sourcing. Find the best candidates with AI-powered ranking.',
+      color: 'from-emerald-500 to-teal-600',
     },
   ];
 

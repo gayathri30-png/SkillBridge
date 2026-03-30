@@ -6,6 +6,27 @@ import { Link } from 'react-router-dom';
 const HeroSection = () => {
   const canvasRef = React.useRef(null);
 
+  const [stats, setStats] = React.useState({ students: 10000, companies: 500 });
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('http://localhost:5001/api/public/stats');
+        const data = await response.json();
+        setStats({
+          students: data.students,
+          companies: data.companies
+        });
+      } catch (error) {
+        console.error("Failed to fetch public stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
   React.useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -120,12 +141,16 @@ const HeroSection = () => {
               
               <div className="mt-14 flex items-center justify-center lg:justify-start gap-12">
                 <div className="text-center lg:text-left">
-                  <p className="text-3xl font-black text-[#0F172A]">10K+</p>
+                  <p className="text-3xl font-black text-[#0F172A]">
+                    {loading ? '...' : stats.students > 999 ? `${(stats.students/1000).toFixed(1)}K+` : stats.students}
+                  </p>
                   <p className="text-sm font-bold text-[#64748B] uppercase tracking-wider">Students</p>
                 </div>
                 <div className="h-10 w-px bg-slate-200"></div>
                 <div className="text-center lg:text-left">
-                  <p className="text-3xl font-black text-[#0F172A]">500+</p>
+                  <p className="text-3xl font-black text-[#0F172A]">
+                    {loading ? '...' : stats.companies}
+                  </p>
                   <p className="text-sm font-bold text-[#64748B] uppercase tracking-wider">Companies</p>
                 </div>
               </div>
