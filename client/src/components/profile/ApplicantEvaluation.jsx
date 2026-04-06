@@ -6,6 +6,7 @@ import {
   Calendar, User, FileText, Send, ThumbsDown, RotateCcw
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
+import HireConfirmationModal from './HireConfirmationModal';
 import './ApplicantEvaluation.css';
 
 const ApplicantEvaluation = () => {
@@ -22,6 +23,7 @@ const ApplicantEvaluation = () => {
   const [sendingMsg, setSendingMsg] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectFeedback, setRejectFeedback] = useState('');
+  const [showHireModal, setShowHireModal] = useState(false);
 
   useEffect(() => {
     if (applicationId) fetchEvaluation();
@@ -339,7 +341,7 @@ const ApplicantEvaluation = () => {
 
                 {/* Hire Target */}
                 <button 
-                onClick={() => handleUpdateStatus('hired')}
+                onClick={() => setShowHireModal(true)}
                 disabled={application.status === 'hired'}
                 className="flex-1 md:flex-none relative overflow-hidden group px-12 py-4 rounded-2xl font-black text-lg text-white shadow-xl shadow-emerald-500/30 transition-all hover:-translate-y-1 hover:shadow-emerald-500/50 disabled:opacity-30 disabled:hover:translate-y-0 disabled:hover:shadow-emerald-500/30"
                 style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
@@ -388,6 +390,22 @@ const ApplicantEvaluation = () => {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* HIRE CONFIRMATION MODAL */}
+      {showHireModal && (
+        <HireConfirmationModal 
+          application={{
+            ...application,
+            application_id: data.applicationId,
+            student_name: candidate.name
+          }}
+          onClose={() => setShowHireModal(false)}
+          onConfirm={() => {
+            setShowHireModal(false);
+            fetchEvaluation();
+          }}
+        />
       )}
     </div>
   );

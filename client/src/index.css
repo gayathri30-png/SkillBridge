@@ -161,3 +161,40 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
 }
+
+/* Modal v2 - Premium Styles */
+.modal-overlay-v2 {
+  @apply fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm;
+  animation: fadeInV2 0.3s ease-out forwards;
+}
+
+.modal-content-v2 {
+  @apply bg-white rounded-[2rem] shadow-2xl border border-slate-100 w-full overflow-hidden;
+  animation: zoomInV2 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInV2 {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes zoomInV2 {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header-v2 {
+  @apply px-8 py-6 border-b border-slate-50 flex justify-between items-center;
+}
+
+.modal-body-v2 {
+  @apply p-8;
+}
+
+.btn-primary {
+  @apply px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-indigo-200 active:scale-95 disabled:opacity-50;
+}
+
+.btn-outline {
+  @apply px-6 py-3 border-2 border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-all active:scale-95;
+}

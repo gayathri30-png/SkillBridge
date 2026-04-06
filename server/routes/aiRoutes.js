@@ -28,6 +28,7 @@ router.get("/match/:jobId", protect, calculateMatchScore);
 router.post("/generate-job-post", protect, allowRoles("recruiter", "admin", "student"), generateJobPost);
 
 // Tier 4
+router.post("/proposal/advanced/:jobId", protect, allowRoles("student"), generateAdvancedProposal);
 router.get("/market-intelligence", protect, allowRoles("recruiter", "admin"), getMarketIntelligence);
 router.get("/market-intelligence/:jobId", protect, allowRoles("recruiter", "admin"), getMarketIntelligence);
 

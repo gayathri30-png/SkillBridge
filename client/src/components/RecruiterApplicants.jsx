@@ -9,6 +9,7 @@ import {
   TrendingUp, Zap,  MoreVertical, Send, Menu, Sparkles, Trash2, 
   Target, Clock, Tags, Settings
 } from "lucide-react";
+import HireConfirmationModal from "./profile/HireConfirmationModal";
 import "./RecruiterApplicants.css"; 
 
 const RecruiterApplicants = () => {
@@ -26,6 +27,7 @@ const RecruiterApplicants = () => {
   const [aiFilter, setAiFilter] = useState(null);
   const [visibleCount, setVisibleCount] = useState(10);
   const [sortBy, setSortBy] = useState("match");
+  const [hiringApplicant, setHiringApplicant] = useState(null);
 
   const fetchJobDetails = useCallback(async () => {
     try {
@@ -320,7 +322,13 @@ const RecruiterApplicants = () => {
                         <div className="flex flex-col gap-2 w-full">
                             <select 
                                 value={app.status || 'pending'}
-                                onChange={(e) => handleStatusUpdate(app.application_id, e.target.value)}
+                                onChange={(e) => {
+                                    if(e.target.value === 'hired') {
+                                        setHiringApplicant(app);
+                                    } else {
+                                        handleStatusUpdate(app.application_id, e.target.value);
+                                    }
+                                }}
                                 className="action-select status-dropdown"
                             >
                                 <option value="pending">Pending</option>
@@ -339,7 +347,7 @@ const RecruiterApplicants = () => {
                             {app.status === 'accepted' && (
                                 <button 
                                     className="quick-btn hire"
-                                    onClick={() => handleStatusUpdate(app.application_id, 'hired')}
+                                    onClick={() => setHiringApplicant(app)}
                                 >
                                     <CheckCircle size={12} /> Hire Candidate
                                 </button>
@@ -366,6 +374,17 @@ const RecruiterApplicants = () => {
           <InterviewScheduler 
             application={schedulingApplicant}
             onClose={() => setSchedulingApplicant(null)}
+          />
+      )}
+
+      {hiringApplicant && (
+          <HireConfirmationModal 
+            application={hiringApplicant}
+            onClose={() => setHiringApplicant(null)}
+            onConfirm={() => {
+                setHiringApplicant(null);
+                fetchApplicants(); // Refresh list to show 'hired' status
+            }}
           />
       )}
     </div>

@@ -162,7 +162,9 @@ export const getUserInterviews = (req, res) => {
         JOIN jobs j ON a.job_id = j.id
         JOIN users u1 ON i.recruiter_id = u1.id
         JOIN users u2 ON i.student_id = u2.id
-        WHERE ${role === 'student' ? 'i.student_id = ?' : 'i.recruiter_id = ?'}
+        WHERE (${role === 'student' ? 'i.student_id = ?' : 'i.recruiter_id = ?'})
+          AND i.status != 'declined'
+          AND i.scheduled_at >= NOW()
         ORDER BY i.scheduled_at ASC
     `;
 
