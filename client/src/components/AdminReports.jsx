@@ -5,6 +5,7 @@ import {
     Users, Briefcase, FileText, TrendingUp, 
     Shield, Activity, Zap, ChevronLeft, Download
 } from "lucide-react";
+import "./AdminTable.css";
 
 const AdminReports = () => {
     const [reports, setReports] = useState(null);

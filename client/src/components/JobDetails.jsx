@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import JobApplyModal from "./JobApplyModal";
 import { formatSalary } from "../utils/formatters";
+import "./JobDetails.css";
 
 const JobDetails = () => {
   const { id } = useParams();

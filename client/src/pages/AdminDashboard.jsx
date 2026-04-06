@@ -5,6 +5,7 @@ import {
   Users, Briefcase, FileText, CheckCircle, 
   Activity, Shield, Sidebar as SidebarIcon, Search, LayoutDashboard
 } from "lucide-react";
+import "./AdminDashboard.css";
 
 const AdminDashboard = () => {
   const [data, setData] = useState(null);

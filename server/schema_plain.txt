@@ -1,0 +1,150 @@
+
+--- TABLE: ai_proposals ---
+id | int | NO | PRI | null | auto_increment
+user_id | int | NO | MUL | null | 
+job_id | int | YES | MUL | null | 
+job_title | varchar(255) | YES |  | null | 
+company | varchar(255) | YES |  | null | 
+proposal_text | text | YES |  | null | 
+tone | varchar(50) | YES |  | null | 
+length | varchar(50) | YES |  | null | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+used_count | int | YES |  | 0 | 
+
+--- TABLE: ai_recommendations ---
+id | int | NO | PRI | null | auto_increment
+user_id | int | NO | MUL | null | 
+recommendation_type | enum('portfolio','skill','job') | NO |  | null | 
+recommendation_text | text | YES |  | null | 
+priority | enum('high','medium','low') | YES |  | medium | 
+is_completed | tinyint(1) | YES |  | 0 | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+
+--- TABLE: applications ---
+id | int | NO | PRI | null | auto_increment
+job_id | int | YES | MUL | null | 
+student_id | int | YES | MUL | null | 
+proposal | text | NO |  | null | 
+ai_match_score | decimal(5,2) | YES |  | 0.00 | 
+status | enum('pending','accepted','rejected','hired') | YES |  | pending | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+hired_at | timestamp | YES |  | null | 
+start_date | date | YES |  | null | 
+salary | bigint unsigned | YES |  | null | 
+contract_type | enum('Full-time','Part-time','Contract','Internship') | YES |  | Full-time | 
+offer_letter | text | YES |  | null | 
+additional_notes | text | YES |  | null | 
+is_offer_accepted | tinyint(1) | YES |  | 0 | 
+is_offer_declined | tinyint(1) | YES |  | 0 | 
+offer_accepted_at | timestamp | YES |  | null | 
+offer_declined_at | timestamp | YES |  | null | 
+suggestion_sent | tinyint(1) | YES |  | 0 | 
+
+--- TABLE: chat_rooms ---
+id | int | NO | PRI | null | auto_increment
+room_id | varchar(255) | NO | UNI | null | 
+application_id | int | NO | MUL | null | 
+student_id | int | NO | MUL | null | 
+recruiter_id | int | NO | MUL | null | 
+job_title | varchar(255) | YES |  |  | 
+student_name | varchar(255) | YES |  |  | 
+recruiter_name | varchar(255) | YES |  |  | 
+last_message | text | YES |  | null | 
+last_message_at | timestamp | YES |  | null | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+
+--- TABLE: interviews ---
+id | int | NO | PRI | null | auto_increment
+application_id | int | NO | MUL | null | 
+recruiter_id | int | NO | MUL | null | 
+student_id | int | NO | MUL | null | 
+scheduled_at | datetime | NO |  | null | 
+meeting_link | varchar(255) | YES |  | null | 
+instructions | text | YES |  | null | 
+status | enum('pending','accepted','declined') | YES |  | pending | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+updated_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED on update CURRENT_TIMESTAMP
+
+--- TABLE: job_skills ---
+id | int | NO | PRI | null | auto_increment
+job_id | int | YES | MUL | null | 
+skill_id | int | YES | MUL | null | 
+
+--- TABLE: jobs ---
+id | int | NO | PRI | null | auto_increment
+title | varchar(255) | NO |  | null | 
+description | text | NO |  | null | 
+job_type | enum('full-time','part-time','contract','internship','freelance') | NO |  | null | 
+budget | bigint unsigned | YES |  | null | 
+duration | varchar(100) | YES |  | null | 
+location | varchar(100) | YES |  | Remote | 
+experience_level | enum('entry','intermediate','senior','executive') | NO |  | null | 
+posted_by | int | YES | MUL | null | 
+status | enum('open','closed') | YES |  | open | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+
+--- TABLE: messages ---
+id | int | NO | PRI | null | auto_increment
+room_id | varchar(255) | NO | MUL | null | 
+sender_id | int | NO |  | null | 
+receiver_id | int | NO | MUL | null | 
+message | text | NO |  | null | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+is_read | tinyint(1) | YES | MUL | 0 | 
+
+--- TABLE: notifications ---
+id | int | NO | PRI | null | auto_increment
+user_id | int | NO | MUL | null | 
+type | varchar(50) | NO |  | null | 
+target_id | int | YES |  | null | 
+message | text | NO |  | null | 
+is_read | tinyint(1) | YES |  | 0 | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+
+--- TABLE: saved_jobs ---
+id | int | NO | PRI | null | auto_increment
+user_id | int | NO | MUL | null | 
+job_id | int | NO | MUL | null | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+
+--- TABLE: skill_gap_analysis ---
+id | int | NO | PRI | null | auto_increment
+user_id | int | NO | MUL | null | 
+job_title | varchar(255) | YES |  | null | 
+match_percentage | int | YES |  | null | 
+matched_skills | json | YES |  | null | 
+missing_skills | json | YES |  | null | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+
+--- TABLE: skills ---
+id | int | NO | PRI | null | auto_increment
+name | varchar(100) | NO | UNI | null | 
+
+--- TABLE: user_skills ---
+id | int | NO | PRI | null | auto_increment
+user_id | int | NO | MUL | null | 
+skill_id | int | NO | MUL | null | 
+proficiency | enum('Beginner','Intermediate','Advanced') | YES |  | Beginner | 
+endorsements | int | YES |  | 0 | 
+years_of_experience | int | YES |  | 0 | 
+
+--- TABLE: users ---
+id | int | NO | PRI | null | auto_increment
+name | varchar(100) | YES |  | null | 
+email | varchar(100) | YES |  | null | 
+password | varchar(255) | YES |  | null | 
+role | enum('student','recruiter','admin') | YES |  | student | 
+reset_password_token | varchar(255) | YES |  | null | 
+reset_password_expires | datetime | YES |  | null | 
+github_url | text | YES |  | null | 
+resume_url | text | YES |  | null | 
+is_verified | tinyint(1) | YES |  | 0 | 
+created_at | timestamp | YES |  | CURRENT_TIMESTAMP | DEFAULT_GENERATED
+bio | text | YES |  | null | 
+phone | varchar(20) | YES |  | null | 
+location | varchar(255) | YES |  | null | 
+avatar | varchar(255) | YES |  | null | 
+linkedin_url | varchar(255) | YES |  | null | 
+company_name | varchar(255) | YES |  | null | 
+company_bio | text | YES |  | null | 
+headline | varchar(255) | YES |  |  | 
